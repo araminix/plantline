@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Plantline.Cad.Browser/Plantline.Cad.Browser.csproj" />
+  <Project Path="Plantline.Cad.Samples/Plantline.Cad.Samples.csproj" />
+  <Project Path="Plantline.Cad.Tests/Plantline.Cad.Tests.csproj" />
+  <Project Path="Plantline.Cad/Plantline.Cad.csproj" />
+</Solution>

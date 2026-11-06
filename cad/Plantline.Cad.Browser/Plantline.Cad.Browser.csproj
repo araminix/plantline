@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- The site serves the files as they are; GitHub Pages compresses them itself -->
+    <CompressionEnabled>false</CompressionEnabled>
+    <!-- ACadSharp maps DXF codes by reflection: it is kept whole (rooted below), so its trim warnings do not apply -->
+    <NoWarn>$(NoWarn);IL2104</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <TrimmerRootAssembly Include="ACadSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Plantline.Cad\Plantline.Cad.csproj" />
+  </ItemGroup>
+</Project>
