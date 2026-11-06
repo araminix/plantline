@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest something plantline should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you need to do, and why?
+      description: Describe the task and who does it (a design engineer, an O&M team…), not only the feature.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Single-line diagram, Plant layout, Languages, Other]

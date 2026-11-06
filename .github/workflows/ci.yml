@@ -1,0 +1,110 @@
+name: CI
+
+# Every push and pull request: test the CAD reader and the web app (unit and end-to-end, desktop and phone).
+# A push to main also publishes the site on GitHub Pages.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions are pinned to the commit of a release, so a moved tag cannot change what runs here
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: cad/global.json
+
+      - name: Test the CAD reader
+        working-directory: cad
+        run: dotnet test --project Plantline.Cad.Tests
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11.25.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint, type-check and unit tests
+        working-directory: web
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+
+      - name: Build the CAD reader for the browser
+        working-directory: web
+        run: pnpm cad
+
+      - name: End-to-end tests (desktop and phone)
+        working-directory: web
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm e2e
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7
+
+      - name: Build the site for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: web
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: pnpm build
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          path: web/dist
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Pages is switched on once, in Settings → Pages → Source: GitHub Actions; until then this job only warns
+      - name: Check that GitHub Pages is enabled
+        id: pages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if curl -sf -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pages" > /dev/null; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::GitHub Pages is not enabled. In Settings → Pages, set Source to \"GitHub Actions\", then run this workflow again."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        id: deployment
+        if: steps.pages.outputs.enabled == 'true'

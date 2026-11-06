@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/araminix/plantline/security/advisories/new
+    about: A drawing or file that crashes, hangs or misleads the app.

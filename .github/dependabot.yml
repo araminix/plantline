@@ -1,0 +1,24 @@
+# Weekly updates; a release must be 7 days old first (as pnpm's minimumReleaseAge in web/pnpm-workspace.yaml)
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      web:
+        patterns: ["*"]
+  - package-ecosystem: nuget
+    directory: /cad
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
