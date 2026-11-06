@@ -21,6 +21,14 @@ interface Props {
     onMove: (centre: { lat: number; lon: number }) => void;
 }
 
+// Leaflet 1.9: a canvas redraw scheduled just before its layer or map is removed runs after the removal and throws
+// ("reading 'clearRect'"); a removed renderer has no context, so its redraw is skipped
+const canvas = L.Canvas.prototype as unknown as { _redraw(): void; _ctx?: CanvasRenderingContext2D };
+const redraw = canvas._redraw;
+canvas._redraw = function (this: typeof canvas) {
+    if (this._ctx) redraw.call(this);
+};
+
 const TILES = {
     plain: { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: "© OpenStreetMap contributors", maxNativeZoom: 19 },
     satellite: {
