@@ -1,6 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+// Any uncaught error in the page fails the test that caused it (tests in one worker run one at a time)
+let pageErrors: string[] = [];
+test.beforeEach(({ page }) => {
+    pageErrors = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+});
+test.afterEach(() => {
+    expect(pageErrors, "errors in the page").toEqual([]);
+});
+
 /** Starts as a first-time visitor in English and picks the plant type. */
 async function start(page: Page, plant: string) {
     await page.addInitScript(() => {
