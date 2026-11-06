@@ -1,0 +1,21 @@
+import { describe, expect, it } from "vitest";
+import { commit, preview, redo, undo, type History } from "./history";
+
+const start: History<number> = { past: [], present: 0, future: [] };
+
+describe("undo history", () => {
+    it("undoes and redoes committed steps, and a new step clears redo", () => {
+        const two = commit(commit(start, 1), 2);
+        expect(undo(two).present).toBe(1);
+        expect(redo(undo(two)).present).toBe(2);
+        expect(commit(undo(two), 5).future).toEqual([]);
+        expect(undo(start)).toBe(start);
+        expect(redo(start)).toBe(start);
+    });
+
+    it("makes a drag one step: previews are not steps, the commit returns to the state before the drag", () => {
+        const dragged = commit(preview(preview(start, 1), 2), 3, start.present);
+        expect(dragged.past).toEqual([0]);
+        expect(undo(dragged).present).toBe(0);
+    });
+});

@@ -1,0 +1,3 @@
+# Supply-chain guard: pnpm installs only package versions published at least 7 days ago (in minutes), which leaves
+# time for a malicious release to be found and pulled. Dependabot waits as long (.github/dependabot.yml).
+minimumReleaseAge: 10080
