@@ -5,6 +5,10 @@
   "description": "Single-line diagrams and DWG/DXF plant layouts in the browser.",
   "license": "Apache-2.0",
   "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "cad": "node scripts/build-cad.mjs",
     "dev": "vite",
