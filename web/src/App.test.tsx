@@ -26,13 +26,15 @@ describe("the app", () => {
         expect(palette().getAllByRole("listitem")[0]!.textContent).toBe("Wind turbine");
     });
 
-    it("changes the palette with the plant type", () => {
+    it("changes the palette with the plant type and keeps the diagram", () => {
         localStorage.setItem("plantline.plant", '"solar"');
-        renderApp();
+        const { container } = renderApp();
         expect(palette().getAllByRole("listitem")[0]!.textContent).toBe("PV array");
+        fireEvent.click(palette().getByRole("button", { name: "Inverter" }));
         fireEvent.change(screen.getByRole("combobox", { name: "Plant type" }), { target: { value: "storage" } });
         expect(palette().getAllByRole("listitem")[0]!.textContent).toBe("Battery");
         expect(palette().queryByRole("button", { name: "PV array" })).toBeNull();
+        expect(container.querySelectorAll("[data-node]")).toHaveLength(1);
     });
 
     it("adds an element from the palette, selects it, and undoes it", () => {
