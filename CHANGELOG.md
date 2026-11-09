@@ -20,6 +20,12 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   the page receives 12 MB instead of 77 million characters; zooming redraws in under 100 ms.
 - Arrays of block copies (MINSERT) show every copy, not only the first.
 - Move and turn a drawing on the map by dragging its handles; it follows smoothly however large it is.
+- A drawing reader that cannot start (a file of it failed to download) is reported within seconds with "Try again",
+  instead of a "took too long" after two minutes.
+- While a drawing is read, the time so far and Cancel are shown, instead of a fixed two-minute limit; a drawing likely
+  too large for the device's memory is read only after asking.
+- The documents no longer say that the reader's worker protects the page from running out of memory: it shares the
+  page's memory; the question before large drawings does.
 - Scaled blocks with a base point are placed correctly.
 
 ## 0.1.0 (unreleased)

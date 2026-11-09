@@ -15,9 +15,11 @@ The latest release and the `main` branch, which is what https://araminix.github.
 
 ## How the app protects you
 
-- Drawings are read in a worker of their own, ended after each file, with a size limit (100 MB) and a time limit
-  (2 minutes). The reader keeps each block once instead of expanding it (at most 1,000,000 shapes and references and
-  4,000,000 points); the app opens blocks at most 8 levels deep and places at most 5,000,000 copies.
+- Drawings are read in a worker of their own, ended after each file or when you cancel, with a size limit (100 MB).
+  The reader keeps each block once instead of expanding it (at most 1,000,000 shapes and references and 4,000,000
+  points); the app opens blocks at most 8 levels deep and places at most 5,000,000 copies.
+- A worker shares the page's memory: a drawing too large for the device could still close the page. Before reading a
+  file likely to need more than a quarter of the device's memory, the app asks.
 - Diagram files are validated field by field and size-limited; anything unexpected is refused.
 - Nothing is uploaded: there is no server. Map tiles are the only outside requests.
 - A Content Security Policy blocks scripts and connections from anywhere but the site.

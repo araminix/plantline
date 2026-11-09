@@ -5,7 +5,7 @@ import { LAYOUT_RULES, type LayoutKind, type LayoutRule, type PlantType } from "
 import { download } from "../diagram/export";
 import { usePersisted } from "../settings";
 import { IconButton, NumberField, TextField } from "../ui/controls";
-import { CadReadError, readDrawing, type CadError } from "./cad";
+import { CadReadError, fitsDevice, readDrawing, type CadError } from "./cad";
 import { drawingBounds, LENGTH_UNITS, METRES_PER_UNIT, type Drawing, type LengthUnit } from "./drawing";
 import { toCsv, toGeoJson } from "./exports";
 import { LayoutMap } from "./LayoutMap";
@@ -22,7 +22,10 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const { t, number } = useI18n();
     const [drawing, setDrawing] = useState<Drawing | null>(null);
     const [fileName, setFileName] = useState("");
-    const [status, setStatus] = useState<"idle" | "loading" | CadError>("idle");
+    const [status, setStatus] = useState<"idle" | "loading" | Exclude<CadError, "cancelled">>("idle");
+    const [elapsed, setElapsed] = useState(0);
+    const reading = useRef<AbortController | null>(null);
+    const lastRead = useRef<{ file: File; preset?: Placement | undefined } | null>(null);
     const [unit, setUnit] = useState<LengthUnit>("m");
     const [placement, setPlacement] = useState<Placement>({ mode: "point", lat: 0, lon: 0, rotationDeg: 0 });
     const [rules, setRules] = useState<LayoutRule[]>(() => [...LAYOUT_RULES[plant]]);
@@ -48,10 +51,25 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     }, [drawing, recognition, projector, metres, colorOf, rules]);
     const kindName = (kind: LayoutKind) => t(`kind.${kind}`);
 
+    useEffect(() => {
+        if (status !== "loading") return;
+        const started = Date.now();
+        setElapsed(0);
+        const timer = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
+        return () => clearInterval(timer);
+    }, [status]);
+
+    // A newer reading replaces an older one; only the newest may change what is shown
     const load = async (file: File, preset?: Placement) => {
+        if (!fitsDevice(file) && !window.confirm(t("layout.largeConfirm", { size: number(file.size / 2 ** 20, 0) }))) return;
+        reading.current?.abort();
+        const controller = new AbortController();
+        reading.current = controller;
+        lastRead.current = { file, preset };
         setStatus("loading");
         try {
-            const loaded = await readDrawing(file);
+            const loaded = await readDrawing(file, controller.signal);
+            if (reading.current !== controller) return;
             setDrawing(loaded);
             setFileName(file.name);
             setUnit(loaded.units === "unitless" ? "m" : loaded.units);
@@ -59,7 +77,11 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
             setFitNonce((n) => n + 1);
             setStatus("idle");
         } catch (error) {
-            setStatus(error instanceof CadReadError ? error.code : "unreadable");
+            if (reading.current !== controller) return;
+            const code = error instanceof CadReadError ? error.code : "unreadable";
+            setStatus(code === "cancelled" ? "idle" : code);
+        } finally {
+            if (reading.current === controller) reading.current = null;
         }
     };
 
@@ -75,6 +97,32 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
             .then((file) => load(file, SAMPLES[plant].placement))
             .catch(() => setStatus("unreadable"));
     };
+
+    // While reading: the time so far and Cancel; after a failure: what happened and, where it may help, Try again
+    const retry = lastRead.current;
+    const readingStatus =
+        status === "loading" ? (
+            <div className="row reading">
+                <p role="status">
+                    {t("layout.loading")} <span className="muted">{t("layout.elapsed", { seconds: number(elapsed) })}</span>
+                </p>
+                <button type="button" className="button" onClick={() => reading.current?.abort()}>
+                    {t("action.cancel")}
+                </button>
+            </div>
+        ) : status !== "idle" ? (
+            <>
+                <p className="error" role="alert">
+                    {t(`layout.error.${status}`)}
+                </p>
+                {(status === "missing" || status === "unreadable") && retry && (
+                    <button type="button" className="button" onClick={() => void load(retry.file, retry.preset)}>
+                        <RotateCcw size={16} aria-hidden="true" />
+                        {t("layout.tryAgain")}
+                    </button>
+                )}
+            </>
+        ) : null;
 
     const fileButtons = (
         <>
@@ -100,12 +148,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                             {t("layout.sample", { plant: t(`plant.${plant}`) })}
                         </button>
                     </div>
-                    {status === "loading" && <p role="status">{t("layout.loading")}</p>}
-                    {status !== "idle" && status !== "loading" && (
-                        <p className="error" role="alert">
-                            {t(`layout.error.${status}`)}
-                        </p>
-                    )}
+                    {readingStatus}
                     <p className="muted small">{t("layout.private")}</p>
                 </div>
             </section>
@@ -144,6 +187,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                             </IconButton>
                         </div>
                     </header>
+                    {readingStatus}
                     {(drawing.truncated || recognition?.complete === false) && <p className="banner error">{t("layout.truncated")}</p>}
 
                     <h3>{t("layout.objects")}</h3>

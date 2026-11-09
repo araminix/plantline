@@ -34,7 +34,7 @@ plantline is a static web app. Everything happens in the browser: there is no se
 | Canvas | Pointer events (mouse, pen and touch alike): select, drag, pan, pinch, connect. | `web/src/diagram/Canvas.tsx` |
 | Diagram file | The `.plantline.json` format and its validation. | `web/src/diagram/file.ts` |
 | Drawing reader | DWG or DXF to drawing JSON and a binary list of points, in .NET with ACadSharp, compiled to WebAssembly. Every block once. | `cad/Plantline.Cad`, `cad/Plantline.Cad.Browser` |
-| Reader worker | Runs the reader for one file in a worker of its own, with a size limit and a timeout; hands the points over without copying. | `web/src/layout/cad.worker.ts`, `cad.ts` |
+| Reader worker | Runs the reader for one file in a worker of its own, ended afterwards or on Cancel; reports a reader that cannot start at once; hands the points over without copying; asks before a file likely too large for the device. | `web/src/layout/cad.worker.ts`, `cad.ts` |
 | Drawing model | The reader's output checked and typed; blocks placed inside each other through their transforms (depth limit, copy limit), block extents, lengths. | `web/src/layout/drawing.ts` |
 | Recognition | Rules to counts and lengths, over every placed copy. | `web/src/layout/recognize.ts` |
 | Placement | Drawing coordinates to latitude and longitude. | `web/src/layout/place.ts` |
@@ -161,7 +161,8 @@ files others open.
 
 | Threat | Defence |
 | --- | --- |
-| A drawing that crashes, hangs or exhausts the reader | The reader runs in a Web Worker started for one file and ended after it; a 2-minute timeout ends a hung read; files over 100 MB are refused before reading. |
+| A drawing that crashes, hangs or exhausts the reader | The reader runs in a Web Worker started for one file and ended after it; the user sees the time so far and can cancel; files over 100 MB are refused before reading. A worker shares the page's memory, so the worker alone does not protect the page: before reading a file likely to need more than a quarter of the device's memory (about 70 times its size for DWG, 15 times for DXF), the app asks. |
+| A reader that cannot start (a runtime file fails to download) | .NET's start then waits for ever; the worker treats errors that are not recovered from within 5 s as a failed start and reports it at once, and the user can try again. |
 | A block bomb (deep or self-referencing nesting, exponential copies) | The reader never expands blocks: each is read once, from a list rather than by recursion, so no nesting can overflow its stack; at most 1,000,000 shapes and references and 4,000,000 points are kept. The app opens references at most 8 levels deep and stops a walk at 5,000,000 placed shapes and references. Block extents come from the shapes kept, not from ACadSharp's own recursive bounding box. |
 | A hostile diagram file | Strict validation: format, version, every field's type and range, unique ids, existing link ends, size limits; anything unexpected is refused. |
 | Script injection (XSS) | React escapes all text; there is no `dangerouslySetInnerHTML`, no `eval`, no HTML built from strings. Exported SVG is rendered by React, so typed text is escaped. |

@@ -87,8 +87,9 @@ and save it as PDF; only the diagram is printed.
 ## Epic C: Plant layout from a drawing
 
 **US-30 Open a drawing, privately.** As a design engineer, I open a DWG or DXF file of up to 100 MB; it is read in my
-browser and never uploaded. Another file type, a damaged file, a file the reader cannot read in two minutes, or a
-missing reader each give a clear message, and the page keeps working.
+browser and never uploaded. While it is read I see the time so far and can cancel. Another file type, a damaged file
+or a reader that cannot be loaded each give a clear message at once, with "Try again" where it may help; a file likely
+too large for my device's memory is read only if I agree.
 
 **US-31 Try a sample.** Without a drawing of my own, I open a made-up sample of the current plant type.
 
@@ -131,5 +132,5 @@ from OpenStreetMap and Esri.
 freely under the Apache 2.0 license.
 
 **US-42 Safe with untrusted files.** As a user, I can open any file without risk: drawings and diagram files are
-validated and bounded, the drawing reader runs in a worker that is ended after each file, and the page has a strict
-Content Security Policy.
+validated and bounded, the drawing reader runs in a worker that is ended after each file, a drawing likely too large
+for my device is read only if I agree, and the page has a strict Content Security Policy.

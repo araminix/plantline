@@ -136,6 +136,45 @@ test("moves and turns a drawing on the map with its handles", async ({ page }) =
     expect(Number(await page.getByRole("textbox", { name: "Longitude" }).inputValue())).toBeGreaterThan(27.18);
 });
 
+test("reports a reader that cannot start at once, and reads the drawing after trying again", async ({ page }) => {
+    await start(page, "Wind farm");
+    const runtimeFile = /System\.Linq\.[^/]*\.wasm$/;
+    await page.context().route(runtimeFile, (route) => route.abort());
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    const clicked = Date.now();
+    await page.getByRole("button", { name: /Try a sample/ }).click();
+    await expect(page.getByRole("alert")).toHaveText(/could not be loaded/, { timeout: 20_000 });
+    expect(Date.now() - clicked).toBeLessThan(20_000);
+    // The failed downloads are reported by the browser as errors of the page: expected here
+    pageErrors = [];
+
+    await page.context().unroute(runtimeFile);
+    await page.getByRole("button", { name: "Try again" }).click();
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    await expect(page.locator(".totals tr", { hasText: "Wind turbine" }).locator("td").last()).toHaveText("8", { timeout: 60_000 });
+});
+
+test("cancels a reading and ends its worker", async ({ page }) => {
+    await start(page, "Wind farm");
+    // The reader's start is held, so the reading is still going when Cancel is pressed
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.context().route(/dotnet\.js$/, async (route) => {
+        await held;
+        await route.continue().catch(() => {});
+    });
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    const worker = page.waitForEvent("worker");
+    await page.getByRole("button", { name: /Try a sample/ }).click();
+    const closed = worker.then((started) => new Promise((resolve) => started.on("close", resolve)));
+    await expect(page.getByRole("status")).toContainText("Reading the drawing");
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await closed;
+    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    release();
+});
+
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();

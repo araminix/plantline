@@ -67,6 +67,9 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-53 | US-30, US-42 | Bytes that are not a drawing are refused with an error, not a crash. | `CadReaderTests` › RejectsBytesThatAreNotADrawing (3 cases); e2e › opens a DXF… and reports a file that is not a drawing |
 | TC-54 | US-30 | The reader's JSON has the names the app reads, and its points are the binary numbers the app reads; anything else is refused. | `CadReaderTests` › WritesCamelCaseJson_AndThePointsAsBinary_TheWebAppReads; `drawing.test.ts` › accepts the reader's output… |
 | TC-55 | US-30 | A file chosen by the user is read in the browser and counted. | e2e › opens a DXF chosen by the user… |
+| TC-55a | US-30 | A reader that cannot start (a runtime file blocked) is reported within seconds, and "Try again" then reads the drawing. | e2e › reports a reader that cannot start at once… |
+| TC-55b | US-30 | Cancel during a reading ends its worker and leaves no error. | e2e › cancels a reading and ends its worker |
+| TC-55c | US-30, US-42 | A file likely to need more than a quarter of the device's memory is read only after asking (DWG 70 times its size, DXF 15 times; 4 GB assumed when the browser does not say). | `cad.test.ts` › asks before reading a drawing likely too large… |
 | TC-56 | US-31, US-32 | The sample of every plant type opens on the map with its key object counted (40 tables, 8 turbines, 12 batteries, 3 generators, 8 breakers, 15 towers), on desktop and phone. | e2e › reads the … sample drawing and counts it (6 tests) |
 | TC-57 | US-32 | Tables, strings and inverters are counted; cables and fences measured in metres. | `recognize.test.ts` › counts tables, strings and inverters… |
 | TC-58 | US-32 | A block inside a table and the table's own outline are not counted again. | `recognize.test.ts` › does not count a block nested in a table… |
