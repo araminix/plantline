@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ACadSharp;
 using ACadSharp.Entities;
 using ACadSharp.IO;
@@ -19,16 +21,17 @@ public sealed class CadReaderTests
         var drawing = CadReader.Read(File.ReadAllBytes(SamplePath(file)));
 
         Assert.Equal("m", drawing.Units);
-        Assert.Equal(40, drawing.Inserts.Count(insert => insert.Block == "PV_TABLE_2x28" && insert.Depth == 0));
-        Assert.Equal(80, drawing.Shapes.Count(shape => shape.Layer == "PV-STRINGS"));
-        var inverters = drawing.Inserts.Where(insert => insert.Layer == "INVERTERS").Select(insert => insert.Attributes["ID"]).Order();
+        Assert.Single(drawing.Blocks, block => block.Name == "PV_TABLE_2x28");
+        Assert.Equal(40, drawing.Model.References.Count(reference => drawing.Blocks[reference.Block].Name == "PV_TABLE_2x28"));
+        Assert.Equal(80, Shapes(drawing.Model).Count(shape => drawing.Layers[shape.Layer] == "PV-STRINGS"));
+        var inverters = drawing.Model.References.Where(reference => drawing.Layers[reference.Layer] == "INVERTERS").Select(reference => reference.Attributes!["ID"]).Order();
         Assert.Equal(["INV-01", "INV-02", "INV-03", "INV-04"], inverters);
         Assert.Contains("PV-TABLES", drawing.Layers);
         Assert.False(drawing.Truncated);
     }
 
     [Fact]
-    public void PlacesNestedBlockContent_InModelCoordinates()
+    public void KeepsNestedBlocks_WithTheTransformOfEachReference()
     {
         var document = new CadDocument();
         var inner = Block(document, "INNER", new Line(new XYZ(0, 0, 0), new XYZ(1, 0, 0)));
@@ -37,19 +40,50 @@ public sealed class CadReaderTests
 
         var drawing = CadReader.Read(Dxf(document));
 
-        var line = Assert.Single(drawing.Shapes);
-        Assert.Equal(2, line.Depth);
-        Assert.Equal([100, 110, 100, 111], line.Points);
-        var outerRef = drawing.Inserts.Single(insert => insert.Block == "OUTER");
-        Assert.Equal([100, 110, 100, 111], outerRef.Box);
+        Assert.Equal(["OUTER", "INNER"], drawing.Blocks.Select(block => block.Name));
+        var toModel = Assert.Single(drawing.Model.References).Transform;
+        var toOuter = Assert.Single(drawing.Blocks[0].References).Transform;
+        var line = Assert.Single(Shapes(drawing.Blocks[1]));
+        var start = Apply(toModel, Apply(toOuter, Point(drawing, line.First)));
+        var end = Apply(toModel, Apply(toOuter, Point(drawing, line.First + 1)));
+        AssertNear((100, 110), start);
+        AssertNear((100, 111), end);
+        Assert.Empty(drawing.Model.Shapes);
     }
 
     [Fact]
-    public void StopsExpandingBlocks_AtTheDepthLimit()
+    public void PlacesABlock_ByItsBasePoint()
     {
         var document = new CadDocument();
-        var block = Block(document, "LEVEL12", new Line(new XYZ(0, 0, 0), new XYZ(1, 1, 0)));
-        for (var level = 11; level >= 0; level--)
+        var block = Block(document, "BASED", new Line(new XYZ(5, 5, 0), new XYZ(6, 5, 0)));
+        block.BlockEntity.BasePoint = new XYZ(5, 5, 0);
+        document.Entities.Add(new Insert(block) { InsertPoint = new XYZ(20, 30, 0), XScale = 2, YScale = 2 });
+
+        var drawing = CadReader.Read(Dxf(document));
+
+        var transform = Assert.Single(drawing.Model.References).Transform;
+        var line = Assert.Single(Shapes(drawing.Blocks[0]));
+        AssertNear((20, 30), Apply(transform, Point(drawing, line.First)));
+        AssertNear((22, 30), Apply(transform, Point(drawing, line.First + 1)));
+    }
+
+    [Fact]
+    public void KeepsEachBlockOnce_HoweverOftenItIsUsed()
+    {
+        var drawing = CadReader.Read(Dxf(LargePlant(fields: 9)));
+
+        Assert.Equal(["FIELD", "ROW", "TABLE", "MODULE"], drawing.Blocks.Select(block => block.Name));
+        Assert.Equal([9, 8, 10, 28, 0], new[] { drawing.Model }.Concat(drawing.Blocks).Select(block => block.References.Count));
+        Assert.True(drawing.PointCount < 100, $"{drawing.PointCount} points");
+        Assert.True(CadReader.ToJson(drawing).Length < 10_000);
+    }
+
+    [Fact]
+    public void ReadsDeepNesting_WithoutExpandingIt()
+    {
+        var document = new CadDocument();
+        var block = Block(document, "LEVEL1000", new Line(new XYZ(0, 0, 0), new XYZ(1, 1, 0)));
+        for (var level = 999; level >= 0; level--)
         {
             block = Block(document, $"LEVEL{level}", new Insert(block));
         }
@@ -58,12 +92,45 @@ public sealed class CadReaderTests
 
         var drawing = CadReader.Read(Dxf(document));
 
-        Assert.Equal(CadReader.MaxDepth, drawing.Inserts.Max(insert => insert.Depth));
-        Assert.Empty(drawing.Shapes);
+        Assert.Equal(1001, drawing.Blocks.Count);
+        Assert.Single(Shapes(drawing.Blocks[^1]));
+        Assert.False(drawing.Truncated);
     }
 
     [Fact]
-    public void TruncatesALargeDrawing_AtTheItemLimit()
+    public void ReadsABlockThatContainsItself_Once()
+    {
+        // ACadSharp cannot build such a block in memory (it clones forever), so the file is written with another
+        // block's name in the reference and then edited, as a hostile file would be
+        var document = new CadDocument();
+        var other = Block(document, "OTHER", new Line(new XYZ(0, 0, 0), new XYZ(1, 0, 0)));
+        var self = Block(document, "SELF", new Insert(other) { InsertPoint = new XYZ(2, 0, 0) });
+        document.Entities.Add(new Insert(self));
+        var text = Encoding.UTF8.GetString(Dxf(document));
+        var edited = Regex.Replace(text, @"(AcDbBlockReference\r?\n  2\r?\n)OTHER(\r?\n)", "${1}SELF${2}");
+
+        var drawing = CadReader.Read(Encoding.UTF8.GetBytes(edited));
+
+        var selfBlock = Assert.Single(drawing.Blocks);
+        Assert.Equal("SELF", selfBlock.Name);
+        Assert.Equal(0, Assert.Single(selfBlock.References).Block);
+    }
+
+    [Fact]
+    public void MakesAnArrayOfCopies_OneReferencePerCopy()
+    {
+        var document = new CadDocument();
+        var block = Block(document, "POST", new Circle { Radius = 0.1 });
+        document.Entities.Add(new Insert(block) { InsertPoint = new XYZ(1, 2, 0), ColumnCount = 3, RowCount = 2, ColumnSpacing = 10, RowSpacing = 5 });
+
+        var drawing = CadReader.Read(Dxf(document));
+
+        var origins = drawing.Model.References.Select(reference => (reference.Transform[4], reference.Transform[5])).Order();
+        Assert.Equal([(1, 2), (1, 7), (11, 2), (11, 7), (21, 2), (21, 7)], origins);
+    }
+
+    [Fact]
+    public void TruncatesALargeDrawing_AtTheItemAndPointLimits()
     {
         var document = new CadDocument();
         for (var i = 0; i < 20; i++)
@@ -71,29 +138,32 @@ public sealed class CadReaderTests
             document.Entities.Add(new Line(new XYZ(i, 0, 0), new XYZ(i, 1, 0)));
         }
 
-        var drawing = CadReader.Read(Dxf(document), maxItems: 5);
+        var byItems = CadReader.Read(Dxf(document), maxItems: 5);
+        var byPoints = CadReader.Read(Dxf(document), maxPoints: 7);
 
-        Assert.True(drawing.Truncated);
-        Assert.Equal(5, drawing.Shapes.Count);
+        Assert.True(byItems.Truncated);
+        Assert.Equal(5, Shapes(byItems.Model).Count());
+        Assert.True(byPoints.Truncated);
+        Assert.Equal(3, Shapes(byPoints.Model).Count());
+        Assert.Equal(6, byPoints.PointCount);
     }
 
     [Fact]
-    public void ReadsTextsAndCurves_AndTheUnit()
+    public void ReadsCurvesAndTheUnit_AndLeavesTextsOut()
     {
         var document = new CadDocument();
         document.Header.InsUnits = UnitsType.Feet;
-        document.Entities.Add(new TextEntity { Value = " INV-01 ", InsertPoint = new XYZ(5, 6, 0), Height = 1 });
-        document.Entities.Add(new MText { Value = "{\\fArial|b1;Station} A", InsertPoint = new XYZ(1, 2, 0), Height = 1 });
+        document.Entities.Add(new TextEntity { Value = "INV-01", InsertPoint = new XYZ(5, 6, 0), Height = 1 });
+        document.Entities.Add(new MText { Value = "Station A", InsertPoint = new XYZ(1, 2, 0), Height = 1 });
         document.Entities.Add(new Circle { Center = new XYZ(0, 0, 0), Radius = 2 });
 
         var drawing = CadReader.Read(Dxf(document));
 
         Assert.Equal("ft", drawing.Units);
-        Assert.Contains(drawing.Texts, text => text.Text == "INV-01" && text.X == 5 && text.Y == 6);
-        Assert.Contains(drawing.Texts, text => text.Text == "Station A");
-        var circle = Assert.Single(drawing.Shapes);
+        var circle = Assert.Single(Shapes(drawing.Model));
         Assert.True(circle.Closed);
-        Assert.True(circle.Points.Length >= 40);
+        Assert.True(circle.Count >= 20);
+        Assert.Equal(circle.Count, drawing.PointCount);
     }
 
     [Theory]
@@ -106,16 +176,74 @@ public sealed class CadReaderTests
     }
 
     [Fact]
-    public void WritesCamelCaseJson_TheWebAppReads()
+    public void WritesCamelCaseJson_AndThePointsAsBinary_TheWebAppReads()
     {
-        var json = CadReader.ReadJson(File.ReadAllBytes(SamplePath("wind-farm.dxf")));
+        var drawing = CadReader.Read(File.ReadAllBytes(SamplePath("solar-plant.dxf")));
 
-        using var parsed = JsonDocument.Parse(json);
-        var names = parsed.RootElement.EnumerateObject().Select(property => property.Name);
-        Assert.Equal(["units", "layers", "shapes", "inserts", "texts", "truncated"], names);
-        var insert = parsed.RootElement.GetProperty("inserts")[0];
-        Assert.Equal(["layer", "block", "depth", "x", "y", "box", "attributes"], insert.EnumerateObject().Select(property => property.Name));
+        using var parsed = JsonDocument.Parse(CadReader.ToJson(drawing));
+        var root = parsed.RootElement;
+        Assert.Equal(["units", "layers", "blocks", "model", "truncated", "pointCount"], root.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(["name", "shapes", "references"], root.GetProperty("model").EnumerateObject().Select(property => property.Name));
+        var references = root.GetProperty("model").GetProperty("references").EnumerateArray().ToList();
+        Assert.Contains(references, reference => reference.EnumerateObject().Select(property => property.Name).SequenceEqual(["block", "layer", "transform", "attributes"]));
+        Assert.Contains(references, reference => !reference.TryGetProperty("attributes", out _));
+
+        var bytes = CadReader.PointBytes(drawing);
+        Assert.Equal(drawing.PointCount * 16, bytes.Length);
+        Assert.Equal(drawing.Points[1], BitConverter.ToDouble(bytes, 8));
     }
+
+    /// <summary>A solar field nested four deep, as real plants are drawn: model, fields, rows, tables, modules.</summary>
+    internal static CadDocument LargePlant(int fields)
+    {
+        var document = new CadDocument { Header = { InsUnits = UnitsType.Meters } };
+        var module = Block(document, "MODULE", Rectangle(0, 0, 1.1, 2.3));
+        var table = Block(document, "TABLE", Rectangle(-0.1, -0.1, 15.5, 4.8));
+        for (var i = 0; i < 28; i++)
+        {
+            table.Entities.Add(new Insert(module) { InsertPoint = new XYZ(i % 14 * 1.1, i / 14 * 2.35, 0) });
+        }
+
+        var row = Block(document, "ROW", new Line(new XYZ(0, -1, 0), new XYZ(160, -1, 0)));
+        for (var i = 0; i < 10; i++)
+        {
+            row.Entities.Add(new Insert(table) { InsertPoint = new XYZ(i * 16, 0, 0) });
+        }
+
+        var field = Block(document, "FIELD", Rectangle(-5, -5, 165, 85));
+        for (var i = 0; i < 8; i++)
+        {
+            field.Entities.Add(new Insert(row) { InsertPoint = new XYZ(0, i * 10, 0) });
+        }
+
+        for (var i = 0; i < fields; i++)
+        {
+            document.Entities.Add(new Insert(field) { InsertPoint = new XYZ(470_000 + i % 10 * 180, 4_330_000 + i / 10 * 100, 0), Rotation = 0.01 * i });
+        }
+
+        return document;
+    }
+
+    private static IEnumerable<(int Layer, bool Closed, int First, int Count)> Shapes(Block block)
+    {
+        for (var i = 0; i < block.Shapes.Count; i += 4)
+        {
+            yield return (block.Shapes[i], block.Shapes[i + 1] == 1, block.Shapes[i + 2], block.Shapes[i + 3]);
+        }
+    }
+
+    private static (double X, double Y) Point(Drawing drawing, int index) => (drawing.Points[index * 2], drawing.Points[index * 2 + 1]);
+
+    private static (double X, double Y) Apply(double[] t, (double X, double Y) p) => (t[0] * p.X + t[2] * p.Y + t[4], t[1] * p.X + t[3] * p.Y + t[5]);
+
+    private static void AssertNear((double X, double Y) expected, (double X, double Y) actual)
+    {
+        Assert.Equal(expected.X, actual.X, 9);
+        Assert.Equal(expected.Y, actual.Y, 9);
+    }
+
+    private static LwPolyline Rectangle(double x1, double y1, double x2, double y2) =>
+        new([new XY(x1, y1), new XY(x2, y1), new XY(x2, y2), new XY(x1, y2)]) { IsClosed = true };
 
     private static BlockRecord Block(CadDocument document, string name, Entity entity)
     {

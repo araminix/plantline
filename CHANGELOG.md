@@ -12,6 +12,14 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 - The diagram is saved in the browser once per change, not on every frame of a drag; a full or blocked browser storage
   is reported.
 - An unexpected error shows a message with Reload and "Download the diagram" instead of a blank page.
+- A menu stays under its button while the page or a toolbar scrolls, instead of closing (seen on phones).
+- **Large drawings no longer crash the browser tab.** The reader keeps every block once with its transform instead of
+  copying it everywhere it is used, sends the points as binary instead of text, and leaves out texts; the map draws
+  each block's shapes once per copy through a transform, with dots for copies too small to see. A real 7.5 MB plant
+  drawing with 27,000 nested block copies: read in 10 s instead of 61 s, reader memory 0.5 GB instead of 1.3 GB, and
+  the page receives 12 MB instead of 77 million characters; zooming redraws in under 100 ms.
+- Arrays of block copies (MINSERT) show every copy, not only the first.
+- Scaled blocks with a base point are placed correctly.
 
 ## 0.1.0 (unreleased)
 

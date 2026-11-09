@@ -59,14 +59,18 @@ request ([CI](../.github/workflows/ci.yml)).
 | ID | Story | Case | Test |
 | --- | --- | --- | --- |
 | TC-50 | US-30 | DWG and DXF of the same plant read the same: units, blocks, strings, attributes. | `CadReaderTests` › ReadsTheSolarSample_InDwgAndDxf |
-| TC-51 | US-30 | Nested block content is placed in model coordinates (translation and rotation), with the block's box. | `CadReaderTests` › PlacesNestedBlockContent_InModelCoordinates |
-| TC-52 | US-30 | Texts (multi-line without formatting), curves and the unit are read. | `CadReaderTests` › ReadsTextsAndCurves_AndTheUnit |
+| TC-51 | US-30 | Nested blocks keep each reference's transform (translation and rotation); composed, they put the shapes where the drawing does. | `CadReaderTests` › KeepsNestedBlocks_WithTheTransformOfEachReference |
+| TC-51a | US-30 | A scaled block with a base point lands on its insertion point (ACadSharp's own transform does not). | `CadReaderTests` › PlacesABlock_ByItsBasePoint |
+| TC-51b | US-39 | Each block is read once however often it is used: a 20,000-module plant nested four deep is a few hundred numbers. | `CadReaderTests` › KeepsEachBlockOnce_HoweverOftenItIsUsed |
+| TC-51c | US-30 | An array of copies (MINSERT) is one reference per copy, spaced by rows and columns. | `CadReaderTests` › MakesAnArrayOfCopies_OneReferencePerCopy |
+| TC-52 | US-30 | Curves and the unit are read; texts are left out. | `CadReaderTests` › ReadsCurvesAndTheUnit_AndLeavesTextsOut |
 | TC-53 | US-30, US-42 | Bytes that are not a drawing are refused with an error, not a crash. | `CadReaderTests` › RejectsBytesThatAreNotADrawing (3 cases); e2e › opens a DXF… and reports a file that is not a drawing |
-| TC-54 | US-30 | The reader's JSON has the names the app reads. | `CadReaderTests` › WritesCamelCaseJson_TheWebAppReads; `drawing.test.ts` › accepts the reader's JSON… |
+| TC-54 | US-30 | The reader's JSON has the names the app reads, and its points are the binary numbers the app reads; anything else is refused. | `CadReaderTests` › WritesCamelCaseJson_AndThePointsAsBinary_TheWebAppReads; `drawing.test.ts` › accepts the reader's output… |
 | TC-55 | US-30 | A file chosen by the user is read in the browser and counted. | e2e › opens a DXF chosen by the user… |
 | TC-56 | US-31, US-32 | The sample of every plant type opens on the map with its key object counted (40 tables, 8 turbines, 12 batteries, 3 generators, 8 breakers, 15 towers), on desktop and phone. | e2e › reads the … sample drawing and counts it (6 tests) |
 | TC-57 | US-32 | Tables, strings and inverters are counted; cables and fences measured in metres. | `recognize.test.ts` › counts tables, strings and inverters… |
 | TC-58 | US-32 | A block inside a table and the table's own outline are not counted again. | `recognize.test.ts` › does not count a block nested in a table… |
+| TC-58a | US-32 | Every placed copy of a nested block is counted, and lines inside blocks are measured in each copy. | `recognize.test.ts` › counts every placed copy… |
 | TC-59 | US-33 | The first matching rule wins; an invalid pattern matches nothing and is reported. | `recognize.test.ts` › lets the first matching rule win… |
 | TC-60 | US-32, US-33 | Every plant type's default rules are valid patterns of known kinds. | `plants.test.ts` › give every plant type layout rules… |
 | TC-61 | US-34 | Lengths follow the unit (the fixture is in millimetres). | `recognize.test.ts` › counts tables… (14 m of cable) |
@@ -75,10 +79,14 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-64 | US-35 | Projected coordinates (UTM 36N) land where they should, scaled by the unit. | `place.test.ts` › reads coordinates in a projected system… |
 | TC-65 | US-35 | An invalid coordinate system is refused. | `place.test.ts` › refuses a definition that is not one |
 | TC-66 | US-37 | The solar sample's capacity is 1.23 MWp (40 tables × 56 modules × 550 Wp). | e2e › opens a DXF chosen by the user… |
-| TC-67 | US-38 | GeoJSON has the recognised objects, longitude first, with their attributes; closed shapes are polygons. | `exports.test.ts` › write the recognised objects as GeoJSON… |
+| TC-67 | US-38 | GeoJSON has the recognised objects, longitude first, with their attributes; closed shapes are polygons; a turned block's point is the centre of what it draws. | `exports.test.ts` › write the recognised objects as GeoJSON…, put a turned block's point… |
 | TC-68 | US-38, US-42 | CSV quotes text and defuses spreadsheet formulas. | `exports.test.ts` › write totals as CSV… |
-| TC-69 | US-39, US-42 | Nesting is not expanded past 8 levels; a drawing is truncated at the item limit and says so. | `CadReaderTests` › StopsExpandingBlocks_AtTheDepthLimit, TruncatesALargeDrawing_AtTheItemLimit |
-| TC-70 | US-32 | Extents and lengths of open and closed polylines. | `drawing.test.ts` › measures the extent and the length… |
+| TC-69 | US-39, US-42 | The reader reads 1,000 levels of nesting and a block that contains itself without expanding them, and truncates at the item and point limits. | `CadReaderTests` › ReadsDeepNesting_WithoutExpandingIt, ReadsABlockThatContainsItself_Once, TruncatesALargeDrawing_AtTheItemAndPointLimits |
+| TC-69a | US-39, US-42 | The app opens blocks at most 8 levels deep (a block containing itself stops there) and stops a block bomb at 5,000,000 placed items, saying so. | `drawing.test.ts` › places nested blocks…, opens a block that contains itself…, stops a block bomb…; `scene.test.ts` › says when a drawing places more copies… |
+| TC-70 | US-32 | Extents and lengths of open and closed polylines, through transforms. | `drawing.test.ts` › measures extents and lengths through transforms |
+| TC-71 | US-31 | The map's projection is Leaflet's Web Mercator and turns back into latitude and longitude. | `scene.test.ts` › uses Leaflet's Web Mercator pixels… |
+| TC-72 | US-31, US-39 | A small plant is drawn through transforms only, each block's shapes kept once, within 2 cm of exact projection. | `scene.test.ts` › draws a small plant through transforms only… |
+| TC-73 | US-31, US-39 | A large plant's own shapes are projected point by point while its small blocks are still placed through transforms, within 2 cm. | `scene.test.ts` › projects a large plant's own shapes… |
 
 ## Checked by hand before each release
 
@@ -88,3 +96,4 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-91 | US-36 | Satellite imagery appears and keeps its colours in the dark theme; the plain map is darkened. |
 | TC-92 | US-40 | The browser's network panel shows no request other than the site's own files and map tiles. |
 | TC-93 | US-05 | On a real phone: pinch zoom, the bottom bar, sheets open and close. |
+| TC-94 | US-39 | A real plant drawing with tens of thousands of block copies (kept local) opens without crashing on desktop and phone; zooming and panning stay smooth. |

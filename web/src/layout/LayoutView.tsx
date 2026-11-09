@@ -8,39 +8,14 @@ import { IconButton, NumberField, TextField } from "../ui/controls";
 import { CadReadError, readDrawing, type CadError } from "./cad";
 import { drawingBounds, LENGTH_UNITS, METRES_PER_UNIT, type Drawing, type LengthUnit } from "./drawing";
 import { toCsv, toGeoJson } from "./exports";
-import { LayoutMap, type LatLng, type MapGroup } from "./LayoutMap";
-import { createProjector, utmProj, type Placement, type Projector } from "./place";
-import { recognize, type Recognition } from "./recognize";
+import { LayoutMap } from "./LayoutMap";
+import { createProjector, utmProj, type Placement } from "./place";
+import { recognize } from "./recognize";
+import { buildScene, GREY } from "./scene";
 import { fetchSample, SAMPLES } from "./samples";
 
 const COLORS = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#0891b2", "#db2777", "#65a30d", "#475569"];
-const OTHER = "#94a3b8";
 const isBoolean = (value: unknown): value is boolean => typeof value === "boolean";
-
-/**
- * The drawing in map colours: everything in grey, recognised objects in their kind's colour, blocks as boxes. Only
- * counted objects (a building, a block) are filled; measured ones (a fence, a cable) stay lines.
- */
-function mapGroups(drawing: Drawing, recognition: Recognition, project: Projector, colorOf: (kind: LayoutKind) => string, isCounted: (kind: LayoutKind) => boolean): MapGroup[] {
-    const groups = new Map<string, MapGroup>();
-    const group = (color: string) => groups.get(color) ?? groups.set(color, { color, lines: [], polygons: [] }).get(color)!;
-    drawing.shapes.forEach((shape, i) => {
-        const kind = recognition.shapeKinds[i];
-        const points: LatLng[] = [];
-        for (let p = 0; p < shape.points.length - 1; p += 2) points.push(project(shape.points[p]!, shape.points[p + 1]!));
-        const target = group(kind ? colorOf(kind) : OTHER);
-        if (shape.closed && kind && isCounted(kind)) target.polygons.push(points);
-        else target.lines.push(shape.closed ? [...points, points[0]!] : points);
-    });
-    drawing.inserts.forEach((insert, i) => {
-        const kind = recognition.insertKinds[i];
-        if (!kind) return;
-        const [x1, y1, x2, y2] = insert.box;
-        group(colorOf(kind)).polygons.push([project(x1, y1), project(x2, y1), project(x2, y2), project(x1, y2)]);
-    });
-    // Grey first, so recognised objects are drawn over it
-    return [...groups.values()].sort((a, b) => Number(b.color === OTHER) - Number(a.color === OTHER));
-}
 
 /** Opens a plant drawing, recognises and counts its objects, and shows it on the map. */
 export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolean }) {
@@ -65,12 +40,12 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const centre = useMemo<[number, number]>(() => (bounds ? [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2] : [0, 0]), [bounds]);
     const projector = useMemo(() => (drawing ? createProjector(placement, centre, metres) : null), [drawing, placement, centre, metres]);
     const recognition = useMemo(() => (drawing ? recognize(drawing, rules, metres) : null), [drawing, rules, metres]);
-    const colorOf = useMemo(() => (kind: LayoutKind) => COLORS[rules.findIndex((rule) => rule.kind === kind) % COLORS.length] ?? OTHER, [rules]);
-    const groups = useMemo(() => {
-        if (!drawing || !recognition || !projector) return [];
-        const counted = new Set(rules.filter((rule) => rule.measure === "count").map((rule) => rule.kind));
-        return mapGroups(drawing, recognition, projector, colorOf, (kind) => counted.has(kind));
-    }, [drawing, recognition, projector, colorOf, rules]);
+    const colorOf = useMemo(() => (kind: LayoutKind) => COLORS[rules.findIndex((rule) => rule.kind === kind) % COLORS.length] ?? GREY, [rules]);
+    const scene = useMemo(() => {
+        if (!drawing || !recognition || !projector) return null;
+        const counted = new Set<string>(rules.filter((rule) => rule.measure === "count").map((rule) => rule.kind));
+        return buildScene(drawing, recognition, { project: projector, metresPerUnit: metres, colorOf: (kind) => colorOf(kind as LayoutKind), isFilled: (kind) => counted.has(kind) });
+    }, [drawing, recognition, projector, metres, colorOf, rules]);
     const kindName = (kind: LayoutKind) => t(`kind.${kind}`);
 
     const load = async (file: File, preset?: Placement) => {
@@ -147,7 +122,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
         <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden}>
             <div className="layout-body">
                 <div className="map-area">
-                    <LayoutMap groups={groups} satellite={satellite} fitKey={fitKey} active={!hidden} label={t("layout.map")} onMove={setMapCentre} />
+                    <LayoutMap scene={scene} satellite={satellite} fitKey={fitKey} active={!hidden} label={t("layout.map")} onMove={setMapCentre} />
                     <div className="map-tools">
                         <IconButton label={t("layout.satellite")} pressed={satellite} onClick={() => setSatellite(!satellite)}>
                             <Layers size={18} />
@@ -169,7 +144,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                             </IconButton>
                         </div>
                     </header>
-                    {drawing.truncated && <p className="banner error">{t("layout.truncated")}</p>}
+                    {(drawing.truncated || recognition?.complete === false) && <p className="banner error">{t("layout.truncated")}</p>}
 
                     <h3>{t("layout.objects")}</h3>
                     <table className="totals">

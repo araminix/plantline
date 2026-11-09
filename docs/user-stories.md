@@ -116,8 +116,10 @@ is shown in kWp or MWp.
 shapes, with their kind, block, layer and attributes) and the totals as CSV. CSV cells cannot run as spreadsheet
 formulas.
 
-**US-39 Large drawings.** A drawing with more than 500,000 items is shown and counted up to that limit, with a warning;
-blocks nested more than 8 deep are not expanded.
+**US-39 Large drawings.** A real plant drawing with tens of thousands of nested block copies opens without slowing or
+crashing the browser, and the map stays smooth. A drawing beyond the reader's limits (1,000,000 shapes and block
+references, 4,000,000 points) or placing more than 5,000,000 copies is shown and counted up to them, with a warning;
+blocks nested more than 8 deep are counted but not opened.
 
 ## Epic D: Trust and ownership
 

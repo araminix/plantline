@@ -1,5 +1,5 @@
 import type { LayoutKind } from "../plants";
-import type { Drawing } from "./drawing";
+import { apply, compose, createBoxes, forEachShape, walk, type Drawing } from "./drawing";
 import type { Projector } from "./place";
 import type { Recognition, Total } from "./recognize";
 
@@ -10,26 +10,36 @@ interface Feature {
     properties: Record<string, string | number>;
 }
 
-/** The recognised objects as GeoJSON (longitude, latitude): block references as points, shapes as lines or polygons. */
+/**
+ * The recognised objects of every placed copy as GeoJSON (longitude, latitude): block references as points at the
+ * centre of what they draw, shapes as lines or polygons.
+ */
 export function toGeoJson(drawing: Drawing, recognition: Recognition, project: Projector): string {
     const lonLat = (x: number, y: number): Position => {
         const [lat, lon] = project(x, y);
         return [round(lon), round(lat)];
     };
+    const boxOf = createBoxes(drawing);
     const features: Feature[] = [];
-    drawing.inserts.forEach((insert, i) => {
-        const kind = recognition.insertKinds[i];
-        if (!kind) return;
-        const centre = lonLat((insert.box[0] + insert.box[2]) / 2, (insert.box[1] + insert.box[3]) / 2);
-        features.push({ type: "Feature", geometry: { type: "Point", coordinates: centre }, properties: { kind, block: insert.block, layer: insert.layer, ...insert.attributes } });
-    });
-    drawing.shapes.forEach((shape, i) => {
-        const kind = recognition.shapeKinds[i];
-        if (!kind) return;
-        const ring: Position[] = [];
-        for (let p = 0; p < shape.points.length - 1; p += 2) ring.push(lonLat(shape.points[p]!, shape.points[p + 1]!));
-        const geometry: Feature["geometry"] = shape.closed ? { type: "Polygon", coordinates: [[...ring, ring[0]!]] } : { type: "LineString", coordinates: ring };
-        features.push({ type: "Feature", geometry, properties: { kind, layer: shape.layer } });
+    walk(drawing, null, (block, transform, depth) => {
+        const kinds = recognition.kinds.get(block)!;
+        block.references.forEach((reference, i) => {
+            const kind = kinds.references[i];
+            const box = kind && boxOf(drawing.blocks[reference.block]!, depth + 1);
+            if (!kind || !box) return;
+            const centre = apply(compose(transform, reference.transform), (box[0] + box[2]) / 2, (box[1] + box[3]) / 2);
+            const properties = { kind, block: drawing.blocks[reference.block]!.name, layer: drawing.layers[reference.layer]!, ...reference.attributes };
+            features.push({ type: "Feature", geometry: { type: "Point", coordinates: lonLat(...centre) }, properties });
+        });
+        forEachShape(block, (index, layer, closed, first, count) => {
+            const kind = kinds.shapes[index];
+            if (!kind) return;
+            const ring: Position[] = [];
+            for (let p = first; p < first + count; p++) ring.push(lonLat(...apply(transform, drawing.points[p * 2]!, drawing.points[p * 2 + 1]!)));
+            const geometry: Feature["geometry"] = closed ? { type: "Polygon", coordinates: [[...ring, ring[0]!]] } : { type: "LineString", coordinates: ring };
+            features.push({ type: "Feature", geometry, properties: { kind, layer: drawing.layers[layer]! } });
+        });
+        return null;
     });
     return JSON.stringify({ type: "FeatureCollection", features });
 }
