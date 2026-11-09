@@ -1,7 +1,7 @@
 name: CI
 
 # Every push and pull request: test the CAD reader and the web app (unit and end-to-end, desktop and phone).
-# A push to main also publishes the site on GitHub Pages.
+# On main, a push or a manual run (Actions → CI → Run workflow) also publishes the site on GitHub Pages.
 on:
   push:
     branches: [main]
@@ -70,20 +70,20 @@ jobs:
           retention-days: 7
 
       - name: Build the site for GitHub Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         working-directory: web
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: pnpm build
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:
           path: web/dist
 
   deploy:
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
