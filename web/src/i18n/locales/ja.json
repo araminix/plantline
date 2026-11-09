@@ -62,6 +62,8 @@
     "shortcut.select": "選択",
     "gesture.click": "クリック。Shift または Ctrl で選択に追加",
     "shortcut.area": "範囲を選択",
+    "shortcut.focus": "次または前の要素へ移動",
+    "shortcut.connect": "この要素から接続し、別の要素へつなぐ",
     "gesture.area": "空白部分をドラッグ：左から右は内側にあるもの、右から左は触れたものを選択",
     "shortcut.all": "すべて選択",
     "shortcut.clipboard": "コピー、切り取り、貼り付け",

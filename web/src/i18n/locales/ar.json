@@ -62,6 +62,8 @@
     "shortcut.select": "تحديد",
     "gesture.click": "نقرة؛ Shift أو Ctrl يضيف إلى التحديد",
     "shortcut.area": "تحديد منطقة",
+    "shortcut.focus": "انتقل إلى العنصر التالي أو السابق",
+    "shortcut.connect": "صِل من العنصر، ثم إلى عنصر آخر",
     "gesture.area": "اسحب فوق الرسم الفارغ: من اليسار إلى اليمين يحدد ما بداخله، ومن اليمين إلى اليسار ما يلمسه",
     "shortcut.all": "تحديد الكل",
     "shortcut.clipboard": "نسخ، قص، لصق",

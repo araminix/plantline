@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode 
 import { useI18n } from "../i18n/i18n";
 import { PLANT_ICONS, PLANT_TYPES, type NodeKind, type PlantType } from "../plants";
 import { readStored, writeStored } from "../settings";
-import { IconButton, Menu, type MenuItem } from "../ui/controls";
+import { IconButton, Menu, Spoken, type MenuItem } from "../ui/controls";
 import { isTyping } from "../ui/keys";
 import { Logo } from "../ui/Logo";
 import { arrange } from "./arrange";
@@ -46,6 +46,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const canvas = useRef<CanvasHandle>(null);
     const clipboard = useRef<Clip | null>(null);
     const [zoom, setZoom] = useState(1);
+    const zoomLevel = new Intl.NumberFormat(lang, { style: "percent" }).format(zoom);
     const [shortcuts, setShortcuts] = useState(false);
     const shortcutsButton = useRef<HTMLButtonElement>(null);
     const fileInput = useRef<HTMLInputElement>(null);
@@ -103,9 +104,9 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         onDistribute: (across: boolean) => change(distributeNodes(diagram, chosen, across)),
     };
 
-    const remove = () => {
-        if (selection.nodes.length === 0 && !selection.link) return;
-        history.commit(removeItems(diagram, new Set(selection.nodes), new Set(selection.link ? [selection.link] : [])));
+    const remove = (of: Selection = selection) => {
+        if (of.nodes.length === 0 && !of.link) return;
+        history.commit(removeItems(diagram, new Set(of.nodes), new Set(of.link ? [of.link] : [])));
         setSelection(NONE);
     };
 
@@ -156,28 +157,33 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
             if (isTyping(event.target) || shortcuts) return;
             const command = event.ctrlKey || event.metaKey;
             const key = event.key.toLowerCase();
-            const any = selection.nodes.length > 0;
+            // With nothing selected, the keys act on the element or note the keyboard is on
+            const focused = (document.activeElement as Element | null)?.closest?.("[data-node], [data-note]");
+            const focusedId = focused?.getAttribute("data-node") ?? focused?.getAttribute("data-note") ?? null;
+            const current: Selection = selection.nodes.length === 0 && !selection.link && focusedId ? { nodes: [focusedId], link: null } : selection;
+            const ids = new Set(current.nodes);
+            const any = ids.size > 0;
             const arrow = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }[key];
             // By the key's place, since Shift changes what a digit types
             const view = event.shiftKey && !command ? { Digit1: "fit", Digit2: "selection", Digit0: "actual" }[event.code] : undefined;
             if (event.key === "?") setShortcuts(true);
             else if (view === "fit") canvas.current?.fit();
-            else if (view === "selection") canvas.current?.zoomToItems(selection.nodes);
+            else if (view === "selection") canvas.current?.zoomToItems(current.nodes);
             else if (view === "actual") canvas.current?.zoomTo(1);
-            else if (key === "delete" || key === "backspace") remove();
+            else if (key === "delete" || key === "backspace") remove(current);
             else if (command && key === "a") setSelection({ nodes: diagram.nodes.map((node) => node.id), link: null });
-            else if (command && key === "c" && any) clipboard.current = copyItems(diagram, chosen);
+            else if (command && key === "c" && any) clipboard.current = copyItems(diagram, ids);
             else if (command && key === "x" && any) {
-                clipboard.current = copyItems(diagram, chosen);
-                remove();
+                clipboard.current = copyItems(diagram, ids);
+                remove(current);
             } else if (command && key === "v" && clipboard.current) paste(clipboard.current);
-            else if (command && key === "d" && any) groupActions.onDuplicate();
+            else if (command && key === "d" && any) paste(copyItems(diagram, ids));
             else if (arrow && any && !command) {
                 // A grid step, five with Shift
                 const step = (event.shiftKey ? 5 : 1) * GRID;
-                change(moveNodes(diagram, chosen, arrow[0]! * step, arrow[1]! * step, true));
-            } else if (key === "r" && any && !command) groupActions.onRotate();
-            else if (key === "h" && event.shiftKey && any && !command) groupActions.onFlip();
+                change(moveNodes(diagram, ids, arrow[0]! * step, arrow[1]! * step, true), current.nodes);
+            } else if (key === "r" && any && !command) change(rotateNodes(diagram, ids), current.nodes);
+            else if (key === "h" && event.shiftKey && any && !command) change(flipNodes(diagram, ids), current.nodes);
             else if (key === "escape") {
                 setConnectFrom(undefined);
                 setSelection(NONE);
@@ -213,7 +219,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     ];
     // What a narrower toolbar keeps in its More menu (and a phone in the bottom bar's)
     const moreItems: (MenuItem | null)[] = [
-        { label: t("action.delete"), icon: <Trash2 size={16} />, keys: "Del", disabled: !anything, onSelect: remove },
+        { label: t("action.delete"), icon: <Trash2 size={16} />, keys: "Del", disabled: !anything, onSelect: () => remove() },
         { label: t("action.addText"), icon: <Type size={16} />, onSelect: () => addAnnotation("text") },
         { label: t("action.addArea"), icon: <SquareDashed size={16} />, onSelect: () => addAnnotation("area") },
         null,
@@ -253,7 +259,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                 <IconButton label={t("action.arrange")} text={t("toolbar.arrange")} onClick={arrangeAll} disabled={diagram.nodes.length === 0}>
                     <Workflow size={18} />
                 </IconButton>
-                <IconButton label={t("action.delete")} className="extra" onClick={remove} disabled={!anything}>
+                <IconButton label={t("action.delete")} className="extra" onClick={() => remove()} disabled={!anything}>
                     <Trash2 size={18} />
                 </IconButton>
                 <span className="separator extra" />
@@ -268,8 +274,8 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                     <IconButton label={t("action.zoomOut")} onClick={() => canvas.current?.zoom(1 / 1.25)}>
                         <ZoomOut size={18} />
                     </IconButton>
-                    <button type="button" className="zoom-level" title={t("zoom.reset")} aria-label={t("zoom.reset")} onClick={() => canvas.current?.zoomTo(1)}>
-                        {new Intl.NumberFormat(lang, { style: "percent" }).format(zoom)}
+                    <button type="button" className="zoom-level" title={t("zoom.reset")} aria-label={`${zoomLevel}, ${t("zoom.reset")}`} onClick={() => canvas.current?.zoomTo(1)}>
+                        {zoomLevel}
                     </button>
                     <IconButton label={t("action.zoomIn")} onClick={() => canvas.current?.zoom(1.25)}>
                         <ZoomIn size={18} />
@@ -323,6 +329,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                         onPreview={history.preview}
                         onCommit={history.commit}
                         onPick={pick}
+                        onActivate={(nodeId) => (connectFrom === undefined ? startConnect(nodeId) : pick(nodeId))}
                         onZoom={setZoom}
                         overviewLabel={t("overview.label")}
                     />
@@ -346,9 +353,9 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                                 <ul className="example-grid">
                                     {PLANT_TYPES.map((of) => (
                                         <li key={of}>
-                                            <button type="button" aria-current={of === plant ? "true" : undefined} aria-label={t("example.name", { plant: t(`plant.${of}`) })} onClick={() => openExample(of)}>
+                                            <button type="button" aria-current={of === plant ? "true" : undefined} onClick={() => openExample(of)}>
                                                 <SymbolIcon kind={PLANT_ICONS[of]} size={28} />
-                                                {t(`plant.${of}`)}
+                                                <Spoken message={t("example.name", { plant: "\u0000" })}>{t(`plant.${of}`)}</Spoken>
                                             </button>
                                         </li>
                                     ))}
@@ -367,7 +374,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                 {panel(
                     "inspector",
                     t("inspector.title"),
-                    <Inspector diagram={diagram} selection={selection} issues={issues} onChange={(next) => history.commit(next)} onSelect={setSelection} onConnectFrom={startConnect} onDelete={remove} {...groupActions} />,
+                    <Inspector diagram={diagram} selection={selection} issues={issues} onChange={(next) => history.commit(next)} onSelect={setSelection} onConnectFrom={startConnect} onDelete={() => remove()} {...groupActions} />,
                 )}
             </div>
             <nav className="mobile-bar" aria-label={t("toolbar.label")}>

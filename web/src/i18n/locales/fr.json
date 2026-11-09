@@ -62,6 +62,8 @@
     "shortcut.select": "Sélectionner",
     "gesture.click": "Clic ; Maj ou Ctrl ajoute à la sélection",
     "shortcut.area": "Sélectionner une zone",
+    "shortcut.focus": "Aller à l’élément suivant ou précédent",
+    "shortcut.connect": "Relier depuis l’élément, puis à un autre",
     "gesture.area": "Faites glisser sur le dessin vide : de gauche à droite sélectionne ce qui est à l’intérieur, de droite à gauche ce qui est touché",
     "shortcut.all": "Tout sélectionner",
     "shortcut.clipboard": "Copier, couper, coller",

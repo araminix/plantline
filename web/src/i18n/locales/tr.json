@@ -62,6 +62,8 @@
     "shortcut.select": "Seç",
     "gesture.click": "Tıklayın; Shift veya Ctrl seçime ekler",
     "shortcut.area": "Alan seç",
+    "shortcut.focus": "Sonraki ya da önceki elemana geç",
+    "shortcut.connect": "Elemandan bağla, sonra başka birine",
     "gesture.area": "Boş çizim üzerinde sürükleyin: soldan sağa içinde kalanları, sağdan sola dokunduklarını seçer",
     "shortcut.all": "Tümünü seç",
     "shortcut.clipboard": "Kopyala, kes, yapıştır",

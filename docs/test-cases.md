@@ -33,6 +33,9 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-97 | US-05, US-18a | A narrower window keeps Delete, texts, areas, Zoom to selection and Shortcuts in a More menu; a phone keeps them, with the file actions, in the bottom bar's menu. | e2e › shows and resets the zoom…, builds, connects, checks and saves… |
 | TC-98 | US-06 | Every plant type's example is connected, of its own elements, without problems, laid out without overlaps, and saves and opens unchanged. | `examples.test.ts` |
 | TC-99 | US-06 | The empty diagram opens this or another plant type's example (switching the plant type), with No problems; Undo takes it back; File offers the example too. | e2e › opens a ready-made example from the empty diagram… |
+| TC-102 | US-07 | With the keyboard only: Tab to the palette and add three elements, connect them with Enter on one and then the next (No problems), move the focused one with an arrow and remove it with Delete (its line goes too). | e2e › builds, connects, moves and removes elements with the keyboard only |
+| TC-103 | US-07 | Tab and Shift+Tab stay inside the plant type dialog. | e2e › keeps the focus inside the plant type dialog |
+| TC-104 | US-04, US-07 | No serious or critical axe findings on the empty diagram, an example with an element selected, and the plant layout before and with a drawing, light and dark, on desktop and phone. | e2e › has no serious accessibility problems on the main screens, in both themes |
 
 ## Single-line diagram
 

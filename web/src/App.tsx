@@ -102,7 +102,8 @@ export function App() {
                                 type="button"
                                 role="tab"
                                 id={`tab-${name}`}
-                                aria-controls={`view-${name}`}
+                                // The plant layout's panel is there only once it was first opened
+                                aria-controls={name === "diagram" || layoutOpened ? `view-${name}` : undefined}
                                 aria-selected={view === name}
                                 aria-label={t(`nav.${name}`)}
                                 onClick={() => {
@@ -173,7 +174,7 @@ export function App() {
                 <main className="app-main">
                     <DiagramEditor plant={current} onPlantChange={setPlant} hidden={view !== "diagram"} />
                     {layoutOpened && (
-                        <Suspense fallback={null}>
+                        <Suspense fallback={<section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" aria-busy="true" hidden={view !== "layout"} />}>
                             <LayoutView plant={current} onPlantChange={setPlant} hidden={view !== "layout"} />
                         </Suspense>
                     )}

@@ -62,6 +62,8 @@
     "shortcut.select": "انتخاب",
     "gesture.click": "کلیک؛ Shift یا Ctrl به انتخاب اضافه می‌کند",
     "shortcut.area": "انتخاب ناحیه",
+    "shortcut.focus": "رفتن به جزء بعدی یا قبلی",
+    "shortcut.connect": "اتصال از این جزء، سپس به جزئی دیگر",
     "gesture.area": "روی بخش خالی نقشه بکشید: از چپ به راست آنچه درون آن است و از راست به چپ آنچه را لمس کند انتخاب می‌کند",
     "shortcut.all": "انتخاب همه",
     "shortcut.clipboard": "کپی، برش، چسباندن",

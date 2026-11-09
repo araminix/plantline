@@ -62,6 +62,8 @@
     "shortcut.select": "선택",
     "gesture.click": "클릭, Shift 또는 Ctrl을 누르면 선택에 추가",
     "shortcut.area": "영역 선택",
+    "shortcut.focus": "다음 또는 이전 요소로 이동",
+    "shortcut.connect": "이 요소에서 연결을 시작해 다른 요소에 연결",
     "gesture.area": "빈 도면 위로 끌기: 왼쪽에서 오른쪽은 안에 있는 것, 오른쪽에서 왼쪽은 닿는 것을 선택",
     "shortcut.all": "모두 선택",
     "shortcut.clipboard": "복사, 잘라내기, 붙여넣기",

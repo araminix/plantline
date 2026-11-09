@@ -44,6 +44,13 @@ stays readable in both, and satellite imagery keeps its real colours.
 - The diagram pans with a finger and zooms with two.
 - Added to the home screen, it has its own icon.
 
+**US-07 Keyboard and screen readers.** As a user who works without a mouse or with a screen reader, I use the whole
+app.
+- Tab reaches every control and every element of the diagram; the focused element is selected and scrolled into view.
+- Arrows move it, R turns it, Delete removes it; Enter starts a line from it and Enter on another element ends it.
+- A dialog keeps the focus inside until it is closed.
+- Every control and element has a name that contains its visible text, so voice control finds it too.
+
 ## Epic B: Single-line diagram
 
 **US-06 Start from an example.** As a new user, I open a ready-made single-line diagram of any plant type (connected,

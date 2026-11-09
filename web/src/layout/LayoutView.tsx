@@ -5,7 +5,7 @@ import { LAYOUT_RULES, MEASURE, PLANT_ICONS, PLANT_TYPES, type LayoutKind, type 
 import { SymbolIcon } from "../diagram/symbols";
 import { download } from "../diagram/export";
 import { usePersisted } from "../settings";
-import { IconButton, NumberField, TextField } from "../ui/controls";
+import { IconButton, NumberField, Spoken, TextField } from "../ui/controls";
 import { CadReadError, fitsDevice, readDrawing, type CadError } from "./cad";
 import { drawingBounds, LENGTH_UNITS, METRES_PER_UNIT, type Drawing, type LengthUnit } from "./drawing";
 import { toCsv, toGeoJson } from "./exports";
@@ -252,9 +252,11 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
                     <ul className="sample-grid">
                         {PLANT_TYPES.map((of) => (
                             <li key={of}>
-                                <button type="button" className="sample-card" aria-label={t("layout.sample", { plant: t(`plant.${of}`) })} aria-current={of === plant ? "true" : undefined} disabled={status === "loading"} onClick={() => openSample(of)}>
+                                <button type="button" className="sample-card" aria-current={of === plant ? "true" : undefined} disabled={status === "loading"} onClick={() => openSample(of)}>
                                     <SymbolIcon kind={PLANT_ICONS[of]} size={38} />
-                                    <strong>{t(`plant.${of}`)}</strong>
+                                    <strong>
+                                        <Spoken message={t("layout.sample", { plant: "\u0000" })}>{t(`plant.${of}`)}</Spoken>
+                                    </strong>
                                     <span>{facts(of)}</span>
                                 </button>
                             </li>

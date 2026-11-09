@@ -57,7 +57,14 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                 })}
             </g>
             {diagram.nodes.map((node) => (
-                <g key={node.id} data-node={node.id} transform={`translate(${node.x} ${node.y})`} className={classes("sld-node", selectedNodes?.has(node.id) && "selected", node.id === targetNode && "target")}>
+                <g
+                    key={node.id}
+                    data-node={node.id}
+                    transform={`translate(${node.x} ${node.y})`}
+                    className={classes("sld-node", selectedNodes?.has(node.id) && "selected", node.id === targetNode && "target")}
+                    // On the canvas, Tab reaches every element; its name is its kind and the label as drawn
+                    {...(interactive && { tabIndex: 0, role: "button", "aria-label": spokenName(node, kindName), "aria-pressed": selectedNodes?.has(node.id) ?? false })}
+                >
                     <g {...statusLook(node.props, "4 3")}>
                         {node.kind === "busbar" ? (
                             <rect
@@ -108,7 +115,7 @@ const statusLook = (props: Properties, dashes: string) =>
 function Note({ note, selected, interactive }: { note: DiagramNote; selected: boolean; interactive: boolean }) {
     const box = noteBox(note);
     return (
-        <g data-note={note.id} className={classes("sld-note", selected && "selected")}>
+        <g data-note={note.id} className={classes("sld-note", selected && "selected")} {...(interactive && { tabIndex: 0, role: "button", "aria-label": note.text.split("\n")[0], "aria-pressed": selected })}>
             {note.kind === "area" ? (
                 <>
                     <rect className="note-area" x={note.x} y={note.y} width={note.width} height={note.height} rx={6} fill="none" stroke="currentColor" strokeWidth={1.5} strokeDasharray="6 4" />
@@ -158,9 +165,19 @@ export function labelStart(node: DiagramNode): Point {
     return isUpright(node) ? { x: 10, y: -busbarHalf(node) + 10 } : { x: -busbarHalf(node), y: -10 };
 }
 
+/** The label drawn beside an element: its name (or kind) in bold, then its designation and main ratings. */
+function labelText(node: DiagramNode, kindName: (kind: NodeKind) => string) {
+    return { title: node.label || kindName(node.kind), details: [node.designation, ...summary(node.kind, node.props)].filter(Boolean).join(" · ") };
+}
+
+/** What a screen reader says for an element: its kind, then the label exactly as drawn (so voice control finds it). */
+function spokenName(node: DiagramNode, kindName: (kind: NodeKind) => string) {
+    const { title, details } = labelText(node, kindName);
+    return [node.label && kindName(node.kind), title, details].filter(Boolean).join(" ");
+}
+
 function NodeLabel({ node, kindName }: { node: DiagramNode; kindName: (kind: NodeKind) => string }) {
-    const title = node.label || kindName(node.kind);
-    const details = [node.designation, ...summary(node.kind, node.props)].filter(Boolean).join(" · ");
+    const { title, details } = labelText(node, kindName);
     const start = labelStart(node);
     // Above a bar lying across, a second line would run into the bar: both lines go up one
     const lift = details && node.kind === "busbar" && !isUpright(node) && !node.labelAt ? 14 : 0;
@@ -168,6 +185,8 @@ function NodeLabel({ node, kindName }: { node: DiagramNode; kindName: (kind: Nod
     return (
         <text data-label="" x={x} y={y} fontSize={11} fill="currentColor" stroke="none">
             <tspan fontWeight={600}>{title}</tspan>
+            {/* A space between the lines, so the text reads (and copies) as words */}
+            {details && " "}
             {details && (
                 <tspan x={x} dy={14}>
                     {details}

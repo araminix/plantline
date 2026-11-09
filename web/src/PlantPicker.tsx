@@ -1,13 +1,14 @@
 import { useI18n } from "./i18n/i18n";
 import { PLANT_ICONS, PLANT_TYPES, type PlantType } from "./plants";
 import { SymbolIcon } from "./diagram/symbols";
+import { trapFocus } from "./ui/focus";
 
 /** Asked on the first visit: the plant type decides the diagram elements and how drawings are read. */
 export function PlantPicker({ onPick }: { onPick: (plant: PlantType) => void }) {
     const { t } = useI18n();
     return (
         <div className="overlay">
-            <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+            <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title" onKeyDown={trapFocus}>
                 <h1 id="picker-title">{t("start.title")}</h1>
                 <p>{t("start.intro")}</p>
                 <ul className="plant-grid">

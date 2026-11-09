@@ -62,6 +62,8 @@
     "shortcut.select": "चुनें",
     "gesture.click": "क्लिक करें; Shift या Ctrl चयन में जोड़ता है",
     "shortcut.area": "क्षेत्र चुनें",
+    "shortcut.focus": "अगले या पिछले तत्व पर जाएँ",
+    "shortcut.connect": "इस तत्व से जोड़ें, फिर किसी दूसरे से",
     "gesture.area": "खाली ड्रॉइंग पर खींचें: बाएँ से दाएँ अंदर की चीज़ें चुनता है, दाएँ से बाएँ जिन्हें छूता है",
     "shortcut.all": "सब चुनें",
     "shortcut.clipboard": "कॉपी, कट, पेस्ट",

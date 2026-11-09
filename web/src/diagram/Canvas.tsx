@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import type { NodeKind } from "../plants";
 import { isTyping } from "../ui/keys";
 import { contentBounds, DiagramContent, labelStart } from "./DiagramContent";
@@ -36,6 +36,8 @@ interface Props {
     onPreview: (diagram: Diagram) => void;
     onCommit: (diagram: Diagram, base: Diagram) => void;
     onPick: (nodeId: string) => void;
+    /** Enter on an element reached with the keyboard: connect from it, or to it. */
+    onActivate: (nodeId: string) => void;
     /** The zoom level changed (1 is 100 %). */
     onZoom: (k: number) => void;
     /** The overview's accessible name. */
@@ -74,7 +76,7 @@ const clampZoom = (k: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k));
  * segments and line ends; draw lines from connection points; pick elements to connect.
  */
 export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref) {
-    const { diagram, selection, connectFrom, kindName, label, onSelect, onPreview, onCommit, onPick, onZoom, overviewLabel } = props;
+    const { diagram, selection, connectFrom, kindName, label, onSelect, onPreview, onCommit, onPick, onActivate, onZoom, overviewLabel } = props;
     const svgRef = useRef<SVGSVGElement>(null);
     const [view, setView] = useState<View>({ x: 40, y: 40, k: 1 });
     const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -107,6 +109,34 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
     const fit = () => {
         const bounds = contentBounds(diagram);
         if (bounds) show(bounds, 1.5);
+    };
+
+    /** Brings an element or note into the middle of the view when it is not wholly in view, at the same zoom. */
+    const reveal = (id: string) => {
+        const node = diagram.nodes.find((candidate) => candidate.id === id);
+        const note = diagram.notes.find((candidate) => candidate.id === id);
+        const item = node ? extent(node) : note ? noteBox(note) : null;
+        const { width, height } = size();
+        if (!item || width === 0) return;
+        const [left, top, right, bottom] = [item.minX * view.k + view.x, item.minY * view.k + view.y, item.maxX * view.k + view.x, item.maxY * view.k + view.y];
+        if (left >= 0 && top >= 0 && right <= width && bottom <= height) return;
+        setView((v) => ({ ...v, x: width / 2 - ((item.minX + item.maxX) / 2) * v.k, y: height / 2 - ((item.minY + item.maxY) / 2) * v.k }));
+    };
+
+    // Reached with the keyboard (not by a click, which selects in its own way), an element is selected and shown
+    const onFocus = (event: ReactFocusEvent<SVGSVGElement>) => {
+        const target = event.target as Element;
+        const item = target.closest("[data-node], [data-note]");
+        if (!item || !target.matches(":focus-visible")) return;
+        const id = item.getAttribute("data-node") ?? item.getAttribute("data-note")!;
+        if (selection.nodes.length !== 1 || selection.nodes[0] !== id || selection.link) onSelect({ nodes: [id], link: null });
+        reveal(id);
+    };
+    const onKeyDown = (event: ReactKeyboardEvent<SVGSVGElement>) => {
+        const id = (event.target as Element).closest("[data-node]")?.getAttribute("data-node");
+        if (event.key !== "Enter" || !id) return;
+        event.preventDefault();
+        onActivate(id);
     };
 
     useEffect(() => onZoom(view.k), [view.k, onZoom]);
@@ -392,6 +422,8 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
             onDoubleClick={onDoubleClick}
+            onFocus={onFocus}
+            onKeyDown={onKeyDown}
         >
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
                 <DiagramContent diagram={diagram} kindName={kindName} selectedNodes={selectedNodes} selectedLink={selection.link} targetNode={line?.target ?? null} movingLink={line?.moving ?? null} interactive />

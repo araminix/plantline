@@ -228,3 +228,18 @@ export function SelectField(props: { label: string; value: string; options: { va
         </label>
     );
 }
+
+/**
+ * Visible words inside a message only screen readers hear in full: "Example: {{plant}}" shows the plant and reads
+ * "Example: Hydropower". The message is given with its placeholder filled by NUL, so word order follows the language.
+ */
+export function Spoken({ message, children }: { message: string; children: ReactNode }) {
+    const [before = "", after = ""] = message.split("\u0000");
+    return (
+        <>
+            {before && <span className="sr-only">{before}</span>}
+            {children}
+            {after && <span className="sr-only">{after}</span>}
+        </>
+    );
+}

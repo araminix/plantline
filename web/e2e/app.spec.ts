@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
@@ -339,7 +340,7 @@ test("shows and resets the zoom, zooms to the selection, moves by the overview; 
     if (isPhone(page)) await act(page, "Shortcuts");
     else await page.keyboard.press("?");
     const sheet = page.getByRole("dialog", { name: "Shortcuts" });
-    await expect(sheet.getByRole("row")).toHaveCount(19);
+    await expect(sheet.getByRole("row")).toHaveCount(21);
     await page.keyboard.press("Escape");
     await expect(sheet).toBeHidden();
 });
@@ -393,6 +394,88 @@ test("opens a ready-made example from the empty diagram, with no problems, of th
     if (isPhone(page)) await page.locator(".panel.open .sheet-close").click();
     await openFileMenu(page);
     await expect(page.getByRole("menuitem", { name: "Open an example" })).toBeVisible();
+});
+
+/** Presses Tab until the element has the focus, as a keyboard user would (at most 120 presses). */
+async function tabTo(page: Page, target: Locator) {
+    for (let i = 0; i < 120; i++) {
+        if (await target.evaluate((element) => element === document.activeElement)) return;
+        await page.keyboard.press("Tab");
+    }
+    throw new Error("not reached with Tab");
+}
+
+test("builds, connects, moves and removes elements with the keyboard only", async ({ page }) => {
+    test.skip(isPhone(page), "a phone has no keyboard");
+    await start(page, "Substation");
+    const palette = page.getByRole("complementary", { name: "Elements" });
+    for (const name of ["Grid connection", "Busbar", "Circuit breaker"]) {
+        await tabTo(page, palette.getByRole("button", { name, exact: true }));
+        await page.keyboard.press("Enter");
+    }
+    const nodes = page.locator("[data-node]");
+    await expect(nodes).toHaveCount(3);
+
+    // Tab reaches each element and selects it; Enter connects from it, then Enter on the next connects to it
+    await tabTo(page, nodes.nth(0));
+    await expect(nodes.nth(0)).toHaveAttribute("aria-pressed", "true");
+    await expect(nodes.nth(0)).toHaveAttribute("aria-label", "Grid connection");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await expect(page.locator("[data-link]")).toHaveCount(1);
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-link]")).toHaveCount(2);
+    await expect(page.getByRole("button", { name: "No problems" })).toBeVisible();
+
+    // The arrows move the element reached, Delete removes it
+    await tabTo(page, nodes.nth(2));
+    const before = await nodes.nth(2).getAttribute("transform");
+    await page.keyboard.press("ArrowRight");
+    await expect(nodes.nth(2)).not.toHaveAttribute("transform", before!);
+    await page.keyboard.press("Delete");
+    await expect(nodes).toHaveCount(2);
+    await expect(page.locator("[data-link]")).toHaveCount(1);
+});
+
+test("keeps the focus inside the plant type dialog", async ({ page }) => {
+    await page.goto("/");
+    const dialog = page.getByRole("dialog");
+    const [first, last] = [dialog.getByRole("button", { name: "Solar PV" }), dialog.getByRole("button", { name: "Transmission line" })];
+    await expect(first).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(last).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(first).toBeFocused();
+});
+
+/** No serious or critical accessibility problems on the page as it is (axe). */
+async function expectAccessible(page: Page, where: string) {
+    const results = await new AxeBuilder({ page }).exclude(".leaflet-tile-pane").analyze();
+    const problems = results.violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical").map((violation) => `${violation.id}: ${violation.nodes.slice(0, 3).map((node) => node.target.join(" ")).join(" | ")}`);
+    expect(problems, where).toEqual([]);
+}
+
+test("has no serious accessibility problems on the main screens, in both themes", async ({ page }) => {
+    await start(page, "Solar PV");
+    await expectAccessible(page, "empty diagram");
+    await page.getByRole("button", { name: "Example: Solar PV" }).click();
+    await page.locator("[data-node]", { hasText: "T1" }).locator(".hit").click();
+    await expectAccessible(page, "diagram with a transformer selected");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    await expectAccessible(page, "plant layout before a drawing");
+    await page.locator(".sample-card[aria-current]").click();
+    await page.locator(".totals tr").first().waitFor({ state: "attached", timeout: 60_000 });
+    await expectAccessible(page, "plant layout with the solar sample");
+    // The theme follows the system's until chosen
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator(":root")).toHaveCSS("color-scheme", "dark");
+    await expectAccessible(page, "plant layout, dark");
+    await page.getByRole("tab", { name: "Single-line diagram" }).click();
+    await expectAccessible(page, "diagram, dark");
 });
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {

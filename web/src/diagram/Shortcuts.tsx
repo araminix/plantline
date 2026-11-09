@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useI18n, type MessageKey } from "../i18n/i18n";
 import { IconButton } from "../ui/controls";
+import { trapFocus } from "../ui/focus";
 
 const COMMAND = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘" : "Ctrl";
 
@@ -24,6 +25,8 @@ const ROWS: { what: MessageKey; keys?: string[][]; how?: MessageKey }[] = [
     { what: "action.fit", keys: [["Shift", "1"]] },
     { what: "action.zoomSelection", keys: [["Shift", "2"]] },
     { what: "zoom.reset", keys: [["Shift", "0"]] },
+    { what: "shortcut.focus", keys: [["Tab"], ["Shift", "Tab"]] },
+    { what: "shortcut.connect", keys: [["Enter"]] },
     { what: "shortcut.escape", keys: [["Esc"]] },
     { what: "shortcut.help", keys: [["?"]] },
 ];
@@ -45,7 +48,7 @@ export function Shortcuts({ onClose }: { onClose: () => void }) {
 
     return (
         <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-            <div className="dialog shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+            <div className="dialog shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" onKeyDown={trapFocus}>
                 <header className="panel-header">
                     <h2 id="shortcuts-title">{t("shortcuts.title")}</h2>
                     <IconButton label={t("action.close")} onClick={onClose} buttonRef={close}>

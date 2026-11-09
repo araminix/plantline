@@ -1017,6 +1017,20 @@ select {
     rx: 8px;
 }
 
+/* Reached with the keyboard: a dashed accent ring */
+.canvas [data-node],
+.canvas [data-note] {
+    outline: none;
+}
+
+.canvas [data-node]:focus-visible .hit,
+.canvas [data-note]:focus-visible .hit {
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-dasharray: 4 3;
+    vector-effect: non-scaling-stroke;
+}
+
 .canvas .sld-node:hover:not(.selected) .hit {
     fill: color-mix(in srgb, var(--ink) 5%, transparent);
 }

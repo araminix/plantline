@@ -2,7 +2,21 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
-## 0.6.0 (unreleased)
+## Unreleased
+
+### Added
+
+- Keyboard and screen readers: Tab reaches every element of the diagram (selecting it and bringing it into view);
+  arrows move it, R turns it, Delete removes it, and Enter on one element and then another connects them. Dialogs
+  keep the focus inside. The shortcuts sheet lists Tab and Enter.
+
+### Fixed
+
+- Screen readers name each element by its kind and its label as drawn, the zoom level by its value, and the example
+  and sample cards by their visible names (voice control finds them all); the plant layout's tab no longer points at
+  a panel that is not there yet.
+
+## 0.6.0
 
 A refreshed interface, ready-made examples, and samples drawn as real plant drawings on real ground.
 

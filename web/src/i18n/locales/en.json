@@ -62,6 +62,8 @@
     "shortcut.select": "Select",
     "gesture.click": "Click; Shift or Ctrl adds to the selection",
     "shortcut.area": "Select an area",
+    "shortcut.focus": "Go to the next or previous element",
+    "shortcut.connect": "Connect from the element, then onto another",
     "gesture.area": "Drag over the empty drawing: left to right selects what is inside, right to left what it touches",
     "shortcut.all": "Select all",
     "shortcut.clipboard": "Copy, cut, paste",
