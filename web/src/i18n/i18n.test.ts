@@ -7,13 +7,17 @@ import en from "./locales/en.json";
 const locales = import.meta.glob<Dictionary>("./locales/*.json", { eager: true, import: "default" });
 const placeholders = (text: string) => [...text.matchAll(/\{\{\w+\}\}/g)].map((match) => match[0]).sort();
 /** The plural forms a language uses for whole numbers, and "other" (the fallback). */
-const formsFor = (lang: string) => new Set(["other", ...Array.from({ length: 1001 }, (_, n) => new Intl.PluralRules(lang).select(n))]);
+function formsFor(lang: string) {
+    const rules = new Intl.PluralRules(lang);
+    return new Set(["other", ...Array.from({ length: 1001 }, (_, n) => rules.select(n))]);
+}
 
 describe("translations", () => {
     it("have a file for every language, with exactly the English messages and placeholders", () => {
         expect(Object.keys(locales)).toHaveLength(LANGUAGES.length);
         for (const { code } of LANGUAGES) {
             const messages = locales[`./locales/${code}.json`]!;
+            const forms = formsFor(code);
             expect(Object.keys(messages).sort(), code).toEqual(Object.keys(en).sort());
             for (const [key, english] of Object.entries(en) as [string, Message][]) {
                 const message = messages[key as keyof Dictionary];
@@ -24,10 +28,10 @@ describe("translations", () => {
                 }
                 // A count: every plural form the language uses for whole numbers, none it does not have
                 expect(typeof message, `${code} ${key}`).toBe("object");
-                const forms = message as Exclude<Message, string>;
-                expect(new Set(Object.keys(forms)), `${code} ${key}`).toEqual(formsFor(code));
-                expect(placeholders(forms.other!), `${code} ${key} other`).toEqual(placeholders(english.other!));
-                for (const [form, text] of Object.entries(forms)) {
+                const plural = message as Exclude<Message, string>;
+                expect(new Set(Object.keys(plural)), `${code} ${key}`).toEqual(forms);
+                expect(placeholders(plural.other!), `${code} ${key} other`).toEqual(placeholders(english.other!));
+                for (const [form, text] of Object.entries(plural)) {
                     expect(text.trim(), `${code} ${key} ${form}`).not.toBe("");
                     // A form for one exact number (Arabic "two") may say the number in words
                     for (const placeholder of placeholders(text)) expect(placeholders(english.other!), `${code} ${key} ${form}`).toContain(placeholder);
