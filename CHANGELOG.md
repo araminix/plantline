@@ -2,7 +2,9 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.6.0 (unreleased)
+
+A refreshed interface, ready-made examples, and samples drawn as real plant drawings on real ground.
 
 ### Added
 
