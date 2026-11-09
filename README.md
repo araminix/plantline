@@ -48,7 +48,7 @@ plantline is a web tool for the people who design, build and run power plants. D
 - **Light and dark themes.**
 - **Phones and tablets:** panels become sheets, and the diagram pans and zooms with your fingers.
 
-| Phone, plant layout | Arabic, right to left |
+| Phone, plant layout | Persian, right to left |
 | --- | --- |
 | ![The solar sample on a phone](docs/images/phone-layout.jpg) | ![A substation diagram in Persian, right to left](docs/images/persian.png) |
 
