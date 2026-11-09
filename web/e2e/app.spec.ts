@@ -362,12 +362,12 @@ test("refuses a file that is not a diagram and keeps working", async ({ page }) 
 });
 
 const samples = [
-    { plant: "Solar PV", kind: "PV table", count: "40" },
-    { plant: "Wind farm", kind: "Wind turbine", count: "8" },
-    { plant: "Battery storage", kind: "Battery", count: "12" },
+    { plant: "Solar PV", kind: "PV table", count: "316" },
+    { plant: "Wind farm", kind: "Wind turbine", count: "10" },
+    { plant: "Battery storage", kind: "Battery", count: "24" },
     { plant: "Hydropower", kind: "Generator", count: "3" },
-    { plant: "Substation", kind: "Circuit breaker", count: "8" },
-    { plant: "Transmission line", kind: "Tower", count: "15" },
+    { plant: "Substation", kind: "Circuit breaker", count: "18" },
+    { plant: "Transmission line", kind: "Tower", count: "38" },
 ];
 
 for (const sample of samples) {
@@ -384,7 +384,8 @@ for (const sample of samples) {
 }
 
 test("moves and turns a drawing on the map with its handles", async ({ page }) => {
-    await start(page, "Wind farm");
+    // The storage sample is in its own site coordinates, so it is placed on a point the handles move
+    await start(page, "Battery storage");
     await page.getByRole("tab", { name: "Plant layout" }).click();
     await page.getByRole("button", { name: /Try a sample/ }).click();
     const drag = async (handle: Locator, dx: number, dy: number) => {
@@ -397,8 +398,8 @@ test("moves and turns a drawing on the map with its handles", async ({ page }) =
     await drag(page.locator(".map-handle.turn"), 72, 72);
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     await expect(page.getByText("(-90°)")).toBeVisible();
-    expect(Number(await page.getByRole("textbox", { name: "Latitude" }).inputValue())).toBeGreaterThan(38.62);
-    expect(Number(await page.getByRole("textbox", { name: "Longitude" }).inputValue())).toBeGreaterThan(27.18);
+    expect(Number(await page.getByRole("textbox", { name: "Latitude" }).inputValue())).toBeGreaterThan(39.206);
+    expect(Number(await page.getByRole("textbox", { name: "Longitude" }).inputValue())).toBeGreaterThan(32.7771);
 });
 
 test("reports a reader that cannot start at once, and reads the drawing after trying again", async ({ page }) => {
@@ -416,7 +417,7 @@ test("reports a reader that cannot start at once, and reads the drawing after tr
     await page.context().unroute(runtimeFile);
     await page.getByRole("button", { name: "Try again" }).click();
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
-    await expect(page.locator(".totals tr", { hasText: "Wind turbine" }).locator("td").last()).toHaveText("8", { timeout: 60_000 });
+    await expect(page.locator(".totals tr", { hasText: "Wind turbine" }).locator("td").last()).toHaveText("10", { timeout: 60_000 });
 });
 
 test("cancels a reading and ends its worker", async ({ page }) => {
@@ -448,9 +449,9 @@ test("checks a drawing's unit, asks where a local drawing lies, and asks for the
         await chooser.setFiles({ name, mimeType: "application/dxf", buffer: Buffer.from(text, "latin1") });
     };
 
-    // The wind sample is drawn in metres; labelled millimetres, the farm would be 4 m across
-    const wind = await readFile("public/samples/wind-farm.dxf", "latin1");
-    await open("wind-mm.dxf", wind.replace(/(\$INSUNITS\r?\n *70\r?\n)\d+/, "$14"));
+    // The storage sample is drawn in metres; labelled millimetres, its sheet would be 42 cm across
+    const storage = await readFile("public/samples/battery-storage.dxf", "latin1");
+    await open("storage-mm.dxf", storage.replace(/(\$INSUNITS\r?\n *70\r?\n)\d+/, "$14"));
     const advice = page.locator(".map-banner", { hasText: "Is the drawing in m?" });
     await expect(advice).toBeVisible({ timeout: 60_000 });
     await advice.getByRole("button", { name: "Use m" }).click();
@@ -480,15 +481,16 @@ test("says what a block of the drawing is, and hides a layer", async ({ page }) 
     await page.getByRole("button", { name: /Try a sample/ }).click();
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     const tables = page.locator(".totals tr", { hasText: "PV table" }).locator("td").last();
-    await expect(tables).toHaveText("40", { timeout: 60_000 });
+    await expect(tables).toHaveText("316", { timeout: 60_000 });
 
+    // 292 long tables and 24 short ones: leaving the long ones out leaves the short ones
     await page.getByText("Layers and blocks").click();
-    const table = page.getByRole("combobox", { name: "PV_TABLE_2x28" });
+    const table = page.getByRole("combobox", { name: "PV_TABLE_2P28" });
     await expect(table.locator("option:checked")).toHaveText("Automatic: PV table");
     await table.selectOption({ label: "Not counted" });
-    await expect(tables).toHaveText("0");
+    await expect(tables).toHaveText("24");
     await table.selectOption({ label: "PV table" });
-    await expect(tables).toHaveText("40");
+    await expect(tables).toHaveText("316");
 
     const eye = page.getByRole("button", { name: "Show on the map: PV-TABLES" });
     await eye.click();
@@ -500,16 +502,16 @@ test("describes a counted object from the list, on a click and on hover, and cou
     await page.getByRole("tab", { name: "Plant layout" }).click();
     await page.getByRole("button", { name: /Try a sample/ }).click();
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
-    // 40 tables of 56 module blocks named "…550W"
+    // 292 tables of 56 and 24 of 28 module blocks named "…590W"
     const capacity = page.getByText(/Installed capacity/);
-    await expect(capacity).toContainText("1.23 MWp", { timeout: 60_000 });
-    await expect(capacity).toContainText("from 2,240 counted modules");
+    await expect(capacity).toContainText("10.04 MWp", { timeout: 60_000 });
+    await expect(capacity).toContainText("from 17,024 counted modules");
 
     await page.getByRole("searchbox", { name: "Find an object" }).fill("INV-03");
     await page.getByRole("button", { name: /INV-03/ }).click();
     const popup = page.locator(".object-popup");
     await expect(popup).toContainText("Inverter · INV-03");
-    await expect(popup).toContainText("Block: INVERTER_250KW");
+    await expect(popup).toContainText("Block: INVERTER_330KW");
     await popup.locator(".leaflet-popup-close-button").click();
 
     // The inverter now lies in the middle of the map: pointing at it (a mouse) or tapping it (a phone) describes it
@@ -528,14 +530,14 @@ test("describes a counted object from the list, on a click and on hover, and cou
 });
 
 test("remembers a drawing's place and choices, and brings them back when the file is opened again", async ({ page }) => {
-    await start(page, "Wind farm");
+    await start(page, "Battery storage");
     const open = async () => {
         await page.getByRole("tab", { name: "Plant layout" }).click();
         const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Open a drawing" }).click()]);
-        await chooser.setFiles("public/samples/wind-farm.dxf");
+        await chooser.setFiles("public/samples/battery-storage.dxf");
         await expect(page.locator(".map")).toBeVisible({ timeout: 60_000 });
     };
-    const turbines = page.locator(".totals tr", { hasText: "Wind turbine" }).locator("td").last();
+    const batteries = page.locator(".totals tr", { hasText: "Battery" }).locator("td").last();
 
     await open();
     const map = (await page.locator(".map").boundingBox())!;
@@ -544,9 +546,9 @@ test("remembers a drawing's place and choices, and brings them back when the fil
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     const latitude = await page.getByRole("textbox", { name: "Latitude" }).inputValue();
     await page.getByText("Layers and blocks").click();
-    await page.getByRole("combobox", { name: "WTG_4MW" }).selectOption({ label: "Not counted" });
-    await page.getByRole("button", { name: "Show on the map: ROADS" }).click();
-    await expect(turbines).toHaveText("0");
+    await page.getByRole("combobox", { name: "BESS_CONTAINER_20FT_4.2MWH" }).selectOption({ label: "Not counted" });
+    await page.getByRole("button", { name: "Show on the map: ROAD-ASPHALT-6M" }).click();
+    await expect(batteries).toHaveText("0");
 
     // Another visit: the same file comes back placed, with its choices
     await page.reload();
@@ -555,10 +557,10 @@ test("remembers a drawing's place and choices, and brings them back when the fil
     await expect(page.locator(".map-banner", { hasText: "Click the map" })).toHaveCount(0);
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     await expect(page.getByRole("textbox", { name: "Latitude" })).toHaveValue(latitude);
-    await expect(turbines).toHaveText("0");
+    await expect(batteries).toHaveText("0");
     await page.getByText("Layers and blocks").click();
-    await expect(page.getByRole("combobox", { name: "WTG_4MW" })).toHaveValue("none");
-    await expect(page.getByRole("button", { name: "Show on the map: ROADS" })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByRole("combobox", { name: "BESS_CONTAINER_20FT_4.2MWH" })).toHaveValue("none");
+    await expect(page.getByRole("button", { name: "Show on the map: ROAD-ASPHALT-6M" })).toHaveAttribute("aria-pressed", "false");
 });
 
 test("keeps the map tools clear of the zoom buttons in Persian", async ({ page }) => {
@@ -583,8 +585,8 @@ test("opens a DXF chosen by the user, and reports a file that is not a drawing",
     const [good] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Open a drawing" }).click()]);
     await good.setFiles("public/samples/solar-plant.dxf");
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
-    await expect(page.locator(".totals tr", { hasText: "PV string" }).locator("td").last()).toHaveText("80", { timeout: 60_000 });
-    await expect(page.getByText(/Installed capacity/)).toContainText("1.23 MWp");
+    await expect(page.locator(".totals tr", { hasText: "PV string" }).locator("td").last()).toHaveText("608", { timeout: 60_000 });
+    await expect(page.getByText(/Installed capacity/)).toContainText("10.04 MWp");
 });
 
 test("shows its own fonts, Estedad for Persian, and has app icons and a link preview", async ({ page, request }) => {

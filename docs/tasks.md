@@ -9,7 +9,7 @@ The work behind each [user story](user-stories.md), in the order it was done, an
 | T-01 | Prove that ACadSharp reads DWG and DXF in the browser: compiled to WebAssembly without extra workloads, run in a Web Worker (the runtime must start when the worker starts, and the worker must listen with `addEventListener`). | US-30, US-42 | spike, then `web/src/layout/cad.worker.ts` |
 | T-02 | Drawing reader: DWG or DXF to drawing JSON and binary points; every block once with transformed references (arrays as one per copy) and their attributes; curves to points; units; limits on size (1,000,000 items, 4,000,000 points). | US-30, US-32, US-39, US-42 | `cad/Plantline.Cad` |
 | T-03 | Browser module of the reader (`CadExports.ReadDrawing`) and its build script (`pnpm cad`). | US-30 | `cad/Plantline.Cad.Browser`, `web/scripts/build-cad.mjs` |
-| T-04 | A made-up sample drawing for every plant type (solar also as DWG), written by a generator. | US-31 | `cad/Plantline.Cad.Samples`, `web/public/samples` |
+| T-04 | A made-up sample drawing for every plant type (solar also as DWG), written by a generator the way real plant drawings are (sheet, layers, blocks, attributes), on real ground from SRTM (`cad/Plantline.Cad.Samples/Terrain`). | US-31 | `cad/Plantline.Cad.Samples`, `web/public/samples` |
 | T-05 | Web app skeleton: Vite, React, strict TypeScript, Content Security Policy, settings kept in the browser. | US-41, US-42 | `web/` |
 | T-06 | Plant types, their palettes and their recognition rules. | US-01, US-02, US-32 | `web/src/plants.ts` |
 | T-07 | Diagram model, undo history (a drag is one step), checks and automatic arrangement. | US-10 to US-17 | `web/src/diagram/model.ts`, `history.ts`, `checks.ts`, `arrange.ts` |

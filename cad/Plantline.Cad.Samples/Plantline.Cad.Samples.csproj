@@ -5,4 +5,7 @@
   <ItemGroup>
     <PackageReference Include="ACadSharp" Version="3.8.35" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Terrain/*.grid" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

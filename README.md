@@ -117,7 +117,7 @@ A drawing is untrusted input: a file that crashes, hangs or misleads the app is 
 
 ## License
 
-[Apache License 2.0](LICENSE). Third-party components keep their own licenses: ACadSharp (MIT), React (MIT), Leaflet (BSD-2-Clause), proj4js (MIT) and Lucide icons (ISC). Map data © OpenStreetMap contributors; satellite imagery © Esri and its providers.
+[Apache License 2.0](LICENSE). Third-party components keep their own licenses: ACadSharp (MIT), React (MIT), Leaflet (BSD-2-Clause), proj4js (MIT) and Lucide icons (ISC). Map data © OpenStreetMap contributors; satellite imagery © Esri and its providers. The sample drawings' ground comes from SRTM elevations (NASA/USGS, public domain), fetched through OpenTopoData.
 
 ## Related projects
 

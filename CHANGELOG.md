@@ -4,6 +4,15 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 
 ## Unreleased
 
+### Changed
+
+- The sample drawings are drawn as real plant drawings are: on a sheet with a title block, legend, notes, details and
+  coordinate grid, with the layers, blocks and attributes design teams use, and (for the solar, wind, hydropower and
+  transmission samples) on real ground: contours, streams and the river from SRTM elevations, in UTM coordinates
+  that land where the plant was laid out. A 10 MWp solar plant (316 tables, 25 string inverters), a 45 MW wind farm
+  on ridge tops, a 50 MW / 100 MWh storage site, a 13 MW run-of-river plant along a real valley, a 154/33 kV
+  substation drawn in millimetres and a 13.6 km 154 kV line with 38 towers.
+
 ### Fixed
 
 - In Arabic and Persian, the map's satellite and fit buttons no longer lie under the zoom buttons.

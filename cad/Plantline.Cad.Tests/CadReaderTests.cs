@@ -21,11 +21,13 @@ public sealed class CadReaderTests
         var drawing = CadReader.Read(File.ReadAllBytes(SamplePath(file)));
 
         Assert.Equal("m", drawing.Units);
-        Assert.Single(drawing.Blocks, block => block.Name == "PV_TABLE_2x28");
-        Assert.Equal(40, drawing.Model.References.Count(reference => drawing.Blocks[reference.Block].Name == "PV_TABLE_2x28"));
-        Assert.Equal(80, Shapes(drawing.Model).Count(shape => drawing.Layers[shape.Layer] == "PV-STRINGS"));
-        var inverters = drawing.Model.References.Where(reference => drawing.Layers[reference.Layer] == "INVERTERS").Select(reference => reference.Attributes!["ID"]).Order();
-        Assert.Equal(["INV-01", "INV-02", "INV-03", "INV-04"], inverters);
+        var tables = drawing.Model.References.Select(reference => drawing.Blocks[reference.Block].Name).Where(name => name.StartsWith("PV_TABLE_2P")).ToList();
+        Assert.Equal(292, tables.Count(name => name == "PV_TABLE_2P28"));
+        Assert.Equal(24, tables.Count(name => name == "PV_TABLE_2P14"));
+        Assert.Equal(56, drawing.Blocks.Single(block => block.Name == "PV_TABLE_2P28").References.Count(reference => drawing.Blocks[reference.Block].Name == "PV_MODULE_590W"));
+        Assert.Equal(608, Shapes(drawing.Model).Count(shape => drawing.Layers[shape.Layer] == "PV-STRINGS"));
+        var inverters = drawing.Model.References.Where(reference => drawing.Layers[reference.Layer] == "PV-INVERTERS").Select(reference => reference.Attributes!["ID"]).Order();
+        Assert.Equal(Enumerable.Range(1, 25).Select(i => $"INV-{i:00}"), inverters);
         Assert.Contains("PV-TABLES", drawing.Layers);
         Assert.False(drawing.Truncated);
     }
