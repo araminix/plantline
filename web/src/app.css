@@ -769,6 +769,41 @@ select {
     box-shadow: var(--shadow);
 }
 
+/* What the drawing still needs, over the top of the map: a unit to check, a place to click, a zone to choose */
+.map-notices {
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline: 60px;
+    z-index: 500;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.map-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 12px;
+    max-width: 560px;
+    margin: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    font-weight: 600;
+    text-align: center;
+    pointer-events: auto;
+}
+
+.map.picking,
+.map.picking .leaflet-interactive {
+    cursor: crosshair;
+}
+
 .totals {
     width: 100%;
     border-collapse: collapse;

@@ -13,6 +13,7 @@ import { createProjector, utmProj, type Placement } from "./place";
 import { recognize } from "./recognize";
 import { buildScene, GREY } from "./scene";
 import { fetchSample, SAMPLES } from "./samples";
+import { looksProjected, sizeOf, unitAdvice } from "./where";
 
 const COLORS = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#0891b2", "#db2777", "#65a30d", "#475569"];
 const isBoolean = (value: unknown): value is boolean => typeof value === "boolean";
@@ -27,7 +28,8 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const reading = useRef<AbortController | null>(null);
     const lastRead = useRef<{ file: File; preset?: Placement | undefined } | null>(null);
     const [unit, setUnit] = useState<LengthUnit>("m");
-    const [placement, setPlacement] = useState<Placement>({ mode: "point", lat: 0, lon: 0, rotationDeg: 0 });
+    // Null until the user shows on the map where a drawing in local coordinates lies
+    const [placement, setPlacement] = useState<Placement | null>(null);
     const [rules, setRules] = useState<LayoutRule[]>(() => [...LAYOUT_RULES[plant]]);
     const [satellite, setSatellite] = usePersisted("plantline.satellite", false, isBoolean);
     const [mapCentre, setMapCentre] = useState({ lat: 0, lon: 0 });
@@ -41,7 +43,9 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const metres = METRES_PER_UNIT[unit];
     const bounds = useMemo(() => (drawing ? drawingBounds(drawing) : null), [drawing]);
     const centre = useMemo<[number, number]>(() => (bounds ? [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2] : [0, 0]), [bounds]);
-    const projector = useMemo(() => (drawing ? createProjector(placement, centre, metres) : null), [drawing, placement, centre, metres]);
+    const projector = useMemo(() => (drawing && placement ? createProjector(placement, centre, metres) : null), [drawing, placement, centre, metres]);
+    const advice = bounds ? unitAdvice(bounds, unit) : null;
+    const zoneMissing = placement?.mode === "crs" && placement.proj === "";
     const recognition = useMemo(() => (drawing ? recognize(drawing, rules, metres) : null), [drawing, rules, metres]);
     const colorOf = useMemo(() => (kind: LayoutKind) => COLORS[rules.findIndex((rule) => rule.kind === kind) % COLORS.length] ?? GREY, [rules]);
     const scene = useMemo(() => {
@@ -70,10 +74,11 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
         try {
             const loaded = await readDrawing(file, controller.signal);
             if (reading.current !== controller) return;
+            const loadedUnit = loaded.units === "unitless" ? "m" : loaded.units;
             setDrawing(loaded);
             setFileName(file.name);
-            setUnit(loaded.units === "unitless" ? "m" : loaded.units);
-            setPlacement(preset ?? { mode: "point", lat: mapCentre.lat, lon: mapCentre.lon, rotationDeg: 0 });
+            setUnit(loadedUnit);
+            setPlacement(preset ?? suggestedPlacement(loaded, loadedUnit));
             setFitNonce((n) => n + 1);
             setStatus("idle");
         } catch (error) {
@@ -155,17 +160,54 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
         );
     }
 
-    const fitKey = `${fileName}:${unit}:${fitNonce}:${placement.mode === "crs" ? placement.proj : "point"}`;
+    const fitKey = `${fileName}:${unit}:${fitNonce}:${placement === null ? "none" : placement.mode === "crs" ? placement.proj : "point"}`;
     const tables = recognition?.totals.find((total) => total.kind === "pvTable")?.count ?? 0;
     const kwp = (tables * solar.modulesPerTable * solar.moduleWp) / 1000;
     const baseName = fileName.replace(/\.(dwg|dxf)$/i, "");
     const amount = (lengthM: number) => (lengthM >= 1000 ? `${number(lengthM / 1000, 2)} km` : `${number(lengthM, 1)} m`);
+    const useUnit = (next: LengthUnit) => {
+        setUnit(next);
+        // Not placed yet: where it lies may look different in the right unit
+        if (placement === null || zoneMissing) setPlacement(suggestedPlacement(drawing, next));
+    };
+    // Over the map: a unit that looks wrong, then what placing the drawing still needs
+    const notices = (
+        <div className="map-notices">
+            {advice && bounds && (
+                <p className="map-banner" role="status">
+                    {t("layout.unitAdvice", { unit, size: amount(sizeOf(bounds, unit)), suggested: advice })}
+                    <button type="button" className="button" onClick={() => useUnit(advice)}>
+                        {t("layout.useUnit", { unit: advice })}
+                    </button>
+                </p>
+            )}
+            {placement === null && <p className="map-banner">{t("layout.pick")}</p>}
+            {zoneMissing && <p className="map-banner">{t("layout.zonePrompt", { section: t("layout.placement") })}</p>}
+        </div>
+    );
 
     return (
         <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden}>
             <div className="layout-body">
                 <div className="map-area">
-                    <LayoutMap scene={scene} placement={placement} onPlace={setPlacement} moveLabel={t("layout.move")} turnLabel={t("layout.turn")} satellite={satellite} fitKey={fitKey} active={!hidden} label={t("layout.map")} onMove={setMapCentre} />
+                    <LayoutMap
+                        scene={scene}
+                        placement={placement ?? { mode: "crs", proj: "" }}
+                        onPlace={setPlacement}
+                        moveLabel={t("layout.move")}
+                        turnLabel={t("layout.turn")}
+                        satellite={satellite}
+                        fitKey={fitKey}
+                        active={!hidden}
+                        label={t("layout.map")}
+                        onMove={setMapCentre}
+                        picking={placement === null}
+                        onPick={({ lat, lon }) => {
+                            setPlacement({ mode: "point", lat, lon, rotationDeg: 0 });
+                            setFitNonce((n) => n + 1);
+                        }}
+                    />
+                    {notices}
                     <div className="map-tools">
                         <IconButton label={t("layout.satellite")} pressed={satellite} onClick={() => setSatellite(!satellite)}>
                             <Layers size={18} />
@@ -217,7 +259,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                     <h3>{t("layout.placement")}</h3>
                     <label className="field">
                         <span>{t("layout.units")}</span>
-                        <select value={unit} onChange={(event) => setUnit(event.target.value as LengthUnit)}>
+                        <select value={unit} onChange={(event) => useUnit(event.target.value as LengthUnit)}>
                             {LENGTH_UNITS.filter((u) => u !== "unitless").map((u) => (
                                 <option key={u} value={u}>
                                     {u}
@@ -226,14 +268,16 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                         </select>
                     </label>
                     <div className="segmented" role="radiogroup" aria-label={t("layout.placement")}>
-                        <button type="button" role="radio" aria-checked={placement.mode === "point"} onClick={() => setPlacement({ mode: "point", lat: mapCentre.lat, lon: mapCentre.lon, rotationDeg: 0 })}>
+                        <button type="button" role="radio" aria-checked={placement?.mode !== "crs"} onClick={() => placement?.mode === "crs" && setPlacement(null)}>
                             {t("layout.modePoint")}
                         </button>
-                        <button type="button" role="radio" aria-checked={placement.mode === "crs"} onClick={() => setPlacement({ mode: "crs", proj: placement.mode === "crs" ? placement.proj : utmProj(35, false) })}>
+                        <button type="button" role="radio" aria-checked={placement?.mode === "crs"} onClick={() => placement?.mode !== "crs" && setPlacement({ mode: "crs", proj: "" })}>
                             {t("layout.modeCrs")}
                         </button>
                     </div>
-                    {placement.mode === "point" ? (
+                    {placement === null ? (
+                        <p className="hint">{t("layout.pick")}</p>
+                    ) : placement.mode === "point" ? (
                         <>
                             <div className="row">
                                 <NumberField signed label={t("layout.latitude")} value={round(placement.lat)} onCommit={(lat) => setPlacement({ ...placement, lat: Math.max(-85, Math.min(85, lat ?? 0)) })} />
@@ -267,7 +311,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                                 </select>
                             </label>
                             <TextField label={t("layout.proj")} value={placement.proj} maxLength={500} onCommit={(proj) => setPlacement({ mode: "crs", proj })} />
-                            {!projector && <p className="error">{t("layout.projInvalid")}</p>}
+                            {zoneMissing ? <p className="hint">{t("layout.zonePrompt", { section: t("layout.placement") })}</p> : !projector && <p className="error">{t("layout.projInvalid")}</p>}
                         </>
                     )}
 
@@ -319,4 +363,10 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
 }
 
 const round = (value: number) => Math.round(value * 1e6) / 1e6;
+
+/** Map coordinates (the zone still to choose) when the coordinates look projected; else null, to be shown on the map. */
+function suggestedPlacement(drawing: Drawing | null, unit: LengthUnit): Placement | null {
+    const bounds = drawing && drawingBounds(drawing);
+    return bounds && looksProjected(bounds, unit) ? { mode: "crs", proj: "" } : null;
+}
 const utmZoneOf = (proj: string) => (/^\+proj=utm \+zone=\d+( \+south)? \+datum=WGS84 \+units=m \+no_defs$/.test(proj) ? proj : "");

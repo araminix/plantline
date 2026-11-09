@@ -18,6 +18,9 @@ interface Props {
     active: boolean;
     label: string;
     onMove: (centre: { lat: number; lon: number }) => void;
+    /** While true, a click on the map tells where the drawing lies. */
+    picking: boolean;
+    onPick: (at: { lat: number; lon: number }) => void;
 }
 
 // Leaflet 1.9: a canvas redraw scheduled just before its layer or map is removed runs after the removal and throws
@@ -252,7 +255,7 @@ function turnAbout(x: number, y: number, radians: number): Affine {
 }
 
 /** The drawing on a Leaflet map, over the plain map or satellite imagery. */
-export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, satellite, fitKey, active, label, onMove }: Props) {
+export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, satellite, fitKey, active, label, onMove, picking, onPick }: Props) {
     const element = useRef<HTMLDivElement>(null);
     const map = useRef<L.Map | null>(null);
     const overlay = useRef<InstanceType<typeof SceneLayer> | null>(null);
@@ -260,6 +263,8 @@ export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, sat
     moved.current = onMove;
     const placed = useRef(onPlace);
     placed.current = onPlace;
+    const picked = useRef(onPick);
+    picked.current = onPick;
 
     useEffect(() => {
         const created = L.map(element.current!, { preferCanvas: true, worldCopyJump: true }).setView([20, 0], 2);
@@ -340,6 +345,18 @@ export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, sat
             turner.remove();
         };
     }, [scene, placement, moveLabel, turnLabel]);
+
+    useEffect(() => {
+        if (!picking) return;
+        const created = map.current!;
+        const pick = (event: L.LeafletMouseEvent) => picked.current({ lat: event.latlng.lat, lon: event.latlng.wrap().lng });
+        created.getContainer().classList.add("picking");
+        created.on("click", pick);
+        return () => {
+            created.getContainer().classList.remove("picking");
+            created.off("click", pick);
+        };
+    }, [picking]);
 
     useEffect(() => {
         const bounds = overlay.current?.getBounds();

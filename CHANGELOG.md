@@ -2,6 +2,17 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 0.5.0 (unreleased)
+
+Plant layouts that work with real drawings.
+
+### Added
+
+- A drawing in local coordinates waits for a click on the map where the plant is, instead of landing at latitude 0,
+  longitude 0; one in coordinates that look projected switches to map coordinates and asks for the zone.
+- A unit that makes the plant implausibly small or large is noticed ("In mm, this plant would be 1.5 m across. Is the
+  drawing in m?"), with a button to use the suggested unit.
+
 ## 0.4.0 (unreleased)
 
 Complete properties.

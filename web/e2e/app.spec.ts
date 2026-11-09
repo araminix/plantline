@@ -440,6 +440,40 @@ test("cancels a reading and ends its worker", async ({ page }) => {
     release();
 });
 
+test("checks a drawing's unit, asks where a local drawing lies, and asks for the zone of map coordinates", async ({ page }) => {
+    await start(page, "Wind farm");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    const open = async (name: string, text: string) => {
+        const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Open a drawing" }).click()]);
+        await chooser.setFiles({ name, mimeType: "application/dxf", buffer: Buffer.from(text, "latin1") });
+    };
+
+    // The wind sample is drawn in metres; labelled millimetres, the farm would be 4 m across
+    const wind = await readFile("public/samples/wind-farm.dxf", "latin1");
+    await open("wind-mm.dxf", wind.replace(/(\$INSUNITS\r?\n *70\r?\n)\d+/, "$14"));
+    const advice = page.locator(".map-banner", { hasText: "Is the drawing in m?" });
+    await expect(advice).toBeVisible({ timeout: 60_000 });
+    await advice.getByRole("button", { name: "Use m" }).click();
+    await expect(advice).toBeHidden();
+
+    // Local coordinates: nothing lands on the map until a click shows where the plant is
+    const pick = page.locator(".map-banner", { hasText: "Click the map where the plant is." });
+    await expect(pick).toBeVisible();
+    await expect(page.locator(".map-handle.move")).toHaveCount(0);
+    const map = (await page.locator(".map").boundingBox())!;
+    await page.mouse.click(map.x + map.width / 2, map.y + map.height * 0.7);
+    await expect(page.locator(".map-handle.move")).toBeVisible();
+    await expect(pick).toBeHidden();
+
+    // The solar sample is in UTM coordinates: the zone is asked for (on a phone, opened from the details sheet)
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    await open("solar-plant.dxf", await readFile("public/samples/solar-plant.dxf", "latin1"));
+    const zone = page.locator(".map-banner", { hasText: "look like UTM" });
+    await expect(zone).toBeVisible({ timeout: 60_000 });
+    await page.getByRole("combobox", { name: "UTM zone" }).selectOption({ label: "36N" });
+    await expect(zone).toBeHidden();
+});
+
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();

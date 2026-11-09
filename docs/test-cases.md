@@ -106,6 +106,8 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-63 | US-35 | The rotation turns the drawing counter-clockwise. | `place.test.ts` › turns the drawing by the rotation… |
 | TC-64 | US-35 | Projected coordinates (UTM 36N) land where they should, scaled by the unit. | `place.test.ts` › reads coordinates in a projected system… |
 | TC-65 | US-35 | An invalid coordinate system is refused. | `place.test.ts` › refuses a definition that is not one |
+| TC-65b | US-34, US-35 | A plant drawn in metres but labelled millimetres is noticed and metres suggested (not feet); projected coordinates are told from local ones, and only in the right unit. | `where.test.ts` (2 tests) |
+| TC-65c | US-34, US-35 | A drawing in metres labelled millimetres gets the notice and Use m fixes it; a local drawing waits for a click on the map; a UTM drawing asks for its zone, on desktop and phone. | e2e › checks a drawing's unit, asks where a local drawing lies… |
 | TC-65a | US-35 | Dragging the centre handle moves the drawing and dragging the turning handle turns it (a quarter turn clockwise reads −90°), on desktop and phone. | e2e › moves and turns a drawing on the map with its handles; `drawing.test.ts` › undoes a transform… |
 | TC-66 | US-37 | The solar sample's capacity is 1.23 MWp (40 tables × 56 modules × 550 Wp). | e2e › opens a DXF chosen by the user… |
 | TC-67 | US-38 | GeoJSON has the recognised objects, longitude first, with their attributes; closed shapes are polygons; a turned block's point is the centre of what it draws. | `exports.test.ts` › write the recognised objects as GeoJSON…, put a turned block's point… |

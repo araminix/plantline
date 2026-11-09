@@ -170,9 +170,16 @@ fences). A table's own outline or a block inside a table is not counted again.
 invalid pattern is marked and matches nothing; I can reset the rules.
 
 **US-34 Fix the unit.** The drawing's unit is read from the file; I can change it (a file can claim millimetres while
-its geometry is in metres), and all lengths and the map follow.
+its geometry is in metres), and all lengths and the map follow. When the unit makes the plant implausibly small or
+large (under 10 m or over 300 km across), a notice over the map says how large it would be and offers the most common
+unit that fits ("In mm, this plant would be 1.5 m across. Is the drawing in m?").
 
-**US-35 Put it on the map.** I place the drawing:
+**US-35 Put it on the map.** A drawing of my own never lands in an empty ocean at 0, 0:
+- in local coordinates, it waits until I click the map where the plant is;
+- in coordinates that look projected (a UTM-like easting and northing in metres), it switches to map coordinates and
+  asks for the zone.
+
+I place the drawing:
 - on a point: its centre at a latitude and longitude (or at the map centre), turned by a rotation; on the map I drag
   its centre handle to move it and its turning handle to turn it, and it follows smoothly however large it is;
 - in map coordinates: a UTM zone or any proj4 definition; an invalid one says so.
