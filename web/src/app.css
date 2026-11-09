@@ -1199,3 +1199,67 @@ kbd {
     text-align: center;
     direction: ltr;
 }
+
+/* The drawing's blocks and layers: name, count, eye (layers), and what each is */
+.inventory summary,
+.rules summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-block: 16px 6px;
+}
+
+.inventory h4 {
+    margin-block: 12px 4px;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.inventory-search {
+    width: 100%;
+    min-height: 34px;
+    padding-inline: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.inventory-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.inventory-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 2px 8px;
+    padding-block: 6px;
+    border-block-end: 1px solid var(--line);
+    font-size: 0.85rem;
+}
+
+.inventory-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inventory-list select {
+    grid-column: 1 / -1;
+    min-height: 32px;
+    padding-inline: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.inventory-list .icon-button {
+    min-height: 28px;
+    min-width: 28px;
+}
+
+.inventory-list .hidden-layer .inventory-name {
+    color: var(--muted);
+    text-decoration: line-through;
+}

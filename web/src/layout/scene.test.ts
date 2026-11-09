@@ -42,7 +42,8 @@ describe("the map scene", () => {
         expect(scene.projected.size).toBe(0);
         expect(scene.placed.map((block) => block.placements.length).sort()).toEqual([1, 1, 2, 2]);
         expect(scene.colors[0]).toBe(GREY);
-        expect(scene.boxes.get("#e11d48")).toHaveLength(3 * 8);
+        // 2 tables, their 2 modules and the inverter
+        expect(scene.boxes.get("#e11d48")).toHaveLength(5 * 8);
         // The second table's outline corner, placed through its transform, lands where exact projection puts it
         const table = scene.placed.find((block) => block.paint.get(GREY)?.lines.coords.includes(10000))!;
         const [, second] = table.placements;
@@ -69,6 +70,16 @@ describe("the map scene", () => {
         const [x1, y1, x2, y2] = scene.bounds!;
         expect((x2 - x1) / perMetre(39.1)).toBeCloseTo(5000, -2);
         expect((y2 - y1) / perMetre(39.1)).toBeCloseTo(4000, -2);
+    });
+
+    it("leaves out hidden layers: their shapes and the blocks placed on them", () => {
+        const drawing = solarFixture();
+        const project = createProjector({ mode: "point", lat: 39, lon: 32, rotationDeg: 0 }, [0, 0], 0.001)!;
+        const hidden = new Set([drawing.layers.indexOf("PV-TABLES")]);
+        const scene = buildScene(drawing, recognize(drawing, LAYOUT_RULES.solar, 0.001), { project, metresPerUnit: 0.001, colorOf: () => "#e11d48", isFilled: () => true, hidden });
+        // The tables (and the modules inside them) are gone; the inverter stays
+        expect(scene.placed.map((block) => block.placements.length)).toEqual([1, 1]);
+        expect(scene.boxes.get("#e11d48")).toHaveLength(8);
     });
 
     it("says when a drawing places more copies than it can draw", () => {

@@ -166,8 +166,14 @@ for the plant type: counted (tables, strings, inverters, turbines, batteries, ge
 disconnectors, towers, substations, buildings) or measured in metres (cables, overhead lines, busbars, roads,
 fences). A table's own outline or a block inside a table is not counted again.
 
-**US-33 Adjust the rules.** I edit the pattern of each rule (a regular expression) and see the counts change; an
-invalid pattern is marked and matches nothing; I can reset the rules.
+**US-33 Say what the drawing's blocks and layers are.** I see the drawing's own blocks (with how many copies are
+placed) and layers (with what they hold), most used first, and find one by name. For each I keep Automatic (which shows
+what the name patterns make of it), choose a kind, or choose Not counted; a block can also be left out with everything
+inside it (a small key plan repeating the whole plant would otherwise count everything twice). The counts follow at
+once. I show or hide each layer on the map.
+
+**US-33a Adjust the name patterns.** Under Advanced, I edit the pattern of each rule (a regular expression) and see
+the counts change; an invalid pattern is marked and matches nothing; I can reset the rules.
 
 **US-34 Fix the unit.** The drawing's unit is read from the file; I can change it (a file can claim millimetres while
 its geometry is in metres), and all lengths and the map follow. When the unit makes the plant implausibly small or

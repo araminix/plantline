@@ -16,7 +16,8 @@ describe("layout exports", () => {
         const recognition = recognize(drawing, LAYOUT_RULES.solar, 0.001);
         const project = createProjector({ mode: "point", lat: 39, lon: 32, rotationDeg: 0 }, [0, 0], 0.001)!;
         const features: Feature[] = JSON.parse(toGeoJson(drawing, recognition, project)).features;
-        expect(features).toHaveLength(3 + 4);
+        // 2 tables, their 2 modules and an inverter; 2 strings, a cable and a fence
+        expect(features).toHaveLength(5 + 4);
         const inverter = features.find((f) => f.properties.kind === "inverter")!;
         expect(inverter.properties).toMatchObject({ ID: "INV-01", block: "INVERTER_250KW", layer: "INVERTERS" });
         expect(inverter.geometry.coordinates[0]).toBeGreaterThan(32);

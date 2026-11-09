@@ -10,6 +10,10 @@ Plant layouts that work with real drawings.
 
 - A drawing in local coordinates waits for a click on the map where the plant is, instead of landing at latitude 0,
   longitude 0; one in coordinates that look projected switches to map coordinates and asks for the zone.
+- Layers and blocks: the drawing's own blocks and layers with their counts; choose what each is (or Not counted, or
+  leave a block out with what is inside, for a key plan that repeats the plant); show or hide layers. The name
+  patterns moved under Advanced.
+- PV modules are recognised (block names such as "590W", panel layers), and PVcase tables ("… PVBlock").
 - A unit that makes the plant implausibly small or large is noticed ("In mm, this plant would be 1.5 m across. Is the
   drawing in m?"), with a button to use the suggested unit.
 

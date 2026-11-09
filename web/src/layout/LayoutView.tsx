@@ -1,7 +1,7 @@
 import { ChevronDown, Crosshair, Download, FileUp, Layers, Map as MapIcon, RotateCcw, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useI18n } from "../i18n/i18n";
-import { LAYOUT_RULES, type LayoutKind, type LayoutRule, type PlantType } from "../plants";
+import { LAYOUT_RULES, MEASURE, type LayoutKind, type LayoutRule, type PlantType } from "../plants";
 import { download } from "../diagram/export";
 import { usePersisted } from "../settings";
 import { IconButton, NumberField, TextField } from "../ui/controls";
@@ -10,7 +10,8 @@ import { drawingBounds, LENGTH_UNITS, METRES_PER_UNIT, type Drawing, type Length
 import { toCsv, toGeoJson } from "./exports";
 import { LayoutMap } from "./LayoutMap";
 import { createProjector, utmProj, type Placement } from "./place";
-import { recognize } from "./recognize";
+import { Inventory } from "./Inventory";
+import { createMatcher, entersBlock, inventory, NO_ASSIGNMENTS, recognize, type Assignments } from "./recognize";
 import { buildScene, GREY } from "./scene";
 import { fetchSample, SAMPLES } from "./samples";
 import { looksProjected, sizeOf, unitAdvice } from "./where";
@@ -31,6 +32,9 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     // Null until the user shows on the map where a drawing in local coordinates lies
     const [placement, setPlacement] = useState<Placement | null>(null);
     const [rules, setRules] = useState<LayoutRule[]>(() => [...LAYOUT_RULES[plant]]);
+    // What the user chose for the drawing's blocks and layers, and the layers hidden from the map
+    const [assignments, setAssignments] = useState<Assignments>(NO_ASSIGNMENTS);
+    const [hiddenLayers, setHiddenLayers] = useState<ReadonlySet<string>>(new Set());
     const [satellite, setSatellite] = usePersisted("plantline.satellite", false, isBoolean);
     const [mapCentre, setMapCentre] = useState({ lat: 0, lon: 0 });
     const [fitNonce, setFitNonce] = useState(0);
@@ -46,13 +50,18 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const projector = useMemo(() => (drawing && placement ? createProjector(placement, centre, metres) : null), [drawing, placement, centre, metres]);
     const advice = bounds ? unitAdvice(bounds, unit) : null;
     const zoneMissing = placement?.mode === "crs" && placement.proj === "";
-    const recognition = useMemo(() => (drawing ? recognize(drawing, rules, metres) : null), [drawing, rules, metres]);
-    const colorOf = useMemo(() => (kind: LayoutKind) => COLORS[rules.findIndex((rule) => rule.kind === kind) % COLORS.length] ?? GREY, [rules]);
+    const recognition = useMemo(() => (drawing ? recognize(drawing, rules, metres, assignments) : null), [drawing, rules, metres, assignments]);
+    const contents = useMemo(() => (drawing ? inventory(drawing) : null), [drawing]);
+    const matcher = useMemo(() => createMatcher(rules), [rules]);
+    const colorOf = useMemo(() => {
+        const shown = recognition?.totals.map((total) => total.kind) ?? [];
+        return (kind: LayoutKind) => COLORS[shown.indexOf(kind) % COLORS.length] ?? GREY;
+    }, [recognition]);
     const scene = useMemo(() => {
         if (!drawing || !recognition || !projector) return null;
-        const counted = new Set<string>(rules.filter((rule) => rule.measure === "count").map((rule) => rule.kind));
-        return buildScene(drawing, recognition, { project: projector, metresPerUnit: metres, colorOf: (kind) => colorOf(kind as LayoutKind), isFilled: (kind) => counted.has(kind) });
-    }, [drawing, recognition, projector, metres, colorOf, rules]);
+        const hidden = new Set(drawing.layers.flatMap((name, index) => (hiddenLayers.has(name) ? [index] : [])));
+        return buildScene(drawing, recognition, { project: projector, metresPerUnit: metres, colorOf: (kind) => colorOf(kind as LayoutKind), isFilled: (kind) => MEASURE[kind as LayoutKind] === "count", hidden, enter: entersBlock(drawing, assignments) });
+    }, [drawing, recognition, projector, metres, colorOf, hiddenLayers, assignments]);
     const kindName = (kind: LayoutKind) => t(`kind.${kind}`);
 
     useEffect(() => {
@@ -79,6 +88,8 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
             setFileName(file.name);
             setUnit(loadedUnit);
             setPlacement(preset ?? suggestedPlacement(loaded, loadedUnit));
+            setAssignments(NO_ASSIGNMENTS);
+            setHiddenLayers(new Set());
             setFitNonce((n) => n + 1);
             setStatus("idle");
         } catch (error) {
@@ -315,8 +326,19 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                         </>
                     )}
 
+                    {contents && (
+                        <Inventory
+                            contents={contents}
+                            assignments={assignments}
+                            onAssign={setAssignments}
+                            hidden={hiddenLayers}
+                            onToggle={(layer) => setHiddenLayers((before) => (before.has(layer) ? new Set([...before].filter((name) => name !== layer)) : new Set([...before, layer])))}
+                            automatic={(name, of) => matcher.match(name, "count") ?? (of === "layers" ? matcher.match(name, "length") : null)}
+                        />
+                    )}
+
                     <details className="rules">
-                        <summary>{t("layout.rules")}</summary>
+                        <summary>{t("layout.advanced")}</summary>
                         <p className="muted small">{t("layout.rulesHint")}</p>
                         {rules.map((rule, index) => (
                             <label key={rule.kind} className="field">

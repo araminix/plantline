@@ -106,6 +106,10 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-63 | US-35 | The rotation turns the drawing counter-clockwise. | `place.test.ts` › turns the drawing by the rotation… |
 | TC-64 | US-35 | Projected coordinates (UTM 36N) land where they should, scaled by the unit. | `place.test.ts` › reads coordinates in a projected system… |
 | TC-65 | US-35 | An invalid coordinate system is refused. | `place.test.ts` › refuses a definition that is not one |
+| TC-60a | US-33 | Choices win over the rules: a block counted as another kind, a block not counted, a layer measured as another kind, a counted kind for a layer, a block left out with what is inside; blocks and layers in use are listed with their counts. | `recognize.test.ts` › follows the user's choices…, lists the blocks and layers in use… |
+| TC-60b | US-33 | A hidden layer's shapes and blocks are not drawn. | `scene.test.ts` › leaves out hidden layers… |
+| TC-60c | US-33 | The solar sample's table block shows Automatic: PV table; Not counted gives 0 tables, PV table 40 again; a layer is hidden, on desktop and phone. | e2e › says what a block of the drawing is… |
+| TC-60d | US-32 | Default rules measure lines and count everything else; PVcase tables (PVBlock) and module blocks are recognised. | `plants.test.ts` › give every plant type layout rules…; `recognize.test.ts` › counts the module inside each table… |
 | TC-65b | US-34, US-35 | A plant drawn in metres but labelled millimetres is noticed and metres suggested (not feet); projected coordinates are told from local ones, and only in the right unit. | `where.test.ts` (2 tests) |
 | TC-65c | US-34, US-35 | A drawing in metres labelled millimetres gets the notice and Use m fixes it; a local drawing waits for a click on the map; a UTM drawing asks for its zone, on desktop and phone. | e2e › checks a drawing's unit, asks where a local drawing lies… |
 | TC-65a | US-35 | Dragging the centre handle moves the drawing and dragging the turning handle turns it (a quarter turn clockwise reads −90°), on desktop and phone. | e2e › moves and turns a drawing on the map with its handles; `drawing.test.ts` › undoes a transform… |

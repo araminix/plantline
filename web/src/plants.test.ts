@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LAYOUT_KINDS, LAYOUT_RULES, NODE_KINDS, PALETTES, PLANT_TYPES } from "./plants";
+import { LAYOUT_KINDS, LAYOUT_RULES, MEASURE, NODE_KINDS, PALETTES, PLANT_TYPES } from "./plants";
 
 describe("plant types", () => {
     it("give every plant type a palette of known elements, without repeats, starting with its own equipment", () => {
@@ -20,6 +20,8 @@ describe("plant types", () => {
             for (const rule of LAYOUT_RULES[plant]) {
                 expect(LAYOUT_KINDS).toContain(rule.kind);
                 expect(() => new RegExp(rule.pattern, "i")).not.toThrow();
+                // Lines are measured and everything else counted, whether by rule or by the user's choice
+                expect(rule.measure, rule.kind).toBe(MEASURE[rule.kind]);
             }
         }
     });

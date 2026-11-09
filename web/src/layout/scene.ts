@@ -1,4 +1,4 @@
-import { apply, compose, corners, createBoxes, extend, forEachShape, shapesBox, transformedBox, walk, type Affine, type Block, type Box, type Drawing } from "./drawing";
+import { apply, compose, corners, createBoxes, extend, forEachShape, shapesBox, transformedBox, walk, type Affine, type Block, type Box, type Drawing, type Reference } from "./drawing";
 import type { Projector } from "./place";
 import type { Recognition } from "./recognize";
 
@@ -66,9 +66,13 @@ interface Options {
     colorOf: (kind: string) => string;
     /** Whether a closed model-space shape of this kind is filled (counted objects are; measured ones are lines). */
     isFilled: (kind: string) => boolean;
+    /** Layers not drawn (by index): their shapes, and the blocks placed on them. */
+    hidden?: ReadonlySet<number>;
+    /** Whether a reference is drawn at all (a block left out is not). */
+    enter?: (reference: Reference) => boolean;
 }
 
-export function buildScene(drawing: Drawing, recognition: Recognition, { project, metresPerUnit, colorOf, isFilled }: Options): Scene {
+export function buildScene(drawing: Drawing, recognition: Recognition, { project, metresPerUnit, colorOf, isFilled, hidden = new Set(), enter = () => true }: Options): Scene {
     const boxOf = createBoxes(drawing);
     const whole = boxOf(drawing.model, 0);
     const origin = whole ? mercator(...project((whole[0] + whole[2]) / 2, (whole[1] + whole[3]) / 2)) : ([0, 0] as [number, number]);
@@ -104,7 +108,7 @@ export function buildScene(drawing: Drawing, recognition: Recognition, { project
         if (own) {
             const [cx, cy] = [(own[0] + own[2]) / 2, (own[1] + own[3]) / 2];
             const paint = new Map<string, Paint>();
-            addShapes(drawing, block, recognition, colorFor, isFilled, paint, (x, y) => [x - cx, y - cy]);
+            addShapes(drawing, block, recognition, colorFor, isFilled, hidden, paint, (x, y) => [x - cx, y - cy]);
             result = { paint, placements: [], centre: [1, 0, 0, 1, cx, cy] as Affine, own };
         }
         placedByBlock.set(block, result);
@@ -131,7 +135,7 @@ export function buildScene(drawing: Drawing, recognition: Recognition, { project
                 extend(bounds, box[2], box[3]);
             }
         } else {
-            addShapes(drawing, block, recognition, colorFor, isFilled, projected, (x, y) => {
+            addShapes(drawing, block, recognition, colorFor, isFilled, hidden, projected, (x, y) => {
                 const point = frame(...apply(transform, x, y));
                 extend(bounds, ...point);
                 return point;
@@ -142,7 +146,7 @@ export function buildScene(drawing: Drawing, recognition: Recognition, { project
         const kinds = recognition.kinds.get(block)!;
         block.references.forEach((reference, i) => {
             const kind = kinds.references[i];
-            const box = kind && boxOf(drawing.blocks[reference.block]!, depth + 1);
+            const box = kind && !hidden.has(reference.layer) && enter(reference) && boxOf(drawing.blocks[reference.block]!, depth + 1);
             if (!kind || !box) return;
             const toDrawing = compose(transform, reference.transform);
             const color = colorFor(kind);
@@ -150,15 +154,25 @@ export function buildScene(drawing: Drawing, recognition: Recognition, { project
             for (const [x, y] of corners(box)) target.push(...(toFrame ? apply(compose(toFrame, toDrawing), x, y) : frame(...apply(toDrawing, x, y))));
         });
         return toFrame;
-    });
+    }, (reference) => !hidden.has(reference.layer) && enter(reference));
 
     const placed: PlacedBlock[] = [...placedByBlock.values()].filter((block) => block !== null && block.placements.length > 0).map((block) => ({ paint: block!.paint, placements: block!.placements }));
     return { origin, bounds: bounds[0] <= bounds[2] ? bounds : null, colors: [...colors], projected, placed, boxes, complete };
 }
 
-function addShapes(drawing: Drawing, block: Block, recognition: Recognition, colorFor: (kind: string | null) => string, isFilled: (kind: string) => boolean, paint: Map<string, Paint>, map: (x: number, y: number) => [number, number]) {
+function addShapes(
+    drawing: Drawing,
+    block: Block,
+    recognition: Recognition,
+    colorFor: (kind: string | null) => string,
+    isFilled: (kind: string) => boolean,
+    hidden: ReadonlySet<number>,
+    paint: Map<string, Paint>,
+    map: (x: number, y: number) => [number, number],
+) {
     const kinds = recognition.kinds.get(block)!;
-    forEachShape(block, (index, _layer, closed, first, count) => {
+    forEachShape(block, (index, layer, closed, first, count) => {
+        if (hidden.has(layer)) return;
         const kind = kinds.shapes[index] ?? null;
         const color = colorFor(kind);
         const target = paint.get(color) ?? paint.set(color, { lines: emptyPolylines(), fills: emptyPolylines() }).get(color)!;

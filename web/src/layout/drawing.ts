@@ -126,9 +126,10 @@ export function forEachShape(block: Block, visit: (index: number, layer: number,
  * Places model space and every block it uses, nested ones included: `visit` gets each placed block with the transform
  * from its coordinates to the drawing's and its depth (model space 0, a block placed in it 1, and so on). References at
  * MAX_DEPTH are not opened. `visit` returns what the blocks placed inside receive as `inherited` (model space gets
- * `root`). Returns false when the walk stopped at MAX_PLACED.
+ * `root`). References `enter` refuses are not opened (a hidden layer). Returns false when the walk stopped at
+ * MAX_PLACED.
  */
-export function walk<T>(drawing: Drawing, root: T, visit: (block: Block, transform: Affine, depth: number, inherited: T) => T): boolean {
+export function walk<T>(drawing: Drawing, root: T, visit: (block: Block, transform: Affine, depth: number, inherited: T) => T, enter: (reference: Reference) => boolean = () => true): boolean {
     let placed = 0;
     const stack: [Block, Affine, number, T][] = [[drawing.model, IDENTITY, 0, root]];
     while (stack.length > 0) {
@@ -140,6 +141,7 @@ export function walk<T>(drawing: Drawing, root: T, visit: (block: Block, transfo
         // Pushed last to first, so blocks are visited in the drawing's order
         for (let i = block.references.length - 1; i >= 0; i--) {
             const reference = block.references[i]!;
+            if (!enter(reference)) continue;
             stack.push([drawing.blocks[reference.block]!, compose(transform, reference.transform), depth + 1, passed]);
         }
     }

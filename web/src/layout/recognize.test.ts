@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LAYOUT_RULES } from "../plants";
 import { METRES_PER_UNIT } from "./drawing";
 import { makeDrawing, solarFixture } from "./fixture";
-import { recognize } from "./recognize";
+import { inventory, recognize } from "./recognize";
 
 describe("recognition", () => {
     it("counts tables, strings and inverters and measures cables and the fence in metres", () => {
@@ -17,11 +17,11 @@ describe("recognition", () => {
         expect(result.complete).toBe(true);
     });
 
-    it("does not count a block nested in a table, nor the table's own outline, again", () => {
+    it("counts the module inside each table, but not the table's own outline again", () => {
         const drawing = solarFixture();
         const { kinds } = recognize(drawing, LAYOUT_RULES.solar, 0.001);
         expect(kinds.get(drawing.model)).toEqual({ shapes: ["pvString", "pvString", "cable", "fence"], references: ["pvTable", "pvTable", "inverter"] });
-        expect(kinds.get(drawing.blocks[0]!)).toEqual({ shapes: [null], references: [null] });
+        expect(kinds.get(drawing.blocks[0]!)).toEqual({ shapes: [null], references: ["pvModule"] });
     });
 
     it("counts every placed copy of a nested block and measures lines inside blocks in each copy", () => {
@@ -36,6 +36,31 @@ describe("recognition", () => {
         const result = recognize(drawing, LAYOUT_RULES.solar, 1);
         expect(result.totals.find((t) => t.kind === "inverter")!.count).toBe(12);
         expect(result.totals.find((t) => t.kind === "cable")!.lengthM).toBeCloseTo(60);
+    });
+
+    it("follows the user's choices for blocks and layers before the rules", () => {
+        const drawing = solarFixture();
+        const counts = (assignments: Parameters<typeof recognize>[3]) => {
+            const { totals } = recognize(drawing, LAYOUT_RULES.solar, 0.001, assignments);
+            return Object.fromEntries(totals.map((total) => [total.kind, total.measure === "length" ? Math.round(total.lengthM) : total.count]));
+        };
+        // The module block inside each table counted as modules; the inverter block not counted; the fence layer as a road
+        const result = counts({ blocks: { MODULE: "pvModule", INVERTER_250KW: "none" }, layers: { FENCE: "road" } });
+        expect(result).toMatchObject({ pvTable: 2, inverter: 0, pvModule: 2, fence: 0, road: 240 });
+        // A counted kind chosen for a layer counts the references on it, and its closed shapes in model space only
+        expect(counts({ blocks: {}, layers: { "PV-TABLES": "building" } })).toMatchObject({ pvTable: 0, building: 2 });
+        // A block left out takes what is inside with it (a key plan repeating the plant)
+        expect(counts({ blocks: { PV_TABLE_2x28: "skip" }, layers: {} })).toMatchObject({ pvTable: 0, pvModule: 0, inverter: 1 });
+    });
+
+    it("lists the blocks and layers in use, most used first", () => {
+        const { blocks, layers } = inventory(solarFixture());
+        expect(blocks).toEqual([
+            { name: "PV_TABLE_2x28", copies: 2 },
+            { name: "MODULE", copies: 2 },
+            { name: "INVERTER_250KW", copies: 1 },
+        ]);
+        expect(layers.find((layer) => layer.name === "PV-TABLES")).toEqual({ name: "PV-TABLES", shapes: 2, references: 2 });
     });
 
     it("lets the first matching rule win and treats an invalid pattern as matching nothing", () => {

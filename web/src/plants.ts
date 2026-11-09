@@ -52,6 +52,7 @@ export const CONVERTERS: ReadonlySet<NodeKind> = new Set<NodeKind>(["transformer
 /** What can be recognised in a plant drawing. */
 export const LAYOUT_KINDS = [
     "pvTable",
+    "pvModule",
     "pvString",
     "inverter",
     "combinerBox",
@@ -72,6 +73,11 @@ export const LAYOUT_KINDS = [
 ] as const;
 export type LayoutKind = (typeof LAYOUT_KINDS)[number];
 
+/** What is measured of each kind: lines are measured in metres, everything else is counted. */
+export const MEASURE: Record<LayoutKind, "count" | "length"> = Object.fromEntries(
+    LAYOUT_KINDS.map((kind) => [kind, ["cable", "overheadLine", "road", "fence", "busbar"].includes(kind) ? "length" : "count"]),
+) as Record<LayoutKind, "count" | "length">;
+
 /**
  * How objects of a drawing are recognised: a block reference or shape whose block or layer name matches the pattern (a
  * case-insensitive regular expression) is of that kind. "count" counts them, "length" adds up their lengths.
@@ -87,7 +93,10 @@ const rule = (kind: LayoutKind, pattern: string, measure: LayoutRule["measure"] 
 /** The default rules of each plant type, for the layer and block names design tools commonly use. */
 export const LAYOUT_RULES: Record<PlantType, readonly LayoutRule[]> = {
     solar: [
-        rule("pvTable", "table"),
+        // PVcase names its tables "… PVBlock"
+        rule("pvTable", "table|pvblock"),
+        // Module blocks, often named after their power ("590W") or put on a panel layer
+        rule("pvModule", "module|panel|\\b\\d{3}\\s?wp?\\b"),
         rule("pvString", "string"),
         rule("inverter", "inv"),
         rule("combinerBox", "combiner|\\bscb\\b"),

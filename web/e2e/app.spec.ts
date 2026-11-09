@@ -474,6 +474,27 @@ test("checks a drawing's unit, asks where a local drawing lies, and asks for the
     await expect(zone).toBeHidden();
 });
 
+test("says what a block of the drawing is, and hides a layer", async ({ page }) => {
+    await start(page, "Solar PV");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    await page.getByRole("button", { name: /Try a sample/ }).click();
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    const tables = page.locator(".totals tr", { hasText: "PV table" }).locator("td").last();
+    await expect(tables).toHaveText("40", { timeout: 60_000 });
+
+    await page.getByText("Layers and blocks").click();
+    const table = page.getByRole("combobox", { name: "PV_TABLE_2x28" });
+    await expect(table.locator("option:checked")).toHaveText("Automatic: PV table");
+    await table.selectOption({ label: "Not counted" });
+    await expect(tables).toHaveText("0");
+    await table.selectOption({ label: "PV table" });
+    await expect(tables).toHaveText("40");
+
+    const eye = page.getByRole("button", { name: "Show on the map: PV-TABLES" });
+    await eye.click();
+    await expect(eye).toHaveAttribute("aria-pressed", "false");
+});
+
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();
