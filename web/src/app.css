@@ -480,6 +480,21 @@ select {
     -webkit-touch-callout: none;
 }
 
+.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-block: 4px 8px;
+    cursor: pointer;
+}
+
+.check input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
 .palette-grid button:hover {
     border-color: var(--accent);
     background: var(--surface-2);
@@ -565,6 +580,19 @@ select {
 
 .canvas .port:hover .port-dot {
     fill: var(--accent);
+}
+
+/* The selected line's segments move across their direction; a straight line's do not */
+.canvas [data-link].selected .hit {
+    cursor: col-resize;
+}
+
+.canvas [data-link].selected .hit.across {
+    cursor: row-resize;
+}
+
+.canvas [data-link].selected.straight .hit {
+    cursor: pointer;
 }
 
 /* The ends of the selected line: drag one to another element */

@@ -47,7 +47,12 @@ export function arrange(diagram: Diagram): Diagram {
     }
 
     const arranged = diagram.nodes.map((node) => ({ ...node, ...placed.get(node.id) }));
-    return { ...diagram, nodes: arranged.map((node) => (node.kind === "busbar" ? { ...node, width: busbarSpan(node, arranged, neighbours) } : node)) };
+    return {
+        ...diagram,
+        nodes: arranged.map((node) => (node.kind === "busbar" ? { ...node, width: busbarSpan(node, arranged, neighbours) } : node)),
+        // Dragged routes would not fit the new places: every line routes itself again
+        links: diagram.links.map((link) => ({ ...link, route: null })),
+    };
 }
 
 /** A busbar long enough to reach every element hanging from it, so its feeders drop straight down. */

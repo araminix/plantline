@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, reconnect, removeItems, updateNode, type Diagram } from "./model";
+import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, reconnect, removeItems, updateLink, updateNode, type Diagram } from "./model";
 
 const twoNodes = () => {
     const first = addNode(emptyDiagram("solar"), "inverter", 101, 99);
@@ -49,6 +49,14 @@ describe("diagram model", () => {
         const { diagram, a } = twoNodes();
         expect(moveNodes(diagram, new Set([a]), 13, 7, false).nodes[0]).toMatchObject({ x: 113, y: 107 });
         expect(moveNodes(diagram, new Set([a]), 13, 7, true).nodes[0]).toMatchObject({ x: 120, y: 100 });
+    });
+
+    it("keeps a line's shape when both its elements move, and lets it stretch when one stays", () => {
+        const { diagram, a, b } = twoNodes();
+        const linked = connect(diagram, a, b)!;
+        const routed = updateLink(linked, linked.links[0]!.id, { route: [200, 120, 260] });
+        expect(moveNodes(routed, new Set([a, b]), 40, 20, true).links[0]!.route).toEqual([220, 160, 280]);
+        expect(moveNodes(routed, new Set([a]), 40, 20, true).links[0]!.route).toEqual([200, 120, 260]);
     });
 
     it("removes an element together with its links, and edits fields", () => {

@@ -1,5 +1,5 @@
 import type { NodeKind } from "../plants";
-import { busbarHalf, linkPoints, pathOf, sidesOf } from "./geometry";
+import { busbarHalf, linkShape, pathOf, sidesOf } from "./geometry";
 import { NODE_SIZE, type Diagram, type DiagramNode } from "./model";
 import { NodeSymbol } from "./symbols";
 
@@ -24,7 +24,7 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
     const ends = (() => {
         const link = interactive ? diagram.links.find((candidate) => candidate.id === selectedLink) : undefined;
         const [from, to] = [byId.get(link?.from ?? ""), byId.get(link?.to ?? "")];
-        return link && from && to ? { link, points: linkPoints(from, to) } : null;
+        return link && from && to ? { link, points: linkShape(link, from, to).points } : null;
     })();
     return (
         <>
@@ -33,11 +33,16 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                     const from = byId.get(link.from);
                     const to = byId.get(link.to);
                     if (!from || !to) return null;
-                    const path = pathOf(linkPoints(from, to));
+                    const { points } = linkShape(link, from, to);
                     return (
-                        <g key={link.id} data-link={link.id} className={classes(link.id === selectedLink && "selected", link.id === movingLink && "moving")}>
-                            <path d={path} />
-                            {interactive && <path d={path} className="hit" stroke="transparent" strokeWidth={14} />}
+                        <g key={link.id} data-link={link.id} className={classes(link.id === selectedLink && "selected", link.id === movingLink && "moving", link.straight && "straight")}>
+                            <path d={pathOf(points)} />
+                            {/* One hit area per segment, so a segment can be dragged or double-clicked */}
+                            {interactive &&
+                                points.slice(1).map((point, segment) => {
+                                    const start = points[segment]!;
+                                    return <line key={segment} className={start.y === point.y ? "hit across" : "hit"} data-segment={segment} x1={start.x} y1={start.y} x2={point.x} y2={point.y} stroke="transparent" strokeWidth={14} />;
+                                })}
                         </g>
                     );
                 })}

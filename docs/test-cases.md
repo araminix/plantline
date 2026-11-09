@@ -43,6 +43,11 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-25 | US-12 | Connecting by picking elements on the canvas, with a mouse and with touch. | e2e › builds, connects, checks and saves… |
 | TC-25a | US-12 | A line dragged from a connection point onto an element connects them, with a mouse and a finger; dropped on the empty drawing, nothing is added. | e2e › draws a line from a connection point… |
 | TC-25b | US-12 | A selected line's end dragged onto another element reconnects it; never onto the element at its other end or into a repeated line. | `model.test.ts` › moves a line's end…; e2e › draws a line from a connection point… |
+| TC-25d | US-12a | A middle segment moves across its direction on the grid; an end segment adds a step, or slides along a busbar; zero-length steps are tidied; a double click removes a bend, and without bends the line routes itself. | `geometry.test.ts` › moves a middle segment…, adds a bend…, removes a bend… |
+| TC-25e | US-12a | A line routing itself goes around a symbol whose lead points away, never through it; a straight line runs lead to lead. | `geometry.test.ts` › routes out of a lead that points away…, joins two symbols on one row… |
+| TC-25f | US-12a | Moving both elements keeps a line's route; moving one keeps the route and stretches the line; arranging resets routes. | `model.test.ts` › keeps a line's shape…; `arrange.test.ts` › puts the grid connection on top… |
+| TC-25g | US-12a, US-15 | Dragging a line adds a bend; undo and redo restore it; a double click removes it. | e2e › bends a line by dragging it… |
+| TC-25h | US-12a, US-20 | Routes are saved and read back; version 1 files open with self-routing lines; malformed routes are refused. | `file.test.ts` › read back exactly…, read version 1 files…, refuse inconsistent or hostile content |
 | TC-25c | US-12 | Connection points are where symbols have leads; lines leave the upper element at the bottom, meet a busbar within its length, and join two symbols on one row from side to side. | `geometry.test.ts` (4 tests) |
 | TC-26 | US-13, US-14 | Fields are edited; removing an element removes its lines. | `model.test.ts` › removes an element together with its links… |
 | TC-26a | US-13 | Text typed for one element is saved onto it, not onto the element clicked next. | `App.test.tsx` › saves typed text onto the element it was typed for… |

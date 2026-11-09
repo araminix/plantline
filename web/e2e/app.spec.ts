@@ -104,7 +104,7 @@ test("builds, connects, checks and saves a single-line diagram", async ({ page }
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Save", exact: true }).click()]);
     expect(download.suggestedFilename()).toBe("diagram.plantline.json");
     const file = JSON.parse(await readFile((await download.path())!, "utf8"));
-    expect(file).toMatchObject({ format: "plantline", version: 1, diagram: { plantType: "solar" } });
+    expect(file).toMatchObject({ format: "plantline", version: 2, diagram: { plantType: "solar" } });
     expect(file.diagram.nodes).toHaveLength(3);
     expect(file.diagram.links).toHaveLength(2);
     await expectNoSidewaysScroll(page);
@@ -167,6 +167,46 @@ test("draws a line from a connection point and moves its end to another element"
     await expect(links).toHaveCount(1);
     if (isPhone(page)) await page.getByRole("navigation").getByRole("button", { name: /Properties/ }).click();
     await expect(page.getByText("Grid connection — Inverter")).toBeVisible();
+});
+
+/** A point on the first line, a fraction of the way along it, on the screen. */
+const alongLine = (page: Page, fraction: number) =>
+    page
+        .locator("[data-link] path")
+        .first()
+        .evaluate((path: SVGPathElement, at) => {
+            const point = path.getPointAtLength(path.getTotalLength() * at);
+            const matrix = path.getScreenCTM()!;
+            return { x: point.x * matrix.a + matrix.e, y: point.y * matrix.d + matrix.f };
+        }, fraction);
+
+const bends = (page: Page) => page.locator("[data-link] path").first().getAttribute("d").then((d) => (d ?? "").split("L").length - 1);
+
+test("bends a line by dragging it, undoes and redoes that, and removes the bend with a double click", async ({ page }) => {
+    await start(page, "Substation");
+    for (const element of ["Busbar", "Circuit breaker"]) await add(page, element);
+    const [busbar, breaker] = [0, 1].map((index) => page.locator("[data-node]").nth(index));
+    await busbar!.click();
+    await mouseDrag(page, await centreOf(busbar!.locator('[data-port="0"] .port-dot')), await centreOf(breaker!));
+    await page.getByRole("button", { name: "Arrange automatically" }).click();
+    // A straight drop from the bar: three points of the route, the middle one of zero length
+    await expect.poll(() => bends(page)).toBe(3);
+
+    // Dragging the end above the breaker sideways steps the line out of its lead and back
+    await expect(async () => {
+        const grip = await alongLine(page, 0.8);
+        await mouseDrag(page, grip, { x: grip.x + 80, y: grip.y });
+        expect(await bends(page)).toBe(5);
+    }).toPass();
+    await page.getByRole("button", { name: "Undo" }).click();
+    expect(await bends(page)).toBe(3);
+    await page.getByRole("button", { name: "Redo" }).click();
+    expect(await bends(page)).toBe(5);
+
+    // A double click on the moved segment removes the bend; the line routes itself again
+    const moved = await alongLine(page, 0.6);
+    await page.mouse.dblclick(moved.x, moved.y);
+    await expect.poll(() => bends(page)).toBe(3);
 });
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {

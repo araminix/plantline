@@ -50,7 +50,7 @@ plantline is a static web app. Everything happens in the browser: there is no se
 ```json
 {
   "format": "plantline",
-  "version": 1,
+  "version": 2,
   "diagram": {
     "plantType": "solar",
     "name": "Field A",
@@ -58,7 +58,7 @@ plantline is a static web app. Everything happens in the browser: there is no se
       { "id": "n-1a2b3c4d", "kind": "gridConnection", "x": 160, "y": 80, "label": "", "designation": "=E01", "voltageKv": 34.5, "ratingKva": null, "width": null },
       { "id": "n-5e6f7a8b", "kind": "busbar", "x": 160, "y": 200, "label": "MV bus", "designation": "", "voltageKv": 34.5, "ratingKva": null, "width": 320 }
     ],
-    "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b" }]
+    "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b", "route": [140, 100, 180], "straight": false }]
   }
 }
 ```
@@ -68,8 +68,15 @@ plantline is a static web app. Everything happens in the browser: there is no se
 - `x`, `y`: the element's centre, in diagram units (the grid is 20); a symbol is 48 × 48.
 - `width`: the length of a busbar; `null` for anything else.
 - Links have no direction.
+- `route`: `null` while a line routes itself; once dragged into shape, the positions of its middle segments, which are
+  alternately horizontal and vertical: the y of the first horizontal segment, the x of the next vertical one, and so
+  on, an odd count. The segments at the two ends run straight out of the elements' leads, so moving an element keeps
+  the route whole; on a busbar, the line meets the bar under the nearest vertical segment.
+- `straight`: drawn straight from lead to lead instead of at right angles (`route` is then not used).
+- Version 1 files (without `route` and `straight`) are still read; their lines route themselves.
 - Limits, checked when a file is opened: 5 MB, 5,000 elements, 10,000 links, 200 characters per text, coordinates
-  within ±1,000,000, ids of at most 64 letters, digits, `_` or `-`, unique, and links between existing elements.
+  within ±1,000,000, ids of at most 64 letters, digits, `_` or `-`, unique, links between existing elements, and
+  routes of at most 63 coordinates.
 
 ### Drawing (from the reader)
 

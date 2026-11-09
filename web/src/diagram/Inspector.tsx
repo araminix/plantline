@@ -1,9 +1,9 @@
-import { Cable, Trash2 } from "lucide-react";
+import { Cable, Spline, Trash2 } from "lucide-react";
 import { useI18n } from "../i18n/i18n";
 import { NumberField, TextField } from "../ui/controls";
 import type { Selection } from "./Canvas";
 import type { Issue } from "./checks";
-import { updateNode, type Diagram, type DiagramNode } from "./model";
+import { updateLink, updateNode, type Diagram, type DiagramNode } from "./model";
 import { SymbolIcon } from "./symbols";
 
 interface Props {
@@ -37,7 +37,20 @@ export function Inspector({ diagram, selection, issues, onChange, onSelect, onCo
                 <p>
                     {nameOf(byId.get(link.from))} — {nameOf(byId.get(link.to))}
                 </p>
-                {deleteButton}
+                <label className="check">
+                    <input type="checkbox" checked={link.straight} onChange={(event) => onChange(updateLink(diagram, link.id, { straight: event.target.checked }))} />
+                    {t("link.straight")}
+                </label>
+                {!link.straight && <p className="hint">{t("link.hint")}</p>}
+                <div className="row">
+                    {link.route && !link.straight && (
+                        <button type="button" className="button" onClick={() => onChange(updateLink(diagram, link.id, { route: null }))}>
+                            <Spline size={16} aria-hidden="true" />
+                            {t("link.autoRoute")}
+                        </button>
+                    )}
+                    {deleteButton}
+                </div>
             </div>
         );
     }

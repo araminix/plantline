@@ -1,8 +1,8 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import type { NodeKind } from "../plants";
 import { contentBounds, DiagramContent } from "./DiagramContent";
-import { busbarHalf, linkPoints, portAt, type Side } from "./geometry";
-import { connect, GRID, moveNodes, reconnect, type Diagram, type Point } from "./model";
+import { busbarHalf, dragSegment, linkShape, portAt, removeSegment, tidyRoute, type Side } from "./geometry";
+import { connect, GRID, moveNodes, reconnect, updateLink, type Diagram, type Point } from "./model";
 
 export interface Selection {
     nodes: string[];
@@ -42,6 +42,7 @@ type Gesture =
     | { type: "drag"; start: { x: number; y: number }; base: Diagram; ids: Set<string>; moved: boolean }
     /** A line drawn from a connection point (or, `end` set, an existing line's end being moved) */
     | { type: "line"; from: string; end: { link: string; end: "from" | "to" } | null }
+    | { type: "segment"; start: Point; base: Diagram; link: string; segment: number; moved: boolean }
     | { type: "pinch"; distance: number; view: View; middle: { x: number; y: number } };
 
 const MIN_ZOOM = 0.2;
@@ -123,6 +124,28 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
     const lineResult = (current: Extract<Gesture, { type: "line" }>, target: string) =>
         current.end ? reconnect(diagram, current.end.link, current.end.end, target) : connect(diagram, current.from, target);
 
+    /** The diagram with a line's segment dragged to a point of the screen; at the end of the drag, tidied. Null for a straight line. */
+    const draggedRoute = (current: Extract<Gesture, { type: "segment" }>, point: Point, end: boolean) => {
+        const link = current.base.links.find((candidate) => candidate.id === current.link);
+        const nodes = new Map(current.base.nodes.map((node) => [node.id, node]));
+        const [from, to] = [nodes.get(link?.from ?? ""), nodes.get(link?.to ?? "")];
+        if (!link || link.straight || !from || !to) return null;
+        const route = dragSegment(from, to, linkShape(link, from, to), current.segment, toDiagram(point));
+        return updateLink(current.base, link.id, { route: end ? tidyRoute(from, to, route) : route });
+    };
+
+    /** A double click on a segment of a dragged route removes that bend; with none left, the line routes itself. */
+    const onDoubleClick = (event: ReactMouseEvent<SVGSVGElement>) => {
+        // The canvas captures the pointer, so the event's own target is the canvas
+        const target = document.elementFromPoint(event.clientX, event.clientY);
+        if (!target) return;
+        const link = diagram.links.find((candidate) => candidate.id === target.closest("[data-link]")?.getAttribute("data-link"));
+        const segment = Number(target.closest("[data-segment]")?.getAttribute("data-segment") ?? NaN);
+        const [from, to] = [byId.get(link?.from ?? ""), byId.get(link?.to ?? "")];
+        if (!link?.route || link.straight || !from || !to || Number.isNaN(segment)) return;
+        onCommit(updateLink(diagram, link.id, { route: removeSegment(from, to, link.route, segment) }), diagram);
+    };
+
     const local = (event: { clientX: number; clientY: number }) => {
         const { left, top } = size();
         return { x: event.clientX - left, y: event.clientY - top };
@@ -154,13 +177,13 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         if (linkId && (end === "from" || end === "to")) {
             // The other end stays; this one follows the pointer to another element
             const link = diagram.links.find((candidate) => candidate.id === linkId)!;
-            const points = linkPoints(byId.get(link.from)!, byId.get(link.to)!);
+            const { points } = linkShape(link, byId.get(link.from)!, byId.get(link.to)!);
             const fixed = end === "from" ? link.to : link.from;
             gesture.current = { type: "line", from: fixed, end: { link: linkId, end } };
             setLine({ start: end === "from" ? points.at(-1)! : points[0]!, end: at, target: null, moving: linkId });
         } else if (nodeId && port && connectFrom === undefined) {
             const node = byId.get(nodeId)!;
-            const start = node.kind === "busbar" ? { x: node.x + Number(port) * Math.max(0, busbarHalf(node) - 8), y: node.y } : portAt(node, port as Side, at);
+            const start = node.kind === "busbar" ? { x: node.x + Number(port) * Math.max(0, busbarHalf(node) - 8), y: node.y } : portAt(node, port as Side, at.x);
             gesture.current = { type: "line", from: nodeId, end: null };
             setLine({ start, end: at, target: null, moving: null });
         } else if (nodeId && connectFrom !== undefined) {
@@ -172,6 +195,8 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             if (nodes.includes(nodeId)) gesture.current = { type: "drag", start: point, base: diagram, ids: new Set(nodes), moved: false };
         } else if (linkId) {
             onSelect({ nodes: [], link: linkId });
+            const segment = Number(target.closest("[data-segment]")?.getAttribute("data-segment") ?? NaN);
+            if (!Number.isNaN(segment)) gesture.current = { type: "segment", start: point, base: diagram, link: linkId, segment, moved: false };
         } else {
             if (!additive) onSelect({ nodes: [], link: null });
             gesture.current = { type: "pan", start: point, view };
@@ -199,6 +224,12 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             if (!current.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
             current.moved = true;
             onPreview(moveNodes(current.base, current.ids, dx / view.k, dy / view.k, false));
+        } else if (current?.type === "segment") {
+            if (!current.moved && Math.hypot(point.x - current.start.x, point.y - current.start.y) < DRAG_THRESHOLD) return;
+            const dragged = draggedRoute(current, point, false);
+            if (!dragged) return;
+            current.moved = true;
+            onPreview(dragged);
         }
     };
 
@@ -208,6 +239,9 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         pointers.current.delete(event.pointerId);
         if (current?.type === "drag" && current.moved) {
             onCommit(moveNodes(current.base, current.ids, (point.x - current.start.x) / view.k, (point.y - current.start.y) / view.k, true), current.base);
+        } else if (current?.type === "segment" && current.moved) {
+            const dragged = draggedRoute(current, point, true);
+            if (dragged) onCommit(dragged, current.base);
         } else if (current?.type === "line") {
             const result = line?.target && event.type === "pointerup" ? lineResult(current, line.target) : null;
             if (result) onCommit(result, diagram);
@@ -228,6 +262,7 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
+            onDoubleClick={onDoubleClick}
         >
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
                 <DiagramContent diagram={diagram} kindName={kindName} selectedNodes={selectedNodes} selectedLink={selection.link} targetNode={line?.target ?? null} movingLink={line?.moving ?? null} interactive />

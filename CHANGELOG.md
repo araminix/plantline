@@ -10,6 +10,14 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   takes the free spot nearest the middle of the view, so new elements never pile up on each other.
 - Connection points: drag from one onto another element to connect them; drag a selected line's end onto another
   element to reconnect it. A dashed line and an outlined target show where it will connect.
+- Line routes: drag a segment to move it, an end segment to add a bend; double-click a segment to remove it; Route
+  automatically; straight lines as an option. Routes are saved in the file (format version 2; version 1 files still
+  open).
+
+### Fixed
+
+- A line from an element whose only lead points away (a grid connection under its busbar) no longer runs back through
+  the symbol; it goes around it.
 
 ### Changed
 

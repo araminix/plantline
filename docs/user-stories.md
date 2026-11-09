@@ -66,6 +66,17 @@ element.
   when the line can connect there. Dropped anywhere else, nothing changes.
 - A selected line shows its two ends; I drag one onto another element to reconnect it.
 
+**US-12a Shape lines.** I give a line the path I want, and it keeps it.
+- I drag a segment across its direction to move it, on the grid; dragging a segment at an end adds a step out of the
+  lead (on a busbar, it slides along the bar). Steps of zero length disappear by themselves.
+- A double click on a segment removes that bend; with none left, the line routes itself again, as Route automatically
+  does. Arrange automatically also lets every line route itself.
+- A line routing itself leaves the upper element at the bottom and enters the lower one at the top; where a lead
+  points away (a grid connection under its busbar), it goes around the symbol instead of through it.
+- I can make a line straight, from lead to lead, instead.
+- Moving both elements of a line keeps its shape; moving one stretches it. Routes are undone and redone like any
+  change and saved in the file.
+
 **US-13 Describe equipment.** I give a selected element a label, a reference designation (IEC 81346), a voltage
 (kV) and a rating (kVA); a busbar also has a length. A field is saved when I leave it or press Enter, as one undo step,
 and always onto the element I typed it for, even when I click another element next.

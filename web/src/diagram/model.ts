@@ -15,11 +15,22 @@ export interface DiagramNode {
     width: number | null;
 }
 
+/**
+ * A right-angled line's path between its two ends, as the positions of its middle segments: the y of a horizontal
+ * segment, then the x of a vertical one, and so on, always an odd count. The segments at the ends run straight out of
+ * the elements' leads, so moving an element never breaks a route (see geometry.ts).
+ */
+export type Route = readonly number[];
+
 /** A connection between two elements; it has no direction. */
 export interface DiagramLink {
     id: string;
     from: string;
     to: string;
+    /** Its path, once dragged into shape; null while it routes itself. */
+    route: Route | null;
+    /** Drawn straight from lead to lead instead of at right angles. */
+    straight: boolean;
 }
 
 export interface Diagram {
@@ -104,10 +115,28 @@ export function updateNode(diagram: Diagram, id: string, patch: Partial<Omit<Dia
     return { ...diagram, nodes: diagram.nodes.map((node) => (node.id === id ? { ...node, ...patch } : node)) };
 }
 
-/** Moves the nodes by (dx, dy); `snapped` puts them back on the grid, as at the end of a drag. */
+/**
+ * Moves the nodes by (dx, dy); `snapped` puts them back on the grid, as at the end of a drag. A line between two moved
+ * elements keeps its shape; a line to an element left behind stretches.
+ */
 export function moveNodes(diagram: Diagram, ids: ReadonlySet<string>, dx: number, dy: number, snapped: boolean): Diagram {
     const place = (value: number) => (snapped ? snap(value) : value);
-    return { ...diagram, nodes: diagram.nodes.map((node) => (ids.has(node.id) ? { ...node, x: place(node.x + dx), y: place(node.y + dy) } : node)) };
+    const moved = new Map<string, Point>();
+    const nodes = diagram.nodes.map((node) => {
+        if (!ids.has(node.id)) return node;
+        const next = { ...node, x: place(node.x + dx), y: place(node.y + dy) };
+        moved.set(node.id, { x: next.x - node.x, y: next.y - node.y });
+        return next;
+    });
+    const links = diagram.links.map((link) => {
+        const shift = moved.get(link.from);
+        return link.route && shift && moved.has(link.to) ? { ...link, route: link.route.map((value, i) => value + (i % 2 === 0 ? shift.y : shift.x)) } : link;
+    });
+    return { ...diagram, nodes, links };
+}
+
+export function updateLink(diagram: Diagram, id: string, patch: Partial<Pick<DiagramLink, "route" | "straight">>): Diagram {
+    return { ...diagram, links: diagram.links.map((link) => (link.id === id ? { ...link, ...patch } : link)) };
 }
 
 /** Removes the nodes with their links, and the links. */
@@ -123,14 +152,14 @@ export function removeItems(diagram: Diagram, nodeIds: ReadonlySet<string>, link
 export function connect(diagram: Diagram, from: string, to: string): Diagram | null {
     const linked = diagram.links.some((link) => (link.from === from && link.to === to) || (link.from === to && link.to === from));
     if (from === to || linked) return null;
-    return { ...diagram, links: [...diagram.links, { id: newId("l"), from, to }] };
+    return { ...diagram, links: [...diagram.links, { id: newId("l"), from, to, route: null, straight: false }] };
 }
 
 /** Moves one end of a line to another element; null when that changes nothing, joins an element to itself or repeats a line. */
 export function reconnect(diagram: Diagram, linkId: string, end: "from" | "to", nodeId: string): Diagram | null {
     const link = diagram.links.find((candidate) => candidate.id === linkId);
     if (!link || link[end] === nodeId) return null;
-    const moved = { ...link, [end]: nodeId };
+    const moved = { ...link, [end]: nodeId, route: null };
     const repeated = diagram.links.some((other) => other.id !== linkId && ((other.from === moved.from && other.to === moved.to) || (other.from === moved.to && other.to === moved.from)));
     if (moved.from === moved.to || repeated) return null;
     return { ...diagram, links: diagram.links.map((candidate) => (candidate.id === linkId ? moved : candidate)) };

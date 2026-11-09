@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { arrange } from "./arrange";
-import { addNode, connect, emptyDiagram, type Diagram } from "./model";
+import { addNode, connect, emptyDiagram, updateLink, type Diagram } from "./model";
 
 describe("automatic arrangement", () => {
     it("puts the grid connection on top and each element one row below the one it hangs from", () => {
@@ -20,6 +20,9 @@ describe("automatic arrangement", () => {
         expect(at(inverterA).y).toBe(at(inverterB).y);
         expect(at(inverterB).x).toBeLessThan(at(inverterA).x);
         expect(at(grid).x).toBe(at(bus).x);
+        // Dragged routes would not fit the new places
+        const routed = updateLink(diagram, diagram.links[0]!.id, { route: [100] });
+        expect(arrange(routed).links.every((link) => link.route === null)).toBe(true);
     });
 
     it("places unconnected groups side by side without overlap", () => {
