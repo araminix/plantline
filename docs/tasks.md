@@ -26,6 +26,9 @@ The work behind each [user story](user-stories.md), in the order it was done, an
 | T-18 | Supply chain: packages at least 7 days old (pnpm and Dependabot), versions at least two weeks old at release. | US-42 | `web/pnpm-workspace.yaml`, `.github/dependabot.yml` |
 | T-19 | Documents: README, user stories, tasks, test cases, architecture, contributing, security, changelog. | all | `README.md`, `docs/`, root files |
 | T-20 | Interface refresh: one set of components (buttons, segmented controls, pills, cards, menus with keys, status chips); header, toolbar, palette, properties, map and first use; examples per plant type; drawings dropped onto the layout. | US-04, US-05, US-06, US-30a, US-31 | `web/src/app.css`, `web/src/ui/controls.tsx`, `web/src/diagram/examples.ts` |
+| T-21 | Keyboard and screen readers: Tab to every element, arrows, R, Delete and Enter to connect; focus kept in dialogs; names that contain the visible text; axe checks in e2e. | US-07 | `web/src/diagram/Canvas.tsx`, `DiagramContent.tsx`, `web/src/ui/focus.ts` |
+| T-22 | Plural forms (Intl.PluralRules) and the language's digits, also in the drawing and its exports. | US-03 | `web/src/i18n/i18n.tsx`, `web/src/diagram/properties.ts` |
+| T-23 | Map tiles in one settings file, written into the Content Security Policy by the build; providers' terms documented. | US-40, US-41 | `web/src/layout/tiles.ts`, `web/vite.config.ts` |
 
 ## Backlog
 
@@ -35,7 +38,6 @@ The work behind each [user story](user-stories.md), in the order it was done, an
 | B-02 | String sizing checks from module and inverter datasheets (string voltage against the inverter's input range at the site's temperatures). | A common design mistake, found early. |
 | B-03 | Cable schedule from the layout: each cable's length by its layer and ends. | A bill of materials needs it. |
 | B-04 | PDF drawing sheets with a title block (project, revision, author) and paper sizes. | Diagrams handed to clients and authorities. |
-| B-05 | Keyboard editing on the canvas: move the selection with the arrow keys, connect without a pointer. | Accessibility. |
 | B-06 | Install as an app and work offline (PWA). | Field use without a connection. |
 | B-07 | Import a substation configuration (IEC 61850 SSD/SCD) as a diagram. | Substation engineers already have one. |
 | B-08 | Arcs of polyline bulges and arrays of block references (MINSERT) in the reader. | More faithful drawings. |
