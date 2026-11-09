@@ -41,11 +41,25 @@ export interface DiagramLink {
     straight: boolean;
 }
 
+/** A remark on the drawing: a text, or an area (a dashed box with a title) around part of the plant. */
+export interface DiagramNote {
+    id: string;
+    kind: "text" | "area";
+    /** The top left corner. */
+    x: number;
+    y: number;
+    /** An area's size; 0 for a text, whose size follows its lines. */
+    width: number;
+    height: number;
+    text: string;
+}
+
 export interface Diagram {
     plantType: PlantType;
     name: string;
     nodes: DiagramNode[];
     links: DiagramLink[];
+    notes: DiagramNote[];
 }
 
 export interface Point {
@@ -70,7 +84,27 @@ export const snap = (value: number) => Math.round(value / GRID) * GRID;
 
 export const newId = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 
-export const emptyDiagram = (plantType: PlantType, name = ""): Diagram => ({ plantType, name, nodes: [], links: [] });
+export const emptyDiagram = (plantType: PlantType, name = ""): Diagram => ({ plantType, name, nodes: [], links: [], notes: [] });
+
+export const AREA_SIZE = { width: 240, height: 160 };
+
+/** Adds a text or an area with its top left corner on the grid point nearest (x, y). */
+export function addNote(diagram: Diagram, kind: DiagramNote["kind"], text: string, x: number, y: number): { diagram: Diagram; id: string } {
+    const size = kind === "area" ? AREA_SIZE : { width: 0, height: 0 };
+    const note: DiagramNote = { id: newId("t"), kind, x: snap(x), y: snap(y), ...size, text };
+    return { diagram: { ...diagram, notes: [...diagram.notes, note] }, id: note.id };
+}
+
+export function updateNote(diagram: Diagram, id: string, patch: Partial<Omit<DiagramNote, "id" | "kind">>): Diagram {
+    return { ...diagram, notes: diagram.notes.map((note) => (note.id === id ? { ...note, ...patch } : note)) };
+}
+
+/** The room a note takes: an area's box, or roughly a text's lines. */
+export function noteBox(note: DiagramNote): Box {
+    if (note.kind === "area") return { minX: note.x, minY: note.y, maxX: note.x + note.width, maxY: note.y + note.height };
+    const lines = note.text.split("\n");
+    return { minX: note.x, minY: note.y, maxX: note.x + 8 + 7 * Math.max(1, ...lines.map((line) => line.length)), maxY: note.y + 4 + 16 * lines.length };
+}
 
 /** The room an element takes: its symbol with the label beside it, or a busbar with its label above (or beside it, upright). */
 export function footprint(node: Pick<DiagramNode, "kind" | "x" | "y" | "width" | "rotation">): Box {
@@ -130,8 +164,8 @@ export function updateNode(diagram: Diagram, id: string, patch: Partial<Omit<Dia
 }
 
 /**
- * Moves the nodes by (dx, dy); `snapped` puts them back on the grid, as at the end of a drag. A line between two moved
- * elements keeps its shape; a line to an element left behind stretches.
+ * Moves the elements and notes by (dx, dy); `snapped` puts them back on the grid, as at the end of a drag. A line
+ * between two moved elements keeps its shape; a line to an element left behind stretches.
  */
 export function moveNodes(diagram: Diagram, ids: ReadonlySet<string>, dx: number, dy: number, snapped: boolean): Diagram {
     const place = (value: number) => (snapped ? snap(value) : value);
@@ -146,19 +180,21 @@ export function moveNodes(diagram: Diagram, ids: ReadonlySet<string>, dx: number
         const shift = moved.get(link.from);
         return link.route && shift && moved.has(link.to) ? { ...link, route: link.route.map((value, i) => value + (i % 2 === 0 ? shift.y : shift.x)) } : link;
     });
-    return { ...diagram, nodes, links };
+    const notes = diagram.notes.map((note) => (ids.has(note.id) ? { ...note, x: place(note.x + dx), y: place(note.y + dy) } : note));
+    return { ...diagram, nodes, links, notes };
 }
 
 export function updateLink(diagram: Diagram, id: string, patch: Partial<Pick<DiagramLink, "route" | "straight">>): Diagram {
     return { ...diagram, links: diagram.links.map((link) => (link.id === id ? { ...link, ...patch } : link)) };
 }
 
-/** Removes the nodes with their links, and the links. */
-export function removeItems(diagram: Diagram, nodeIds: ReadonlySet<string>, linkIds: ReadonlySet<string> = new Set()): Diagram {
+/** Removes the elements with their links, the notes, and the links. */
+export function removeItems(diagram: Diagram, ids: ReadonlySet<string>, linkIds: ReadonlySet<string> = new Set()): Diagram {
     return {
         ...diagram,
-        nodes: diagram.nodes.filter((node) => !nodeIds.has(node.id)),
-        links: diagram.links.filter((link) => !linkIds.has(link.id) && !nodeIds.has(link.from) && !nodeIds.has(link.to)),
+        nodes: diagram.nodes.filter((node) => !ids.has(node.id)),
+        links: diagram.links.filter((link) => !linkIds.has(link.id) && !ids.has(link.from) && !ids.has(link.to)),
+        notes: diagram.notes.filter((note) => !ids.has(note.id)),
     };
 }
 

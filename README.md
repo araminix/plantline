@@ -22,7 +22,10 @@ plantline is a web tool for the people who design, build and run power plants. D
 ### Single-line diagrams
 
 - **Start from the plant type.** Solar PV, wind farm, battery storage, hydropower, substation or transmission line: the palette shows that plant's equipment first (PV arrays and inverters, wind turbines, batteries, generators, overhead lines…), then the switchgear every plant has.
-- **Draw** with 23 element types in the style of IEC 60617: tap an element to add it, drag it into place on the grid, connect elements with lines.
+- **Draw** with 23 element types in the style of IEC 60617: drag an element from the palette onto the grid (or tap it), drag from a connection point to another element to connect them, drag a line's segments to shape it, or make it straight.
+- **Edit groups:** select an area as in CAD, copy and paste, rotate and flip, align and space evenly, nudge with the arrow keys; resize busbars by their ends and move labels where they read best.
+- **Annotate** with texts and dashed areas around bays and stations.
+- **Navigate** with the zoom level, 100 %, zoom to selection and an overview map; every shortcut is on one sheet (press `?`).
 - **Arrange automatically.** One click lays the diagram out top-down from the grid connection, with busbars long enough for their feeders.
 - **Describe** each element: label, reference designation (IEC 81346), voltage, rating.
 - **Check** before you share: a missing grid connection, unconnected elements, different voltages on one line, a designation used twice.

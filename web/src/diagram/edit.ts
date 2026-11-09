@@ -1,4 +1,4 @@
-import { BUSBAR_WIDTH, footprint, GRID, NODE_SIZE, newId, overlaps, snap, updateNode, type Box, type Diagram, type DiagramLink, type DiagramNode, type Point, type Rotation } from "./model";
+import { BUSBAR_WIDTH, footprint, GRID, NODE_SIZE, newId, noteBox, overlaps, snap, updateNode, type Box, type Diagram, type DiagramLink, type DiagramNode, type DiagramNote, type Point, type Rotation } from "./model";
 
 /** Group editing: selecting by area, copying, turning, mirroring, aligning and spacing elements. */
 
@@ -11,23 +11,26 @@ export function extent(node: DiagramNode): Box {
 }
 
 /**
- * The elements in an area, as in CAD: dragged left to right, those wholly inside it; right to left (`crossing`), those
- * it touches.
+ * The elements and notes in an area, as in CAD: dragged left to right, those wholly inside it; right to left
+ * (`crossing`), those it touches.
  */
-export function nodesInBox(diagram: Diagram, box: Box, crossing: boolean): string[] {
+export function itemsInBox(diagram: Diagram, box: Box, crossing: boolean): string[] {
     const inside = (e: Box) => e.minX >= box.minX && e.maxX <= box.maxX && e.minY >= box.minY && e.maxY <= box.maxY;
-    return diagram.nodes.filter((node) => (crossing ? overlaps(extent(node), box) : inside(extent(node)))).map((node) => node.id);
+    const found = (e: Box) => (crossing ? overlaps(e, box) : inside(e));
+    return [...diagram.nodes.filter((node) => found(extent(node))), ...diagram.notes.filter((note) => found(noteBox(note)))].map((item) => item.id);
 }
 
-/** Copied elements with the lines between them. */
+/** Copied elements with the lines between them, and notes. */
 export interface Clip {
     nodes: DiagramNode[];
     links: DiagramLink[];
+    notes: DiagramNote[];
 }
 
 export const copyItems = (diagram: Diagram, ids: ReadonlySet<string>): Clip => ({
     nodes: diagram.nodes.filter((node) => ids.has(node.id)),
     links: diagram.links.filter((link) => ids.has(link.from) && ids.has(link.to)),
+    notes: diagram.notes.filter((note) => ids.has(note.id)),
 });
 
 /** Adds copies with new ids, a few grid steps down and to the right: the first place where they overlap nothing. */
@@ -39,7 +42,11 @@ export function pasteItems(diagram: Diagram, clip: Clip): { diagram: Diagram; id
     const ids = new Map(clip.nodes.map((node) => [node.id, newId("n")]));
     const nodes = clip.nodes.map((node) => ({ ...node, id: ids.get(node.id)!, x: node.x + d, y: node.y + d }));
     const links = clip.links.map((link) => ({ ...link, id: newId("l"), from: ids.get(link.from)!, to: ids.get(link.to)!, route: link.route?.map((value) => value + d) ?? null }));
-    return { diagram: { ...diagram, nodes: [...diagram.nodes, ...nodes], links: [...diagram.links, ...links] }, ids: nodes.map((node) => node.id) };
+    const notes = clip.notes.map((note) => ({ ...note, id: newId("t"), x: note.x + d, y: note.y + d }));
+    return {
+        diagram: { ...diagram, nodes: [...diagram.nodes, ...nodes], links: [...diagram.links, ...links], notes: [...diagram.notes, ...notes] },
+        ids: [...nodes, ...notes].map((item) => item.id),
+    };
 }
 
 /** The middle of the elements' centres (exact, so mirrored places stay on the grid). */

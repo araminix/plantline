@@ -11,15 +11,17 @@ import {
     CopyPlus,
     RotateCw,
     Spline,
+    SquareDashed,
     Trash2,
     TrianglesCenterlineDashedVertical,
+    Type,
 } from "lucide-react";
 import { useI18n } from "../i18n/i18n";
 import { IconButton, NumberField, TextField } from "../ui/controls";
 import type { Selection } from "./Canvas";
 import type { Issue } from "./checks";
 import type { Alignment } from "./edit";
-import { updateLink, updateNode, type Diagram, type DiagramNode } from "./model";
+import { updateLink, updateNode, updateNote, type Diagram, type DiagramNode } from "./model";
 import { SymbolIcon } from "./symbols";
 
 interface Props {
@@ -101,10 +103,29 @@ export function Inspector(props: Props) {
         </>
     );
 
-    if (nodes.length > 1) {
+    const note = selection.nodes.length === 1 ? diagram.notes.find((candidate) => candidate.id === selection.nodes[0]) : undefined;
+    if (note) {
+        return (
+            <div className="inspector" key={note.id}>
+                <h2 className="with-icon">
+                    {note.kind === "text" ? <Type size={22} aria-hidden="true" /> : <SquareDashed size={22} aria-hidden="true" />}
+                    {t(note.kind === "text" ? "note.text" : "note.area")}
+                </h2>
+                <TextField label={t("note.text")} value={note.text} maxLength={1000} multiline={note.kind === "text"} onCommit={(text) => onChange(updateNote(diagram, note.id, { text }))} />
+                <div className="row">
+                    <IconButton label={t("action.duplicate")} onClick={onDuplicate}>
+                        <CopyPlus size={18} />
+                    </IconButton>
+                    {deleteButton}
+                </div>
+            </div>
+        );
+    }
+
+    if (selection.nodes.length > 1) {
         return (
             <div className="inspector">
-                <h2>{t("inspector.selected", { count: nodes.length })}</h2>
+                <h2>{t("inspector.selected", { count: selection.nodes.length })}</h2>
                 <div className="row">{shapeButtons}</div>
                 <h3>{t("align.title")}</h3>
                 <div className="row">

@@ -2,11 +2,12 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type Mous
 import type { NodeKind } from "../plants";
 import { isTyping } from "../ui/keys";
 import { contentBounds, DiagramContent, labelStart } from "./DiagramContent";
-import { nodesInBox, resizeBusbar } from "./edit";
+import { extent, itemsInBox, resizeBusbar } from "./edit";
 import { connectionPoints, dragSegment, linkShape, removeSegment, tidyRoute } from "./geometry";
-import { connect, GRID, moveNodes, reconnect, updateLink, updateNode, type Diagram, type Point } from "./model";
+import { connect, GRID, moveNodes, noteBox, reconnect, snap, updateLink, updateNode, updateNote, type Box, type Diagram, type Point } from "./model";
 
 export interface Selection {
+    /** The selected elements and notes. */
     nodes: string[];
     link: string | null;
 }
@@ -14,6 +15,10 @@ export interface Selection {
 export interface CanvasHandle {
     fit(): void;
     zoom(factor: number): void;
+    /** To a zoom level, around the middle of the view (1 is 100 %). */
+    zoomTo(k: number): void;
+    /** To the elements and notes with these ids. */
+    zoomToItems(ids: readonly string[]): void;
     /** The middle of the visible area, in diagram coordinates: where a new element goes. */
     centre(): Point;
     /** The point of the diagram under a point of the screen, or null where the drawing is not what shows there. */
@@ -31,6 +36,10 @@ interface Props {
     onPreview: (diagram: Diagram) => void;
     onCommit: (diagram: Diagram, base: Diagram) => void;
     onPick: (nodeId: string) => void;
+    /** The zoom level changed (1 is 100 %). */
+    onZoom: (k: number) => void;
+    /** The overview's accessible name. */
+    overviewLabel: string;
 }
 
 interface View {
@@ -44,6 +53,7 @@ type Gesture =
     /** An area selected by dragging over the empty drawing (on a touch screen, after holding still) */
     | { type: "box"; additive: boolean; before: string[] }
     | { type: "label"; start: Point; base: Diagram; id: string; origin: Point; moved: boolean }
+    /** A busbar's end, or an area's corner */
     | { type: "resize"; base: Diagram; id: string; end: "start" | "end"; moved: boolean }
     | { type: "drag"; start: { x: number; y: number }; base: Diagram; ids: Set<string>; moved: boolean }
     /** A line drawn from a connection point (or, `end` set, an existing line's end being moved) */
@@ -64,7 +74,7 @@ const clampZoom = (k: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k));
  * segments and line ends; draw lines from connection points; pick elements to connect.
  */
 export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref) {
-    const { diagram, selection, connectFrom, kindName, label, onSelect, onPreview, onCommit, onPick } = props;
+    const { diagram, selection, connectFrom, kindName, label, onSelect, onPreview, onCommit, onPick, onZoom, overviewLabel } = props;
     const svgRef = useRef<SVGSVGElement>(null);
     const [view, setView] = useState<View>({ x: 40, y: 40, k: 1 });
     const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -87,20 +97,36 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             return { k, x: screenX - ((screenX - v.x) * k) / v.k, y: screenY - ((screenY - v.y) * k) / v.k };
         });
 
-    const fit = () => {
-        const bounds = contentBounds(diagram);
+    /** Shows an area of the diagram whole, zoomed in at most to `most`. */
+    const show = ([minX, minY, maxX, maxY]: [number, number, number, number], most: number) => {
         const { width, height } = size();
-        if (!bounds || width === 0) return;
-        const [minX, minY, maxX, maxY] = bounds;
-        const k = clampZoom(Math.min(1.5, (width - 48) / (maxX - minX), (height - 48) / (maxY - minY)));
+        if (width === 0) return;
+        const k = clampZoom(Math.min(most, (width - 48) / Math.max(1, maxX - minX), (height - 48) / Math.max(1, maxY - minY)));
         setView({ k, x: (width - (maxX - minX) * k) / 2 - minX * k, y: (height - (maxY - minY) * k) / 2 - minY * k });
     };
+    const fit = () => {
+        const bounds = contentBounds(diagram);
+        if (bounds) show(bounds, 1.5);
+    };
+
+    useEffect(() => onZoom(view.k), [view.k, onZoom]);
 
     useImperativeHandle(ref, () => ({
         fit,
         zoom: (factor) => {
             const { width, height } = size();
             zoomAt(factor, width / 2, height / 2);
+        },
+        zoomTo: (k) => {
+            const { width, height } = size();
+            zoomAt(k / view.k, width / 2, height / 2);
+        },
+        zoomToItems: (ids) => {
+            const wanted = new Set(ids);
+            const boxes: Box[] = [...diagram.nodes.filter((node) => wanted.has(node.id)).map(extent), ...diagram.notes.filter((note) => wanted.has(note.id)).map(noteBox)];
+            if (boxes.length === 0) return;
+            const PAD = 60;
+            show([Math.min(...boxes.map((b) => b.minX)) - PAD, Math.min(...boxes.map((b) => b.minY)) - PAD, Math.max(...boxes.map((b) => b.maxX)) + PAD, Math.max(...boxes.map((b) => b.maxY)) + PAD], 2);
         },
         centre: () => {
             const { width, height } = size();
@@ -213,6 +239,7 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
 
         const target = event.target as Element;
         const nodeId = target.closest("[data-node]")?.getAttribute("data-node");
+        const itemId = nodeId ?? target.closest("[data-note]")?.getAttribute("data-note");
         const linkId = target.closest("[data-link]")?.getAttribute("data-link") ?? target.closest("[data-link-ends]")?.getAttribute("data-link-ends");
         const port = target.closest("[data-port]")?.getAttribute("data-port");
         const end = target.closest("[data-end]")?.getAttribute("data-end");
@@ -240,11 +267,11 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         } else if (nodeId && onLabel && nodeId === only && !additive) {
             // The label of the element selected alone moves by itself
             gesture.current = { type: "label", start: point, base: diagram, id: nodeId, origin: labelStart(byId.get(nodeId)!), moved: false };
-        } else if (nodeId) {
-            const selected = selection.nodes.includes(nodeId);
-            const nodes = additive ? (selected ? selection.nodes.filter((id) => id !== nodeId) : [...selection.nodes, nodeId]) : selected ? selection.nodes : [nodeId];
+        } else if (itemId) {
+            const selected = selection.nodes.includes(itemId);
+            const nodes = additive ? (selected ? selection.nodes.filter((id) => id !== itemId) : [...selection.nodes, itemId]) : selected ? selection.nodes : [itemId];
             onSelect({ nodes, link: null });
-            if (nodes.includes(nodeId)) gesture.current = { type: "drag", start: point, base: diagram, ids: new Set(nodes), moved: false };
+            if (nodes.includes(itemId)) gesture.current = { type: "drag", start: point, base: diagram, ids: new Set(nodes), moved: false };
         } else if (linkId) {
             onSelect({ nodes: [], link: linkId });
             const segment = Number(target.closest("[data-segment]")?.getAttribute("data-segment") ?? NaN);
@@ -289,7 +316,7 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             onPreview(movedLabel(current, point));
         } else if (current?.type === "resize") {
             current.moved = true;
-            onPreview(resizeBusbar(current.base, current.id, current.end, toDiagram(point)));
+            onPreview(resized(current, point));
         } else if (current?.type === "line") {
             const id = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-node]")?.getAttribute("data-node") ?? null;
             const target = id && lineResult(current, id) ? id : null;
@@ -319,13 +346,13 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             const area = { minX: Math.min(start.x, end.x), minY: Math.min(start.y, end.y), maxX: Math.max(start.x, end.x), maxY: Math.max(start.y, end.y) };
             // A click, not an area: the selection was already cleared
             if ((area.maxX - area.minX) * view.k > DRAG_THRESHOLD || (area.maxY - area.minY) * view.k > DRAG_THRESHOLD) {
-                const inside = nodesInBox(diagram, area, end.x < start.x);
+                const inside = itemsInBox(diagram, area, end.x < start.x);
                 onSelect({ nodes: [...new Set([...current.before, ...inside])], link: null });
             }
         } else if (current?.type === "label" && current.moved) {
             onCommit(movedLabel(current, point), current.base);
         } else if (current?.type === "resize" && current.moved) {
-            onCommit(resizeBusbar(current.base, current.id, current.end, toDiagram(point)), current.base);
+            onCommit(resized(current, point), current.base);
         } else if (current?.type === "segment" && current.moved) {
             const dragged = draggedRoute(current, point, true);
             if (dragged) onCommit(dragged, current.base);
@@ -338,6 +365,14 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         setBox(null);
     };
 
+    /** A busbar resized from one end, or an area from its corner (at least two grid units each way). */
+    const resized = (current: Extract<Gesture, { type: "resize" }>, point: Point) => {
+        const at = toDiagram(point);
+        const area = current.base.notes.find((note) => note.id === current.id);
+        if (!area) return resizeBusbar(current.base, current.id, current.end, at);
+        return updateNote(current.base, area.id, { width: Math.max(2 * GRID, snap(at.x - area.x)), height: Math.max(2 * GRID, snap(at.y - area.y)) });
+    };
+
     const movedLabel = (current: Extract<Gesture, { type: "label" }>, point: Point) =>
         updateNode(current.base, current.id, {
             labelAt: { x: Math.round(current.origin.x + (point.x - current.start.x) / view.k), y: Math.round(current.origin.y + (point.y - current.start.y) / view.k) },
@@ -345,6 +380,7 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
 
     const selectedNodes = new Set(connectFrom ? [connectFrom] : selection.nodes);
     return (
+        <>
         <svg
             ref={svgRef}
             className={["canvas", (connectFrom !== undefined || line) && "connecting", spaceHeld && "panning"].filter(Boolean).join(" ")}
@@ -372,5 +408,57 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
                 )}
             </g>
         </svg>
+        {(diagram.nodes.length > 0 || diagram.notes.length > 0) && (
+            <Overview diagram={diagram} view={view} size={size()} label={overviewLabel} onCentre={(at) => setView((v) => ({ ...v, x: size().width / 2 - at.x * v.k, y: size().height / 2 - at.y * v.k }))} />
+        )}
+        </>
     );
 });
+
+const OVERVIEW = { width: 180, height: 120 };
+
+/**
+ * The whole diagram small, with the part in view outlined: elements as their outlines, lines straight between them.
+ * Pressing or dragging on it moves the view there.
+ */
+function Overview({ diagram, view, size, label, onCentre }: { diagram: Diagram; view: View; size: { width: number; height: number }; label: string; onCentre: (at: Point) => void }) {
+    const shown = { minX: -view.x / view.k, minY: -view.y / view.k, maxX: (size.width - view.x) / view.k, maxY: (size.height - view.y) / view.k };
+    const [cMinX, cMinY, cMaxX, cMaxY] = contentBounds(diagram)!;
+    const [minX, minY] = [Math.min(cMinX, shown.minX), Math.min(cMinY, shown.minY)];
+    const scale = Math.min(OVERVIEW.width / (Math.max(cMaxX, shown.maxX) - minX), OVERVIEW.height / (Math.max(cMaxY, shown.maxY) - minY));
+    const byId = new Map(diagram.nodes.map((node) => [node.id, node]));
+    const centre = (event: ReactPointerEvent<SVGSVGElement>) => {
+        if (event.buttons !== 1) return;
+        const box = event.currentTarget.getBoundingClientRect();
+        onCentre({ x: minX + (event.clientX - box.left) / scale, y: minY + (event.clientY - box.top) / scale });
+    };
+    return (
+        <svg
+            className="overview"
+            role="img"
+            aria-label={label}
+            width={OVERVIEW.width}
+            height={OVERVIEW.height}
+            viewBox={`${minX} ${minY} ${OVERVIEW.width / scale} ${OVERVIEW.height / scale}`}
+            onPointerDown={(event) => {
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+                centre(event);
+            }}
+            onPointerMove={centre}
+        >
+            {diagram.notes.map((note) => {
+                const box = noteBox(note);
+                return <rect key={note.id} className="overview-note" x={box.minX} y={box.minY} width={box.maxX - box.minX} height={box.maxY - box.minY} />;
+            })}
+            {diagram.links.map((link) => {
+                const [from, to] = [byId.get(link.from), byId.get(link.to)];
+                return from && to ? <line key={link.id} className="overview-link" x1={from.x} y1={from.y} x2={to.x} y2={to.y} /> : null;
+            })}
+            {diagram.nodes.map((node) => {
+                const box = extent(node);
+                return <rect key={node.id} className="overview-node" x={box.minX} y={box.minY} width={box.maxX - box.minX} height={box.maxY - box.minY} />;
+            })}
+            <rect className="overview-view" x={shown.minX} y={shown.minY} width={shown.maxX - shown.minX} height={shown.maxY - shown.minY} />
+        </svg>
+    );
+}

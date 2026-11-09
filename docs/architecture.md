@@ -58,7 +58,8 @@ plantline is a static web app. Everything happens in the browser: there is no se
       { "id": "n-1a2b3c4d", "kind": "gridConnection", "x": 160, "y": 80, "label": "", "designation": "=E01", "voltageKv": 34.5, "ratingKva": null, "width": null, "rotation": 0, "flip": false, "labelAt": { "x": 30, "y": -40 } },
       { "id": "n-5e6f7a8b", "kind": "busbar", "x": 160, "y": 200, "label": "MV bus", "designation": "", "voltageKv": 34.5, "ratingKva": null, "width": 320, "rotation": 0, "flip": false, "labelAt": null }
     ],
-    "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b", "route": [140, 100, 180], "straight": false }]
+    "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b", "route": [140, 100, 180], "straight": false }],
+    "notes": [{ "id": "t-3a4b5c6d", "kind": "area", "x": 60, "y": 40, "width": 240, "height": 200, "text": "Bay E01" }]
   }
 }
 ```
@@ -76,8 +77,11 @@ plantline is a static web app. Everything happens in the browser: there is no se
   on, an odd count. The segments at the two ends run straight out of the elements' leads, so moving an element keeps
   the route whole; on a busbar, the line meets the bar under the nearest vertical segment.
 - `straight`: drawn straight from lead to lead instead of at right angles (`route` is then not used).
-- Version 1 files (without `route`, `straight`, `rotation`, `flip` and `labelAt`) are still read; their lines route
-  themselves and their elements stand upright with their labels in place.
+- `notes`: texts (`kind` `text`, from the top left corner, one line per `\n`, `width` and `height` 0) and areas
+  (`kind` `area`, a dashed box of `width` × `height` with `text` as its title); at most 1,000, texts of at most 1,000
+  characters. Ids are unique across elements, links and notes.
+- Version 1 files (without `route`, `straight`, `rotation`, `flip`, `labelAt` and `notes`) are still read; their lines
+  route themselves, their elements stand upright with their labels in place, and they have no notes.
 - Limits, checked when a file is opened: 5 MB, 5,000 elements, 10,000 links, 200 characters per text, coordinates
   within ±1,000,000, ids of at most 64 letters, digits, `_` or `-`, unique, links between existing elements, and
   routes of at most 63 coordinates.

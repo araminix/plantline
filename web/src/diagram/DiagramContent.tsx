@@ -1,6 +1,6 @@
 import type { NodeKind } from "../plants";
 import { busbarHalf, connectionPoints, isUpright, linkShape, pathOf } from "./geometry";
-import { NODE_SIZE, type Diagram, type DiagramNode, type Point } from "./model";
+import { NODE_SIZE, noteBox, type Diagram, type DiagramNode, type DiagramNote, type Point } from "./model";
 import { NodeSymbol } from "./symbols";
 
 const HALF = NODE_SIZE / 2;
@@ -26,11 +26,16 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
         const [from, to] = [byId.get(link?.from ?? ""), byId.get(link?.to ?? "")];
         return link && from && to ? { link, points: linkShape(link, from, to).points } : null;
     })();
-    // A busbar selected alone can be resized by its ends
+    // A busbar selected alone can be resized by its ends, an area alone by its corner
     const [only] = selectedNodes?.size === 1 ? [...selectedNodes] : [];
     const resizable = interactive ? byId.get(only ?? "") : undefined;
+    const area = interactive ? diagram.notes.find((note) => note.id === only && note.kind === "area") : undefined;
+    const note = (kind: DiagramNote["kind"]) =>
+        diagram.notes.filter((candidate) => candidate.kind === kind).map((candidate) => <Note key={candidate.id} note={candidate} selected={selectedNodes?.has(candidate.id) ?? false} interactive={interactive} />);
     return (
         <>
+            {/* Areas behind everything, texts over everything */}
+            {note("area")}
             <g className="sld-links" fill="none" stroke="currentColor" strokeWidth={2}>
                 {diagram.links.map((link) => {
                     const from = byId.get(link.from);
@@ -68,7 +73,8 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                     {interactive && <Ports node={node} />}
                 </g>
             ))}
-            {/* Over the elements: the selected line's ends, and a lone selected busbar's ends, to drag */}
+            {note("text")}
+            {/* Over the elements: the selected line's ends, and a lone selected busbar's ends or area's corner, to drag */}
             {ends && (
                 <g data-link-ends={ends.link.id}>
                     <circle className="link-end" data-end="from" cx={ends.points[0]!.x} cy={ends.points[0]!.y} r={6} />
@@ -84,11 +90,41 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                     })}
                 </g>
             )}
+            {area && <rect className="resize corner" data-resize="end" x={area.x + area.width - 5} y={area.y + area.height - 5} width={10} height={10} />}
         </>
     );
 }
 
 const classes = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(" ") || undefined;
+
+/** A text, line by line, or an area: a dashed box with its title; an area is picked by its border or title only. */
+function Note({ note, selected, interactive }: { note: DiagramNote; selected: boolean; interactive: boolean }) {
+    const box = noteBox(note);
+    return (
+        <g data-note={note.id} className={classes("sld-note", selected && "selected")}>
+            {note.kind === "area" ? (
+                <>
+                    <rect className="note-area" x={note.x} y={note.y} width={note.width} height={note.height} rx={6} fill="none" stroke="currentColor" strokeWidth={1.5} strokeDasharray="6 4" />
+                    {interactive && <rect className="hit" x={note.x} y={note.y} width={note.width} height={note.height} rx={6} fill="none" stroke="transparent" strokeWidth={12} />}
+                    <text x={note.x + 8} y={note.y + 18} fontSize={12} fontWeight={600} fill="currentColor" stroke="none">
+                        {note.text}
+                    </text>
+                </>
+            ) : (
+                <>
+                    {interactive && <rect className="hit" x={box.minX} y={box.minY} width={box.maxX - box.minX} height={box.maxY - box.minY} fill="transparent" />}
+                    <text x={note.x} y={note.y + 13} fontSize={12} fill="currentColor" stroke="none">
+                        {note.text.split("\n").map((line, i) => (
+                            <tspan key={i} x={note.x} dy={i === 0 ? 0 : 16}>
+                                {line || " "}
+                            </tspan>
+                        ))}
+                    </text>
+                </>
+            )}
+        </g>
+    );
+}
 
 /** The connection points a line can be dragged from: each lead's end, or along a busbar. Shown on hover and selection. */
 function Ports({ node }: { node: DiagramNode }) {
@@ -142,11 +178,15 @@ function hitBox(node: DiagramNode) {
 
 /** The extent of the drawn diagram (minX, minY, maxX, maxY), labels included roughly; null when empty. */
 export function contentBounds(diagram: Diagram): [number, number, number, number] | null {
-    if (diagram.nodes.length === 0) return null;
+    if (diagram.nodes.length === 0 && diagram.notes.length === 0) return null;
     const boxes = diagram.nodes.map((node) => {
         const label = labelStart(node);
         const [w, h] = node.kind !== "busbar" ? [HALF, HALF] : isUpright(node) ? [3, busbarHalf(node)] : [busbarHalf(node), 3];
         return [Math.min(node.x - w, node.x + label.x), Math.min(node.y - h, node.y + label.y - 16), Math.max(node.x + w, node.x + label.x + 140), Math.max(node.y + h, node.y + label.y + 16)];
     });
+    for (const note of diagram.notes) {
+        const box = noteBox(note);
+        boxes.push([box.minX, box.minY, box.maxX, box.maxY]);
+    }
     return [Math.min(...boxes.map((b) => b[0]!)), Math.min(...boxes.map((b) => b[1]!)), Math.max(...boxes.map((b) => b[2]!)), Math.max(...boxes.map((b) => b[3]!))];
 }

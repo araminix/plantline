@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
-import { addNode, connect, emptyDiagram, updateLink, updateNode } from "./model";
+import { addNode, addNote, connect, emptyDiagram, updateLink, updateNode } from "./model";
 
 const sample = () => {
     const a = addNode(emptyDiagram("hydro", "Unit 1"), "generator", 0, 0);
     const b = addNode(a.diagram, "transformer", 0, 120);
     const c = addNode(b.diagram, "breaker", 200, 240);
     const linked = connect(connect(c.diagram, a.id, b.id)!, b.id, c.id)!;
-    return updateNode(updateLink(linked, linked.links[1]!.id, { route: [180, 120, 200] }), c.id, { rotation: 90, flip: true, labelAt: { x: 30, y: -40 } });
+    const shaped = updateNode(updateLink(linked, linked.links[1]!.id, { route: [180, 120, 200] }), c.id, { rotation: 90, flip: true, labelAt: { x: 30, y: -40 } });
+    return addNote(addNote(shaped, "text", "Unit 1\nto be built", 300, 0).diagram, "area", "Powerhouse", -60, -60).diagram;
 };
 
 const withDiagram = (patch: (diagram: Record<string, unknown>) => void) => {
@@ -44,6 +45,10 @@ describe("diagram files", () => {
             withDiagram((d) => delete (d.links as Record<string, unknown>[])[1]!.straight),
             withDiagram((d) => ((d.nodes as Record<string, unknown>[])[0]!.rotation = 45)),
             withDiagram((d) => ((d.nodes as Record<string, unknown>[])[0]!.labelAt = { x: 1e9, y: 0 })),
+            withDiagram((d) => ((d.notes as Record<string, unknown>[])[0]!.kind = "image")),
+            withDiagram((d) => ((d.notes as Record<string, unknown>[])[0]!.text = "x".repeat(1001))),
+            withDiagram((d) => ((d.notes as Record<string, unknown>[])[1]!.id = (d.nodes as Record<string, unknown>[])[0]!.id)),
+            withDiagram((d) => delete d.notes),
         ];
         for (const text of cases) expect(parseDiagram(text)).toEqual({ ok: false, error: "invalid" });
     });
@@ -51,13 +56,15 @@ describe("diagram files", () => {
     it("read version 1 files, whose lines route themselves", () => {
         const diagram = sample();
         const nodes = diagram.nodes.map(({ rotation: _r, flip: _f, labelAt: _l, ...node }) => node);
-        const old = { format: "plantline", version: 1, diagram: { ...diagram, nodes, links: diagram.links.map(({ id, from, to }) => ({ id, from, to })) } };
+        const { notes: _notes, ...rest } = diagram;
+        const old = { format: "plantline", version: 1, diagram: { ...rest, nodes, links: diagram.links.map(({ id, from, to }) => ({ id, from, to })) } };
         const read = parseDiagram(JSON.stringify(old));
         expect(read.ok && read.diagram.links.map((link) => [link.route, link.straight])).toEqual([
             [null, false],
             [null, false],
         ]);
         expect(read.ok && read.diagram.nodes[2]).toMatchObject({ rotation: 0, flip: false, labelAt: null });
+        expect(read.ok && read.diagram.notes).toEqual([]);
     });
 
     it("refuse a file over the size limit before parsing it", () => {

@@ -1,11 +1,11 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
 
 /** A button showing only an icon; the label is its tooltip and accessible name. */
-export function IconButton(props: { label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; className?: string; children: ReactNode }) {
-    const { label, onClick, disabled, pressed, className, children } = props;
+export function IconButton(props: { label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; className?: string; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode }) {
+    const { label, onClick, disabled, pressed, className, buttonRef, children } = props;
     return (
-        <button type="button" className={className ? `icon-button ${className}` : "icon-button"} title={label} aria-label={label} aria-pressed={pressed} disabled={disabled} onClick={onClick}>
+        <button ref={buttonRef} type="button" className={className ? `icon-button ${className}` : "icon-button"} title={label} aria-label={label} aria-pressed={pressed} disabled={disabled} onClick={onClick}>
             {children}
         </button>
     );
@@ -107,15 +107,20 @@ export function Menu({ label, icon, items }: { label: string; icon: ReactNode; i
     );
 }
 
-/** A text field that saves when it loses focus or on Enter, so typing a name is one undo step. */
-export function TextField({ label, value, onCommit, maxLength = 200 }: { label: string; value: string; onCommit: (value: string) => void; maxLength?: number }) {
+/** A text field that saves when it loses focus or on Enter (several lines: on leaving), so typing is one undo step. */
+export function TextField(props: { label: string; value: string; onCommit: (value: string) => void; maxLength?: number; multiline?: boolean }) {
+    const { label, value, onCommit, maxLength = 200, multiline = false } = props;
     const [draft, setDraft] = useState(value);
     useEffect(() => setDraft(value), [value]);
     const commit = () => draft !== value && onCommit(draft);
     return (
         <label className="field">
             <span>{label}</span>
-            <input value={draft} maxLength={maxLength} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => event.key === "Enter" && commit()} />
+            {multiline ? (
+                <textarea dir="auto" rows={4} value={draft} maxLength={maxLength} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />
+            ) : (
+                <input dir="auto" value={draft} maxLength={maxLength} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => event.key === "Enter" && commit()} />
+            )}
         </label>
     );
 }

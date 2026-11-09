@@ -274,6 +274,55 @@ test("resizes a busbar by its end and moves a label; copies, pastes and nudges w
     expect((await places(page)).slice(2)).toEqual(pasted.map(([x, y]) => [x + 20, y]));
 });
 
+test("shows and resets the zoom, zooms to the selection, moves by the overview; adds texts and areas; lists the shortcuts", async ({ page }) => {
+    await start(page, "Solar PV");
+    await add(page, "Inverter");
+    const level = page.getByRole("button", { name: "Zoom to 100 %" });
+    await expect(level).toHaveText("100%");
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    await expect(level).toHaveText("125%");
+    await level.click();
+    await expect(level).toHaveText("100%");
+    await page.getByRole("button", { name: "Zoom to selection" }).click();
+    await expect(level).toHaveText("200%");
+
+    const view = () => page.locator(".canvas > g").getAttribute("transform");
+    if (!isPhone(page)) {
+        const overview = page.getByRole("img", { name: /Overview/ });
+        const before = await view();
+        const corner = (await overview.boundingBox())!;
+        await page.mouse.click(corner.x + 8, corner.y + 8);
+        expect(await view()).not.toBe(before);
+    } else {
+        await expect(page.getByRole("img", { name: /Overview/ })).toBeHidden();
+    }
+
+    await page.getByRole("button", { name: "Add a text" }).click();
+    await openProperties(page);
+    const text = page.getByRole("textbox", { name: "Text" });
+    await text.fill("Feeder 1\nto be built");
+    await text.blur();
+    await expect(page.locator("[data-note] text")).toContainText("to be built");
+    await closeSheet(page);
+
+    await page.getByRole("button", { name: "Add an area" }).click();
+    await expect(page.locator("[data-note]")).toHaveCount(2);
+    // The new area, selected, wholly in view
+    await page.getByRole("button", { name: "Zoom to selection" }).click();
+    const area = page.locator(".note-area");
+    const width = Number(await area.getAttribute("width"));
+    const grip = await centreOf(page.locator(".resize.corner"));
+    await (isPhone(page) ? touchDrag(page, grip, { x: grip.x + 60, y: grip.y + 40 }) : mouseDrag(page, grip, { x: grip.x + 60, y: grip.y + 40 }));
+    await expect.poll(async () => Number(await area.getAttribute("width"))).toBeGreaterThan(width);
+
+    if (isPhone(page)) await page.getByRole("button", { name: "Shortcuts" }).click();
+    else await page.keyboard.press("?");
+    const sheet = page.getByRole("dialog", { name: "Shortcuts" });
+    await expect(sheet.getByRole("row")).toHaveCount(19);
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+});
+
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {
     await start(page, "Substation");
     await page.getByRole("button", { name: "File" }).click();

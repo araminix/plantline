@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, reconnect, removeItems, updateLink, updateNode, type Diagram } from "./model";
+import { addNode, addNote, AREA_SIZE, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, noteBox, reconnect, removeItems, updateLink, updateNode, type Diagram } from "./model";
 
 const twoNodes = () => {
     const first = addNode(emptyDiagram("solar"), "inverter", 101, 99);
@@ -57,6 +57,19 @@ describe("diagram model", () => {
         const routed = updateLink(linked, linked.links[0]!.id, { route: [200, 120, 260] });
         expect(moveNodes(routed, new Set([a, b]), 40, 20, true).links[0]!.route).toEqual([220, 160, 280]);
         expect(moveNodes(routed, new Set([a]), 40, 20, true).links[0]!.route).toEqual([200, 120, 260]);
+    });
+
+    it("adds texts and areas on the grid, moves them with elements and removes them", () => {
+        const { diagram, a } = twoNodes();
+        const text = addNote(diagram, "text", "Feeder 1\nto be built", 33, 47);
+        const area = addNote(text.diagram, "area", "Inverter station", 0, 0);
+        expect(area.diagram.notes[0]).toMatchObject({ kind: "text", x: 40, y: 40, width: 0, height: 0 });
+        expect(area.diagram.notes[1]).toMatchObject({ kind: "area", ...AREA_SIZE });
+        expect(noteBox(area.diagram.notes[0]!)).toEqual({ minX: 40, minY: 40, maxX: 40 + 8 + 7 * 11, maxY: 40 + 4 + 32 });
+        const moved = moveNodes(area.diagram, new Set([a, text.id]), 20, 20, true);
+        expect(moved.notes[0]).toMatchObject({ x: 60, y: 60 });
+        expect(moved.notes[1]).toMatchObject({ x: 0, y: 0 });
+        expect(removeItems(moved, new Set([text.id])).notes.map((note) => note.id)).toEqual([area.id]);
     });
 
     it("removes an element together with its links, and edits fields", () => {

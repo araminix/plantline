@@ -112,11 +112,22 @@ elements concerned: no grid connection, an unconnected element, different voltag
 inverters may join two), a reference designation used twice.
 
 **US-18 Navigate.** I zoom with the wheel, the toolbar or two fingers, pan with the middle mouse button, by holding
-Space and dragging, or with one finger, and fit the diagram to the screen. An opened diagram is fitted once; adding the first element does not zoom.
+Space and dragging, or with one finger, and fit the diagram to the screen.
+- The toolbar shows the zoom level; pressing it returns to 100 %. Zoom to selection shows the selected elements whole.
+- On a wide screen, an overview in the corner shows the whole diagram with the part in view outlined; pressing or
+  dragging on it moves the view there.
+- Shift+1 fits the diagram, Shift+2 zooms to the selection, Shift+0 returns to 100 %.
+
+**US-18a Learn the shortcuts.** The toolbar's Shortcuts button, or `?`, opens a sheet with every shortcut and gesture,
+in my language; Escape closes it. An opened diagram is fitted once; adding the first element does not zoom.
 
 **US-19 Keep my work.** The diagram is kept in the browser and is still there when I come back. If the browser cannot
 keep it (its storage is full or blocked), I am told to save it as a file. If the app fails unexpectedly, it says so and
 offers to reload or to download the kept diagram, instead of a blank page.
+
+**US-19a Annotate.** I add texts (several lines) and areas (a dashed box with a title, resized by its corner) to
+explain the drawing: bays, stations, planned parts. They are selected, moved, copied and deleted with the elements,
+exported and printed with them, and saved in the file.
 
 **US-20 Save and open files.** I save the diagram as a `.plantline.json` file and open it again later or on another
 computer. A file that is not a plantline diagram, is inconsistent or is over 5 MB is refused with a message, and the

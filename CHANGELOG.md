@@ -2,7 +2,9 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.3.0 (unreleased)
+
+A real diagram editor.
 
 ### Added
 
@@ -17,6 +19,10 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   right to left what it touches; on a touch screen, hold still first); Ctrl+A; copy, cut, paste and duplicate; arrow
   keys nudge; rotate 90° and flip (elements and groups, busbars stand upright); align edges and centres; space evenly.
 - Resize a busbar by dragging its ends; drag an element's label to another place.
+- Texts and areas (dashed boxes with a title, resized by their corner) to annotate the diagram.
+- The zoom level in the toolbar (press it for 100 %), zoom to selection, and an overview map on wide screens.
+- A shortcuts sheet (the toolbar's Shortcuts button or `?`) in every language; Shift+1, Shift+2 and Shift+0 fit,
+  zoom to the selection and return to 100 %.
 
 ### Changed
 

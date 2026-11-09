@@ -1,10 +1,10 @@
 import { isNodeKind, isPlantType } from "../plants";
-import type { Diagram, DiagramLink, DiagramNode, Point, Rotation } from "./model";
+import type { Diagram, DiagramLink, DiagramNode, DiagramNote, Point, Rotation } from "./model";
 
 /** A saved diagram (a .plantline.json file). The format is described in docs/architecture.md. */
 export interface DiagramFile {
     format: "plantline";
-    /** 2 added line routes and turned, mirrored and relabelled elements; version 1 files are still read. */
+    /** 2 added line routes, turned, mirrored and relabelled elements, and notes; version 1 files are still read. */
     version: 2;
     diagram: Diagram;
 }
@@ -16,6 +16,9 @@ const MAX_LINKS = 10_000;
 const MAX_TEXT = 200;
 const MAX_COORDINATE = 1_000_000;
 const MAX_ROUTE = 63;
+const MAX_NOTES = 1_000;
+const MAX_NOTE_TEXT = 1_000;
+const MAX_SIZE = 100_000;
 
 export type ParseResult = { ok: true; diagram: Diagram } | { ok: false; error: "tooLarge" | "invalid" };
 
@@ -45,7 +48,11 @@ function readDiagram(value: unknown, version: 1 | 2): Diagram | null {
     const links = value.links.map((link) => readLink(link, version));
     if (links.some((link) => link === null || !ids.has(link.from) || !ids.has(link.to) || link.from === link.to)) return null;
 
-    return { plantType: value.plantType, name: value.name, nodes: nodes as DiagramNode[], links: links as DiagramLink[] };
+    const notes = version === 1 ? [] : Array.isArray(value.notes) && value.notes.length <= MAX_NOTES ? value.notes.map(readNote) : [null];
+    const all = [...ids, ...links.map((link) => link!.id), ...notes.map((note) => note?.id)];
+    if (notes.some((note) => note === null) || new Set(all).size !== all.length) return null;
+
+    return { plantType: value.plantType, name: value.name, nodes: nodes as DiagramNode[], links: links as DiagramLink[], notes: notes as DiagramNote[] };
 }
 
 function readNode(value: unknown, version: 1 | 2): DiagramNode | null {
@@ -79,6 +86,13 @@ function readLink(value: unknown, version: 1 | 2): DiagramLink | null {
     const link = { id: value.id, from: value.from, to: value.to };
     if (version === 1) return { ...link, route: null, straight: false };
     return isRoute(value.route) && typeof value.straight === "boolean" ? { ...link, route: value.route, straight: value.straight } : null;
+}
+
+function readNote(value: unknown): DiagramNote | null {
+    if (!isRecord(value) || !isId(value.id) || (value.kind !== "text" && value.kind !== "area") || !isCoordinate(value.x) || !isCoordinate(value.y)) return null;
+    const isSize = (size: unknown): size is number => typeof size === "number" && Number.isFinite(size) && size >= 0 && size <= MAX_SIZE;
+    if (!isSize(value.width) || !isSize(value.height) || typeof value.text !== "string" || value.text.length > MAX_NOTE_TEXT) return null;
+    return { id: value.id, kind: value.kind, x: value.x, y: value.y, width: value.width, height: value.height, text: value.text };
 }
 
 /** null, or an odd count of coordinates (see Route). */

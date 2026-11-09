@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { alignNodes, copyItems, distributeNodes, flipNodes, nodesInBox, pasteItems, resizeBusbar, rotateNodes } from "./edit";
-import { connect, emptyDiagram, footprint, overlaps, updateLink, type Diagram, type DiagramNode } from "./model";
+import { alignNodes, copyItems, distributeNodes, flipNodes, itemsInBox, pasteItems, resizeBusbar, rotateNodes } from "./edit";
+import { addNote, connect, emptyDiagram, footprint, overlaps, updateLink, type Diagram, type DiagramNode } from "./model";
 
 const node = (id: string, kind: DiagramNode["kind"], x: number, y: number): DiagramNode => ({
     id,
@@ -29,8 +29,16 @@ const all = new Set(["bus", "cb", "fu"]);
 describe("group editing", () => {
     it("selects by area as in CAD: wholly inside left to right, touched right to left", () => {
         const box = { minX: -50, minY: 50, maxX: 400, maxY: 150 };
-        expect(nodesInBox(sample(), box, false)).toEqual(["cb"]);
-        expect(nodesInBox(sample(), { ...box, minY: -10 }, true)).toEqual(["bus", "cb"]);
+        expect(itemsInBox(sample(), box, false)).toEqual(["cb"]);
+        expect(itemsInBox(sample(), { ...box, minY: -10 }, true)).toEqual(["bus", "cb"]);
+    });
+
+    it("selects and copies notes too", () => {
+        const noted = addNote(sample(), "area", "Bay 1", -100, 40);
+        expect(itemsInBox(noted.diagram, { minX: -110, minY: 30, maxX: 200, maxY: 210 }, false)).toEqual(["cb", noted.id]);
+        const pasted = pasteItems(noted.diagram, copyItems(noted.diagram, new Set([noted.id])));
+        expect(pasted.diagram.notes).toHaveLength(2);
+        expect(pasted.ids).toEqual([pasted.diagram.notes[1]!.id]);
     });
 
     it("pastes copies with new ids and their lines, where they overlap nothing", () => {

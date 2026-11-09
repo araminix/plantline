@@ -192,6 +192,7 @@ select {
 
 .field input,
 .field select,
+.field textarea,
 .select select {
     min-height: 36px;
     padding-inline: 10px;
@@ -199,6 +200,11 @@ select {
     border-radius: 8px;
     background: var(--surface);
     width: 100%;
+}
+
+.field textarea {
+    padding-block: 8px;
+    resize: vertical;
 }
 
 .field input[type="range"] {
@@ -1016,4 +1022,145 @@ select {
 
 .inspector-actions {
     margin-block-start: 16px;
+}
+
+/* The zoom level: pressed, back to 100 % */
+.zoom-level {
+    min-width: 56px;
+    min-height: 36px;
+    padding-inline: 6px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+
+.zoom-level:hover {
+    border-color: var(--accent);
+}
+
+/* The overview in a corner of the drawing (not on phones, where the drawing is small already) */
+.overview {
+    position: absolute;
+    inset-block-end: 12px;
+    inset-inline-end: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    color: var(--muted);
+    cursor: pointer;
+    touch-action: none;
+}
+
+.overview-node {
+    fill: currentColor;
+}
+
+.overview-link,
+.overview-note {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.overview-note {
+    stroke-dasharray: 3 2;
+}
+
+.overview-view {
+    fill: color-mix(in srgb, var(--accent) 12%, transparent);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+}
+
+@media (max-width: 1023px) {
+    .overview {
+        display: none;
+    }
+}
+
+/* Notes: an area's tint, and the accent when selected */
+.canvas .note-area {
+    fill: color-mix(in srgb, var(--accent) 4%, transparent);
+    stroke: var(--muted);
+}
+
+.canvas .sld-note {
+    cursor: pointer;
+}
+
+.canvas .sld-note.selected {
+    color: var(--accent);
+}
+
+.canvas .sld-note.selected .note-area {
+    stroke: var(--accent);
+}
+
+.canvas .sld-note.selected .hit {
+    fill: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.canvas .sld-note.selected rect.hit[fill="none"] {
+    fill: none;
+}
+
+.canvas .resize.corner {
+    cursor: nwse-resize;
+}
+
+/* The shortcuts sheet */
+.dialog.shortcuts table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dialog.shortcuts th,
+.dialog.shortcuts td {
+    padding-block: 7px;
+    border-block-end: 1px solid var(--line);
+    text-align: start;
+    vertical-align: top;
+    font-size: 0.9rem;
+}
+
+.dialog.shortcuts th {
+    padding-inline-end: 16px;
+    font-weight: 600;
+}
+
+.dialog.shortcuts td {
+    color: var(--muted);
+}
+
+/* A key combination reads left to right in every language */
+.keys {
+    display: inline-block;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.keys + .keys::before {
+    content: " / ";
+    color: var(--muted);
+}
+
+kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    margin-inline-end: 3px;
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-block-end-width: 2px;
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.8rem;
+    text-align: center;
+    direction: ltr;
 }
