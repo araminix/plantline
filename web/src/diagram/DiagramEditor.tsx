@@ -1,13 +1,15 @@
-import { Cable, ChevronDown, CircleCheck, Ellipsis, FilePlus, FileText, FolderOpen, Image, Keyboard, Maximize, Plus, Printer, Redo2, Save, ScanSearch, SlidersHorizontal, SquareDashed, Trash2, TriangleAlert, Type, Undo2, Workflow, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Cable, ChevronDown, CircleCheck, Ellipsis, FilePlus, FileText, FolderOpen, Image, Keyboard, Maximize, Plus, Printer, Redo2, Save, ScanSearch, SlidersHorizontal, Sparkles, SquareDashed, Trash2, TriangleAlert, Type, Undo2, Workflow, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { useI18n } from "../i18n/i18n";
-import type { NodeKind, PlantType } from "../plants";
+import { PLANT_ICONS, PLANT_TYPES, type NodeKind, type PlantType } from "../plants";
 import { readStored, writeStored } from "../settings";
 import { IconButton, Menu, type MenuItem } from "../ui/controls";
 import { isTyping } from "../ui/keys";
+import { Logo } from "../ui/Logo";
 import { arrange } from "./arrange";
 import { Canvas, type CanvasHandle, type Selection } from "./Canvas";
 import { checkDiagram } from "./checks";
+import { exampleDiagram } from "./examples";
 import { DiagramSheet, diagramSvg, download, fileNameOf, svgToPng } from "./export";
 import { FILE_EXTENSION, MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
 import { useHistory } from "./history";
@@ -16,6 +18,7 @@ import { alignNodes, copyItems, distributeNodes, flipNodes, pasteItems, rotateNo
 import { addNode, addNote, connect, emptyDiagram, GRID, moveNodes, removeItems, type Diagram, type DiagramNote, type Point } from "./model";
 import { Palette } from "./Palette";
 import { Shortcuts } from "./Shortcuts";
+import { SymbolIcon } from "./symbols";
 
 /** Where the diagram is kept in this browser. */
 export const AUTOSAVE_KEY = "plantline.diagram";
@@ -131,6 +134,16 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         requestAnimationFrame(() => canvas.current?.fit());
     };
 
+    // A ready-made diagram of a plant type (another one switches the plant type), as one step: undo brings the previous one back
+    const openExample = (of: PlantType = plant) => {
+        if (diagram.nodes.length > 0 && !window.confirm(t("file.confirmNew"))) return;
+        history.commit(exampleDiagram(of, t("example.name", { plant: t(`plant.${of}`) })));
+        if (of !== plant) onPlantChange(of);
+        setSelection(NONE);
+        setSheet(null);
+        requestAnimationFrame(() => canvas.current?.fit());
+    };
+
     const newDiagram = () => {
         if (diagram.nodes.length > 0 && !window.confirm(t("file.confirmNew"))) return;
         history.reset(emptyDiagram(plant));
@@ -192,6 +205,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const fileItems: MenuItem[] = [
         { label: t("file.new"), icon: <FilePlus size={16} />, onSelect: newDiagram },
         { label: t("file.open"), icon: <FolderOpen size={16} />, onSelect: () => fileInput.current?.click() },
+        { label: t("file.example"), icon: <Sparkles size={16} />, onSelect: () => openExample() },
         { label: t("file.save"), icon: <Save size={16} />, onSelect: () => download(baseName + FILE_EXTENSION, serializeDiagram(diagram), "application/json") },
         { label: t("file.exportSvg"), icon: <Image size={16} />, onSelect: () => download(`${baseName}.svg`, diagramSvg(diagram, kindName), "image/svg+xml") },
         { label: t("file.exportPng"), icon: <Image size={16} />, onSelect: () => void svgToPng(diagramSvg(diagram, kindName)).then((png) => download(`${baseName}.png`, png)) },
@@ -312,7 +326,43 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                         onZoom={setZoom}
                         overviewLabel={t("overview.label")}
                     />
-                    {diagram.nodes.length === 0 && <p className="canvas-empty">{t("canvas.empty")}</p>}
+                    {!drawn && !dragging && (
+                        <div className="canvas-start">
+                            <div className="start-card">
+                                <Logo size={48} />
+                                <h2>{t("canvas.startTitle")}</h2>
+                                <ol>
+                                    {([1, 2, 3] as const).map((step) => (
+                                        <li key={step}>
+                                            <span className="step">{number(step)}</span>
+                                            <div>
+                                                <strong>{t(`canvas.step${step}`)}</strong>
+                                                <span>{t(`canvas.step${step}Hint`)}</span>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ol>
+                                <p className="eyebrow">{t("canvas.example")}</p>
+                                <ul className="example-grid">
+                                    {PLANT_TYPES.map((of) => (
+                                        <li key={of}>
+                                            <button type="button" aria-current={of === plant ? "true" : undefined} aria-label={t("example.name", { plant: t(`plant.${of}`) })} onClick={() => openExample(of)}>
+                                                <SymbolIcon kind={PLANT_ICONS[of]} size={28} />
+                                                {t(`plant.${of}`)}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <button type="button" className="button" onClick={() => fileInput.current?.click()}>
+                                    <FolderOpen size={17} aria-hidden="true" />
+                                    {t("canvas.openFile")}
+                                </button>
+                                <p className="muted small">
+                                    {t("canvas.saved")} <span className="pointer-hint">{t("canvas.shortcutsHint")}</span>
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {panel(
                     "inspector",

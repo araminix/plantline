@@ -1,7 +1,8 @@
-import { ChevronDown, Crosshair, Download, FileText, FileUp, Layers, Map as MapIcon, RotateCcw, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { ChevronDown, Crosshair, Download, FileText, FileUp, Layers, RotateCcw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useI18n } from "../i18n/i18n";
-import { LAYOUT_RULES, MEASURE, type LayoutKind, type LayoutRule, type PlantType } from "../plants";
+import { LAYOUT_RULES, MEASURE, PLANT_ICONS, PLANT_TYPES, type LayoutKind, type LayoutRule, type PlantType } from "../plants";
+import { SymbolIcon } from "../diagram/symbols";
 import { download } from "../diagram/export";
 import { usePersisted } from "../settings";
 import { IconButton, NumberField, TextField } from "../ui/controls";
@@ -22,7 +23,7 @@ const COLORS = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#0891b2"
 const isBoolean = (value: unknown): value is boolean => typeof value === "boolean";
 
 /** Opens a plant drawing, recognises and counts its objects, and shows it on the map. */
-export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolean }) {
+export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType; onPlantChange: (plant: PlantType) => void; hidden: boolean }) {
     const { t, number } = useI18n();
     const [drawing, setDrawing] = useState<Drawing | null>(null);
     const [fileName, setFileName] = useState("");
@@ -55,6 +56,8 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const [panelOpen, setPanelOpen] = useState(false);
     // The placement section opens by itself while the drawing still needs placing, or lies on a point to adjust
     const [placementOpen, setPlacementOpen] = useState(true);
+    // A file dragged over the view, to be dropped and read
+    const [dragOver, setDragOver] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
 
 
@@ -161,11 +164,35 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
         if (file) void load(file);
     };
 
-    const openSample = () => {
+    // A sample of any plant type: picking another one switches the plant type, so its drawing is read the right way
+    const openSample = (of: PlantType) => {
+        if (of !== plant) onPlantChange(of);
         setStatus("loading");
-        fetchSample(plant)
-            .then((file) => load(file, SAMPLES[plant].placement))
+        fetchSample(of)
+            .then((file) => load(file, SAMPLES[of].placement))
             .catch(() => setStatus("unreadable"));
+    };
+
+    // A drawing dropped anywhere on the view is read, replacing the one open
+    const dropping = {
+        onDragOver: (event: DragEvent<HTMLElement>) => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            event.preventDefault();
+            setDragOver(true);
+        },
+        onDragLeave: (event: DragEvent<HTMLElement>) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOver(false);
+        },
+        onDrop: (event: DragEvent<HTMLElement>) => {
+            event.preventDefault();
+            setDragOver(false);
+            const file = event.dataTransfer.files[0];
+            if (file) void load(file);
+        },
+    };
+    const facts = (of: PlantType) => {
+        const { figure, count } = SAMPLES[of].facts;
+        return count ? `${figure} · ${t(count.key, { count: number(count.value) })}` : figure;
     };
 
     // While reading: the time so far and Cancel; after a failure: what happened and, where it may help, Try again
@@ -206,20 +233,33 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
 
     if (!drawing) {
         return (
-            <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden}>
+            <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden} {...dropping}>
                 <div className="layout-empty">
-                    <MapIcon size={40} aria-hidden="true" />
-                    <h2>{t("layout.title")}</h2>
-                    <p>{t("layout.intro")}</p>
-                    <div className="row">
-                        {fileButtons}
-                        <button type="button" className="button" onClick={openSample} disabled={status === "loading"}>
-                            <Sparkles size={18} aria-hidden="true" />
-                            {t("layout.sample", { plant: t(`plant.${plant}`) })}
-                        </button>
+                    <div className={dragOver ? "drop-zone over" : "drop-zone"}>
+                        <FileUp size={40} aria-hidden="true" />
+                        <h2>{t("layout.drop")}</h2>
+                        <div className="row">
+                            <span className="muted">{t("layout.or")}</span>
+                            {fileButtons}
+                        </div>
+                        <p className="muted small with-icon">
+                            <ShieldCheck size={16} aria-hidden="true" />
+                            {t("layout.private")}
+                        </p>
                     </div>
                     {readingStatus}
-                    <p className="muted small">{t("layout.private")}</p>
+                    <p className="eyebrow">{t("layout.orSample")}</p>
+                    <ul className="sample-grid">
+                        {PLANT_TYPES.map((of) => (
+                            <li key={of}>
+                                <button type="button" className="sample-card" aria-label={t("layout.sample", { plant: t(`plant.${of}`) })} aria-current={of === plant ? "true" : undefined} disabled={status === "loading"} onClick={() => openSample(of)}>
+                                    <SymbolIcon kind={PLANT_ICONS[of]} size={38} />
+                                    <strong>{t(`plant.${of}`)}</strong>
+                                    <span>{facts(of)}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </section>
         );
@@ -274,7 +314,13 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     );
 
     return (
-        <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden}>
+        <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden} {...dropping}>
+            {dragOver && (
+                <div className="drop-overlay" aria-hidden="true">
+                    <FileUp size={40} />
+                    {t("layout.drop")}
+                </div>
+            )}
             <div className="layout-body">
                 <div className="map-area">
                     <LayoutMap

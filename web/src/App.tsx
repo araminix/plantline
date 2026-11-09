@@ -174,7 +174,7 @@ export function App() {
                     <DiagramEditor plant={current} onPlantChange={setPlant} hidden={view !== "diagram"} />
                     {layoutOpened && (
                         <Suspense fallback={null}>
-                            <LayoutView plant={current} hidden={view !== "layout"} />
+                            <LayoutView plant={current} onPlantChange={setPlant} hidden={view !== "layout"} />
                         </Suspense>
                     )}
                 </main>

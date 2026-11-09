@@ -35,7 +35,7 @@ async function act(page: Page, name: string) {
 
 /** Opens the file actions: the File menu, or on a phone the bottom bar's More menu that holds them (a sheet closed first). */
 async function openFileMenu(page: Page) {
-    if (!isPhone(page)) return page.getByRole("button", { name: "File" }).click();
+    if (!isPhone(page)) return page.getByRole("button", { name: "File", exact: true }).click();
     const sheet = page.locator(".panel.open .sheet-close");
     if (await sheet.count()) await sheet.click();
     await page.getByRole("navigation").getByRole("button", { name: "More" }).click();
@@ -372,6 +372,29 @@ test("describes a transformer with its own fields, shows them on the drawing, an
     await expect(persian.getByRole("radio", { name: "برنامه‌ریزی‌شده" })).toHaveAttribute("aria-checked", "true");
 });
 
+test("opens a ready-made example from the empty diagram, with no problems, of this or another plant type", async ({ page }) => {
+    await start(page, "Hydropower");
+    await expect(page.getByRole("heading", { name: "Start your single-line diagram" })).toBeVisible();
+    await page.getByRole("button", { name: "Example: Hydropower" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(11);
+    await expect(page.locator("[data-link]")).toHaveCount(10);
+    await expect(page.getByRole("button", { name: "No problems" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Start your single-line diagram" })).toBeHidden();
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(0);
+
+    // Another plant type's example switches the plant type
+    await page.getByRole("button", { name: "Example: Wind farm" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(11);
+    await expect(page.locator("[data-node] text", { hasText: "WTG-03" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "No problems" })).toBeVisible();
+    if (isPhone(page)) await page.getByRole("navigation").getByRole("button", { name: "Add" }).click();
+    await expect(page.getByRole("complementary", { name: "Elements" }).getByRole("listitem").first()).toHaveText("Wind turbine");
+    if (isPhone(page)) await page.locator(".panel.open .sheet-close").click();
+    await openFileMenu(page);
+    await expect(page.getByRole("menuitem", { name: "Open an example" })).toBeVisible();
+});
+
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {
     await start(page, "Substation");
     await openFileMenu(page);
@@ -395,7 +418,7 @@ for (const sample of samples) {
     test(`reads the ${sample.plant} sample drawing and counts it`, async ({ page }) => {
         await start(page, sample.plant);
         await page.getByRole("tab", { name: "Plant layout" }).click();
-        await page.getByRole("button", { name: /Try a sample/ }).click();
+        await page.locator(".sample-card[aria-current]").click();
         if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
         const row = page.locator(".totals tr", { hasText: sample.kind }).first();
         await expect(row.locator("td").last()).toHaveText(sample.count, { timeout: 60_000 });
@@ -408,7 +431,7 @@ test("moves and turns a drawing on the map with its handles", async ({ page }) =
     // The storage sample is in its own site coordinates, so it is placed on a point the handles move
     await start(page, "Battery storage");
     await page.getByRole("tab", { name: "Plant layout" }).click();
-    await page.getByRole("button", { name: /Try a sample/ }).click();
+    await page.locator(".sample-card[aria-current]").click();
     const drag = async (handle: Locator, dx: number, dy: number) => {
         await expect(handle).toBeVisible({ timeout: 60_000 });
         const from = await centreOf(handle);
@@ -429,7 +452,7 @@ test("reports a reader that cannot start at once, and reads the drawing after tr
     await page.context().route(runtimeFile, (route) => route.abort());
     await page.getByRole("tab", { name: "Plant layout" }).click();
     const clicked = Date.now();
-    await page.getByRole("button", { name: /Try a sample/ }).click();
+    await page.locator(".sample-card[aria-current]").click();
     await expect(page.getByRole("alert")).toHaveText(/could not be loaded/, { timeout: 20_000 });
     expect(Date.now() - clicked).toBeLessThan(20_000);
     // The failed downloads are reported by the browser as errors of the page: expected here
@@ -452,7 +475,7 @@ test("cancels a reading and ends its worker", async ({ page }) => {
     });
     await page.getByRole("tab", { name: "Plant layout" }).click();
     const worker = page.waitForEvent("worker");
-    await page.getByRole("button", { name: /Try a sample/ }).click();
+    await page.locator(".sample-card[aria-current]").click();
     const closed = worker.then((started) => new Promise((resolve) => started.on("close", resolve)));
     await expect(page.getByRole("status")).toContainText("Reading the drawing");
     await page.getByRole("button", { name: "Cancel" }).click();
@@ -499,7 +522,7 @@ test("checks a drawing's unit, asks where a local drawing lies, and asks for the
 test("says what a block of the drawing is, and hides a layer", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();
-    await page.getByRole("button", { name: /Try a sample/ }).click();
+    await page.locator(".sample-card[aria-current]").click();
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     const tables = page.locator(".totals tr", { hasText: "PV table" }).locator("td").last();
     await expect(tables).toHaveText("316", { timeout: 60_000 });
@@ -521,7 +544,7 @@ test("says what a block of the drawing is, and hides a layer", async ({ page }) 
 test("describes a counted object from the list, on a click and on hover, and counts modules for the capacity", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();
-    await page.getByRole("button", { name: /Try a sample/ }).click();
+    await page.locator(".sample-card[aria-current]").click();
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     // 292 tables of 56 and 24 of 28 module blocks named "…590W"
     const capacity = page.locator(".capacity");
@@ -584,11 +607,40 @@ test("remembers a drawing's place and choices, and brings them back when the fil
     await expect(page.getByRole("button", { name: "Show on the map: ROAD-ASPHALT-6M" })).toHaveAttribute("aria-pressed", "false");
 });
 
+test("opens a drawing dropped onto the plant layout", async ({ page }) => {
+    await start(page, "Battery storage");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    const bytes = [...(await readFile("public/samples/battery-storage.dxf"))];
+    const transfer = await page.evaluateHandle((data) => {
+        const dropped = new DataTransfer();
+        dropped.items.add(new File([new Uint8Array(data)], "storage.dxf"));
+        return dropped;
+    }, bytes);
+    const view = page.locator("#view-layout");
+    await view.dispatchEvent("dragover", { dataTransfer: transfer });
+    await expect(page.locator(".drop-zone")).toHaveClass(/over/);
+    await view.dispatchEvent("drop", { dataTransfer: transfer });
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    await expect(page.locator(".totals tr", { hasText: "Battery" }).locator("td").last()).toHaveText("24", { timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "storage.dxf" })).toBeVisible();
+});
+
+test("opens the sample of another plant type and switches to that plant type", async ({ page }) => {
+    await start(page, "Solar PV");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    await page.getByRole("button", { name: "Try a sample: Wind farm" }).click();
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    await expect(page.locator(".totals tr", { hasText: "Wind turbine" }).locator("td").last()).toHaveText("10", { timeout: 60_000 });
+    await page.getByRole("tab", { name: "Single-line diagram" }).click();
+    if (isPhone(page)) await page.getByRole("navigation").getByRole("button", { name: "Add" }).click();
+    await expect(page.getByRole("complementary", { name: "Elements" }).getByRole("listitem").first()).toHaveText("Wind turbine");
+});
+
 test("keeps the map tools clear of the zoom buttons in Persian", async ({ page }) => {
     await start(page, "Wind farm");
     await chooseLanguage(page, "fa");
     await page.getByRole("tab", { name: "جانمایی نیروگاه" }).click();
-    await page.locator(".layout-empty .button").nth(1).click();
+    await page.locator(".sample-card[aria-current]").click();
     const [tools, zoom] = [page.locator(".map-tools"), page.locator(".leaflet-control-zoom")];
     await expect(tools).toBeVisible({ timeout: 60_000 });
     const [a, b] = [(await tools.boundingBox())!, (await zoom.boundingBox())!];

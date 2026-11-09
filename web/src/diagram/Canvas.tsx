@@ -424,13 +424,15 @@ const OVERVIEW = { width: 180, height: 120 };
 function Overview({ diagram, view, size, label, onCentre }: { diagram: Diagram; view: View; size: { width: number; height: number }; label: string; onCentre: (at: Point) => void }) {
     const shown = { minX: -view.x / view.k, minY: -view.y / view.k, maxX: (size.width - view.x) / view.k, maxY: (size.height - view.y) / view.k };
     const [cMinX, cMinY, cMaxX, cMaxY] = contentBounds(diagram)!;
-    const [minX, minY] = [Math.min(cMinX, shown.minX), Math.min(cMinY, shown.minY)];
-    const scale = Math.min(OVERVIEW.width / (Math.max(cMaxX, shown.maxX) - minX), OVERVIEW.height / (Math.max(cMaxY, shown.maxY) - minY));
+    const [minX, minY, maxX, maxY] = [Math.min(cMinX, shown.minX), Math.min(cMinY, shown.minY), Math.max(cMaxX, shown.maxX), Math.max(cMaxY, shown.maxY)];
+    const scale = 0.9 * Math.min(OVERVIEW.width / (maxX - minX), OVERVIEW.height / (maxY - minY));
+    // Centred, the spare room shared on both sides
+    const [left, top] = [minX - (OVERVIEW.width / scale - (maxX - minX)) / 2, minY - (OVERVIEW.height / scale - (maxY - minY)) / 2];
     const byId = new Map(diagram.nodes.map((node) => [node.id, node]));
     const centre = (event: ReactPointerEvent<SVGSVGElement>) => {
         if (event.buttons !== 1) return;
         const box = event.currentTarget.getBoundingClientRect();
-        onCentre({ x: minX + (event.clientX - box.left) / scale, y: minY + (event.clientY - box.top) / scale });
+        onCentre({ x: left + (event.clientX - box.left) / scale, y: top + (event.clientY - box.top) / scale });
     };
     return (
         <svg
@@ -439,7 +441,7 @@ function Overview({ diagram, view, size, label, onCentre }: { diagram: Diagram; 
             aria-label={label}
             width={OVERVIEW.width}
             height={OVERVIEW.height}
-            viewBox={`${minX} ${minY} ${OVERVIEW.width / scale} ${OVERVIEW.height / scale}`}
+            viewBox={`${left} ${top} ${OVERVIEW.width / scale} ${OVERVIEW.height / scale}`}
             onPointerDown={(event) => {
                 event.currentTarget.setPointerCapture?.(event.pointerId);
                 centre(event);

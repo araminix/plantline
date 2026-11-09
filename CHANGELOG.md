@@ -4,6 +4,13 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 
 ## Unreleased
 
+### Added
+
+- Ready-made example diagrams, one per plant type (solar, wind, storage, hydropower, substation, transmission line),
+  connected and with no problems to check: open any of them from the empty diagram (another plant type's switches
+  the plant type) or the current one from the File menu.
+- Drop a DWG or DXF onto the plant layout to read it, also over a drawing already open.
+
 ### Changed
 
 - A refreshed interface. The header shows the two views as one control and the plant type and language as pills;
@@ -18,6 +25,8 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   the amounts, a dark tooltip and a scale bar. Its panel starts with the drawing's name, coordinate system and size
   and (solar) the capacity in large figures; placement, layers and blocks, name patterns and export fold away with a
   summary.
+- First use: the empty diagram shows three steps, the examples and Open a file; the plant layout opens on a drop
+  zone and a card per sample, each saying what it holds (another plant type's sample switches the plant type).
 
 - The sample drawings are drawn as real plant drawings are: on a sheet with a title block, legend, notes, details and
   coordinate grid, with the layers, blocks and attributes design teams use, and (for the solar, wind, hydropower and
@@ -28,6 +37,9 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 
 ### Fixed
 
+- A drawing open on the plant layout no longer reports an error when the diagram view is shown and the map is
+  hidden.
+- The diagram's overview shows the drawing centred.
 - In Arabic and Persian, the map's satellite and fit buttons no longer lie under the zoom buttons.
 
 ## 0.5.0 (unreleased)

@@ -197,7 +197,8 @@ const SceneLayer = L.Path.extend({
         const tiny = (box: readonly number[]) => Math.max(box[2]! - box[0]!, box[3]! - box[1]!) * k < DOT_PX;
 
         // Blocks too small to show their shapes become dots of their size, written as pixels into one image: thousands
-        // of tiny shapes cost a canvas far more than the rest of the drawing
+        // of tiny shapes cost a canvas far more than the rest of the drawing. A hidden map's canvas has no size: no dots.
+        if (ctx.canvas.width === 0 || ctx.canvas.height === 0) return;
         const dots = (this._dots = sizedDots(this._dots, ctx.canvas.width, ctx.canvas.height));
         const ratio = ctx.canvas.width / (view.max!.x - view.min!.x);
         let anyDot = false;
