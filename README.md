@@ -56,7 +56,7 @@ plantline is a web tool for the people who design, build and run power plants. D
 
 - **No account, no server, no tracking.** The site is static files; the app sends nothing anywhere.
 - **Drawings are read in your browser**, in a background worker of their own, and never uploaded.
-- **Diagrams are kept in your browser** and in the files you save.
+- **Diagrams are kept in your browser** and in the files you save; for the drawings you open, only their settings (unit, place on the map, your choices) are remembered, never the drawings.
 
 The only things fetched from elsewhere are map tiles (OpenStreetMap and Esri), and only for the part of the map you look at.
 

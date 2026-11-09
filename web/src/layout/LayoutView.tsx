@@ -15,6 +15,7 @@ import { Inventory } from "./Inventory";
 import { createMatcher, inventory, NO_ASSIGNMENTS, recognize, type Assignments } from "./recognize";
 import { buildScene, GREY } from "./scene";
 import { fetchSample, SAMPLES } from "./samples";
+import { drawingKey, recall, remember } from "./memory";
 import { looksProjected, sizeOf, unitAdvice } from "./where";
 
 const COLORS = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#0891b2", "#db2777", "#65a30d", "#475569"];
@@ -32,7 +33,15 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const [unit, setUnit] = useState<LengthUnit>("m");
     // Null until the user shows on the map where a drawing in local coordinates lies
     const [placement, setPlacement] = useState<Placement | null>(null);
-    const [rules, setRules] = useState<LayoutRule[]>(() => [...LAYOUT_RULES[plant]]);
+    // The name patterns edited, per plant type (the others are the plant type's own)
+    const [ruleEdits, setRuleEdits] = useState<Partial<Record<PlantType, LayoutRule[]>>>({});
+    const rules = ruleEdits[plant] ?? LAYOUT_RULES[plant];
+    const setRules = (next: LayoutRule[] | null) => {
+        const { [plant]: _, ...others } = ruleEdits;
+        setRuleEdits(next ? { ...others, [plant]: next } : others);
+    };
+    // The drawing as this browser knows it (file name and size), to remember its settings
+    const [memoryKey, setMemoryKey] = useState<string | null>(null);
     // What the user chose for the drawing's blocks and layers, and the layers hidden from the map
     const [assignments, setAssignments] = useState<Assignments>(NO_ASSIGNMENTS);
     const [hiddenLayers, setHiddenLayers] = useState<ReadonlySet<string>>(new Set());
@@ -46,7 +55,6 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const [panelOpen, setPanelOpen] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
 
-    useEffect(() => setRules([...LAYOUT_RULES[plant]]), [plant]);
 
     const metres = METRES_PER_UNIT[unit];
     const bounds = useMemo(() => (drawing ? drawingBounds(drawing) : null), [drawing]);
@@ -95,6 +103,10 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     };
 
     useEffect(() => {
+        if (drawing && memoryKey) remember(memoryKey, { unit, placement, rules: ruleEdits, assignments, hidden: [...hiddenLayers], moduleWp: solar.moduleWp, modulesPerTable: solar.modulesPerTable });
+    }, [drawing, memoryKey, unit, placement, ruleEdits, assignments, hiddenLayers, solar]);
+
+    useEffect(() => {
         if (status !== "loading") return;
         const started = Date.now();
         setElapsed(0);
@@ -113,14 +125,19 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
         try {
             const loaded = await readDrawing(file, controller.signal);
             if (reading.current !== controller) return;
-            const loadedUnit = loaded.units === "unitless" ? "m" : loaded.units;
+            // A drawing opened before comes back as it was left; a new one starts from what the file says
+            const key = drawingKey(file);
+            const known = recall(key);
+            const loadedUnit = known?.unit ?? (loaded.units === "unitless" ? "m" : loaded.units);
             setDrawing(loaded);
             setFileName(file.name);
+            setMemoryKey(key);
             setUnit(loadedUnit);
-            setPlacement(preset ?? suggestedPlacement(loaded, loadedUnit));
-            setAssignments(NO_ASSIGNMENTS);
-            setHiddenLayers(new Set());
-            setSolar((before) => ({ ...before, moduleWp: null }));
+            setPlacement(known ? known.placement : (preset ?? suggestedPlacement(loaded, loadedUnit)));
+            setRuleEdits(known?.rules ?? {});
+            setAssignments(known?.assignments ?? NO_ASSIGNMENTS);
+            setHiddenLayers(new Set(known?.hidden));
+            setSolar({ modulesPerTable: known?.modulesPerTable ?? 56, moduleWp: known?.moduleWp ?? null });
             setFocus(null);
             setQuery("");
             setFitNonce((n) => n + 1);
@@ -433,7 +450,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                                 />
                             </label>
                         ))}
-                        <button type="button" className="button" onClick={() => setRules([...LAYOUT_RULES[plant]])}>
+                        <button type="button" className="button" onClick={() => setRules(null)}>
                             <RotateCcw size={16} aria-hidden="true" />
                             {t("layout.resetRules")}
                         </button>

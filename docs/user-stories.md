@@ -190,6 +190,11 @@ I place the drawing:
   its centre handle to move it and its turning handle to turn it, and it follows smoothly however large it is;
 - in map coordinates: a UTM zone or any proj4 definition; an invalid one says so.
 
+**US-35a Come back to a drawing.** When I open a drawing I opened before in this browser (the same file name and
+size), it comes back as I left it: its unit, its place on the map, my choices for its blocks and layers, the hidden
+layers, the name patterns for each plant type and the module figures. Changing the plant type and back keeps my edited
+patterns. The 20 most recently used drawings are remembered; nothing leaves the browser.
+
 **US-36 Check against the ground.** I switch between the plain map and satellite imagery.
 
 **US-37 Solar capacity.** For a solar plant, the installed capacity (kWp or MWp) is the modules counted in the drawing

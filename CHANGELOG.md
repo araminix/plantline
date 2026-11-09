@@ -19,6 +19,9 @@ Plant layouts that work with real drawings.
 - A legend on the map; hover, click or tap a counted object to see its kind, ID, block, layer and attributes; search
   the found objects and show one on the map.
 - The solar sample's tables hold their 56 module blocks.
+- A drawing opened again (same file name and size) comes back with its unit, place, block and layer choices, hidden
+  layers, name patterns and module figures; the 20 used last are remembered in the browser. Edited name patterns
+  survive a change of plant type.
 
 ### Fixed
 

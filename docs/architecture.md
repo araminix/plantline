@@ -192,7 +192,7 @@ files others open.
 | Third-party scripts | A Content Security Policy in `index.html` allows scripts and fonts only from the site itself (and WebAssembly), images only from the site and the two tile servers, and no connections elsewhere. |
 | Formula injection in CSV | Cells starting with `=`, `+`, `-`, `@`, tab or carriage return are prefixed with `'`. |
 | Supply chain | Few dependencies; exact versions at least two weeks old at release; pnpm refuses packages published less than 7 days ago; Dependabot waits as long; GitHub Actions pinned to commits. |
-| Privacy | No server, analytics or cookies. Settings and the autosaved diagram are in `localStorage`; drawings are never stored. |
+| Privacy | No server, analytics or cookies. Settings, the autosaved diagram and the settings of the 20 drawings used last (by file name and size: unit, placement, choices; never the drawing itself) are in `localStorage`; drawings are never stored. |
 
 ## Decisions
 

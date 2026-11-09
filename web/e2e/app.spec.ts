@@ -527,6 +527,40 @@ test("describes a counted object from the list, on a click and on hover, and cou
     }
 });
 
+test("remembers a drawing's place and choices, and brings them back when the file is opened again", async ({ page }) => {
+    await start(page, "Wind farm");
+    const open = async () => {
+        await page.getByRole("tab", { name: "Plant layout" }).click();
+        const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Open a drawing" }).click()]);
+        await chooser.setFiles("public/samples/wind-farm.dxf");
+        await expect(page.locator(".map")).toBeVisible({ timeout: 60_000 });
+    };
+    const turbines = page.locator(".totals tr", { hasText: "Wind turbine" }).locator("td").last();
+
+    await open();
+    const map = (await page.locator(".map").boundingBox())!;
+    await page.mouse.click(map.x + map.width / 3, map.y + map.height / 2);
+    await expect(page.locator(".map-handle.move")).toBeVisible();
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    const latitude = await page.getByRole("textbox", { name: "Latitude" }).inputValue();
+    await page.getByText("Layers and blocks").click();
+    await page.getByRole("combobox", { name: "WTG_4MW" }).selectOption({ label: "Not counted" });
+    await page.getByRole("button", { name: "Show on the map: ROADS" }).click();
+    await expect(turbines).toHaveText("0");
+
+    // Another visit: the same file comes back placed, with its choices
+    await page.reload();
+    await open();
+    await expect(page.locator(".map-handle.move")).toBeVisible();
+    await expect(page.locator(".map-banner", { hasText: "Click the map" })).toHaveCount(0);
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    await expect(page.getByRole("textbox", { name: "Latitude" })).toHaveValue(latitude);
+    await expect(turbines).toHaveText("0");
+    await page.getByText("Layers and blocks").click();
+    await expect(page.getByRole("combobox", { name: "WTG_4MW" })).toHaveValue("none");
+    await expect(page.getByRole("button", { name: "Show on the map: ROADS" })).toHaveAttribute("aria-pressed", "false");
+});
+
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();
