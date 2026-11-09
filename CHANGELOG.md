@@ -2,7 +2,10 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.7.0
+
+For everyone: the diagram by keyboard and screen reader, counts and numbers as each language writes them, and
+map tiles set in one place.
 
 ### Added
 
