@@ -358,7 +358,7 @@ test("describes a transformer with its own fields, shows them on the drawing, an
         await field.fill(value);
         await field.press("Enter");
     }
-    await panel.getByRole("combobox", { name: "Status" }).selectOption("planned");
+    await panel.getByRole("radio", { name: "Planned" }).click();
     await expect(page.locator("[data-node] text")).toContainText("33/0.4 kV · 1600 kVA");
     // Planned equipment is drawn dashed
     await expect(page.locator("[data-node] > g").first()).toHaveAttribute("stroke-dasharray", "4 3");
@@ -369,7 +369,7 @@ test("describes a transformer with its own fields, shows them on the drawing, an
     const persian = page.getByRole("complementary", { name: "ویژگی‌ها" });
     await expect(persian.locator(".field")).toHaveCount(fields);
     await expect(persian.getByRole("textbox", { name: /^ولتاژ فشار قوی/ })).toHaveValue("33");
-    await expect(persian.getByRole("combobox", { name: "وضعیت" })).toHaveValue("planned");
+    await expect(persian.getByRole("radio", { name: "برنامه‌ریزی‌شده" })).toHaveAttribute("aria-checked", "true");
 });
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {

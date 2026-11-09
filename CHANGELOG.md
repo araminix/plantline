@@ -11,6 +11,9 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   beside its icons on wide screens, a More menu on narrower ones, and the diagram's problems at a glance; on a phone
   the rest of the tools are in the bottom bar's menu. The palette has a search and groups that fold, one row per
   element.
+- Properties start with the element's symbol, name and kind and one row of actions; fields are on cards, side by
+  side, with units inside the boxes, the status as a segmented control and the notes folded away. A selected element
+  has an accent outline with a soft glow; the element under the pointer a quiet tint.
 
 - The sample drawings are drawn as real plant drawings are: on a sheet with a title block, legend, notes, details and
   coordinate grid, with the layers, blocks and attributes design teams use, and (for the solar, wind, hydropower and

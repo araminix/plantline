@@ -361,6 +361,11 @@ select {
 }
 
 .popover .segmented {
+    margin: 2px 4px 4px;
+}
+
+/* One of a few choices, as one control */
+.segmented {
     display: flex;
     padding: 3px;
     gap: 2px;
@@ -736,7 +741,7 @@ select {
 
 .editor-body {
     display: grid;
-    grid-template-columns: 250px minmax(0, 1fr) 300px;
+    grid-template-columns: 260px minmax(0, 1fr) 340px;
     min-height: 0;
 }
 
@@ -1007,8 +1012,21 @@ select {
     color: var(--accent);
 }
 
+/* An element: a quiet tint under the pointer; selected, an accent outline with a soft glow, and its connection points */
+.canvas .sld-node .hit {
+    rx: 8px;
+}
+
+.canvas .sld-node:hover:not(.selected) .hit {
+    fill: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
 .canvas .sld-node.selected .hit {
-    fill: color-mix(in srgb, var(--accent) 12%, transparent);
+    fill: color-mix(in srgb, var(--accent) 10%, transparent);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 40%, transparent));
 }
 
 /* Connection points: on hover and selection, and on every element while a line is drawn */
@@ -1091,8 +1109,186 @@ select {
     pointer-events: none;
 }
 
-.inspector h2 {
-    margin-block-end: 12px;
+/* ---------- Properties ---------- */
+
+.panel.inspector {
+    background: var(--bg);
+}
+
+.inspector {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 12px;
+}
+
+.inspector-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.inspector-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.inspector-head h2 {
+    font-size: 1.15rem;
+    overflow-wrap: anywhere;
+}
+
+.inspector-head p {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.inspector-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.inspector-actions .button.danger {
+    margin-inline-start: auto;
+    padding-inline: 10px;
+}
+
+/* A card: a group of fields, side by side two by two; long ones take the whole width */
+.card {
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.card h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-size: 0.75rem;
+}
+
+.card > summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+    cursor: pointer;
+}
+
+.card > summary::-webkit-details-marker {
+    display: none;
+}
+
+.card > summary::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-inline: 2px 4px;
+    border-block-end: 2px solid var(--muted);
+    border-inline-end: 2px solid var(--muted);
+    rotate: -45deg;
+    transition: rotate 0.15s;
+}
+
+[dir="rtl"] .card > summary::before {
+    rotate: 135deg;
+}
+
+.card[open] > summary::before {
+    rotate: 45deg;
+}
+
+.card > summary h3 {
+    margin: 0;
+}
+
+.card[open] > summary {
+    margin-block-end: 10px;
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 10px;
+}
+
+/* Side by side, the boxes line up even when one label takes two lines */
+.fields > .field {
+    min-width: 0;
+    align-content: end;
+}
+
+.fields > .field.wide,
+.fields > .field:only-child,
+.fields > .field:has(textarea) {
+    grid-column: 1 / -1;
+}
+
+.card .segmented {
+    margin: 0;
+}
+
+.card .check {
+    margin: 0;
+}
+
+.card .hint {
+    margin: 6px 0 0;
+}
+
+/* A number and its unit in one box */
+.input-unit {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.input-unit:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.field .input-unit input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+}
+
+.field .input-unit input:focus-visible {
+    outline: none;
+}
+
+.input-unit em {
+    padding-inline-end: 10px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-style: normal;
+}
+
+.badge.warn {
+    background: var(--warn-soft);
+    color: var(--warn);
+}
+
+@media (min-width: 1024px) {
+    /* On wide screens the properties start with their own header */
+    .panel.inspector > .panel-header {
+        display: none;
+    }
 }
 
 .with-icon {
@@ -1110,13 +1306,35 @@ select {
 }
 
 .issues button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    padding: 8px 10px;
-    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--danger) 8%, transparent);
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--warn);
     text-align: start;
     cursor: pointer;
+}
+
+.issues button:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+}
+
+.issues button span {
+    flex: 1;
+    color: var(--ink);
+    font-size: 0.875rem;
+}
+
+.issues .chevron {
+    color: var(--muted);
+}
+
+[dir="rtl"] .issues .chevron {
+    rotate: 180deg;
 }
 
 .issues button:disabled {

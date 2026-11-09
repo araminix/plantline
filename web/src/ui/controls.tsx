@@ -182,7 +182,7 @@ export function TextField(props: { label: string; value: string; onCommit: (valu
 }
 
 /**
- * A number field (empty for none) that saves like TextField. It keeps finite numbers: negative ones only when `signed`,
+ * A number field (empty for none), its unit inside the box, that saves like TextField. It keeps finite numbers: negative ones only when `signed`,
  * whole ones only when `integer`, none above `max`; anything else goes back to the saved value.
  */
 export function NumberField(props: { label: string; value: number | null; onCommit: (value: number | null) => void; unit?: string | undefined; signed?: boolean; integer?: boolean | undefined; max?: number | undefined }) {
@@ -196,13 +196,18 @@ export function NumberField(props: { label: string; value: number | null; onComm
         if (wrong) return setDraft(shown);
         if (parsed !== value) onCommit(parsed);
     };
+    const input = <input inputMode={integer ? "numeric" : "decimal"} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => event.key === "Enter" && commit()} />;
     return (
         <label className="field">
-            <span>
-                {label}
-                {unit && <small> ({unit})</small>}
-            </span>
-            <input inputMode={integer ? "numeric" : "decimal"} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => event.key === "Enter" && commit()} />
+            <span>{label}</span>
+            {unit ? (
+                <span className="input-unit">
+                    {input}
+                    <em>{unit}</em>
+                </span>
+            ) : (
+                input
+            )}
         </label>
     );
 }
