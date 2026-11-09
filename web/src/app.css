@@ -831,3 +831,19 @@ select {
         height: auto;
     }
 }
+
+/* The handles that move and turn a drawing on the map */
+.map-handle {
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: var(--shadow);
+    cursor: grab;
+}
+
+.map-handle:active {
+    cursor: grabbing;
+}

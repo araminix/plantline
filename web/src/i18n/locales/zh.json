@@ -89,6 +89,8 @@
     "layout.longitude": "经度",
     "layout.placeHere": "放置在地图中心",
     "layout.rotation": "旋转",
+    "layout.move": "拖动以移动图纸",
+    "layout.turn": "拖动以旋转图纸",
     "layout.utm": "UTM 分带",
     "layout.proj": "坐标系（proj4）",
     "layout.projInvalid": "此坐标系无效，或图纸不在其范围内。",

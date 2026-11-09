@@ -89,6 +89,8 @@
     "layout.longitude": "طول جغرافیایی",
     "layout.placeHere": "قرار دادن در مرکز نقشه",
     "layout.rotation": "چرخش",
+    "layout.move": "برای جابه‌جا کردن نقشه بکشید",
+    "layout.turn": "برای چرخاندن نقشه بکشید",
     "layout.utm": "ناحیه UTM",
     "layout.proj": "سیستم مختصات (proj4)",
     "layout.projInvalid": "این سیستم مختصات معتبر نیست یا نقشه خارج از محدوده آن است.",

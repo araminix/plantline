@@ -122,7 +122,7 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
         <section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" hidden={hidden}>
             <div className="layout-body">
                 <div className="map-area">
-                    <LayoutMap scene={scene} satellite={satellite} fitKey={fitKey} active={!hidden} label={t("layout.map")} onMove={setMapCentre} />
+                    <LayoutMap scene={scene} placement={placement} onPlace={setPlacement} moveLabel={t("layout.move")} turnLabel={t("layout.turn")} satellite={satellite} fitKey={fitKey} active={!hidden} label={t("layout.map")} onMove={setMapCentre} />
                     <div className="map-tools">
                         <IconButton label={t("layout.satellite")} pressed={satellite} onClick={() => setSatellite(!satellite)}>
                             <Layers size={18} />

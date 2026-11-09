@@ -1,11 +1,17 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
-import { compose, type Affine } from "./drawing";
+import { apply, compose, invert, transformedBox, type Affine } from "./drawing";
+import type { Placement } from "./place";
 import { FRAME_SCALE, GREY, unmercator, type Polylines, type Scene } from "./scene";
 
 interface Props {
     scene: Scene | null;
+    /** In a point placement, handles move and turn the drawing; each drag ends in one call of `onPlace`. */
+    placement: Placement;
+    onPlace: (placement: Placement) => void;
+    moveLabel: string;
+    turnLabel: string;
     satellite: boolean;
     /** Changing it fits the map to the drawing again. */
     fitKey: string;
@@ -32,6 +38,8 @@ const TILES = {
 };
 
 const FILL_OPACITY = 0.2;
+/** The turning handle's distance from the drawing's centre, in pixels. */
+const TURN_PX = 72;
 /** A placed block smaller than this, in pixels, is drawn as a dot of its size. */
 const DOT_PX = 4;
 
@@ -126,24 +134,36 @@ const SceneLayer = L.Path.extend({
         return [k, 0, 0, k, this._scene.origin[0] * zoom - pixelOrigin.x, this._scene.origin[1] * zoom - pixelOrigin.y];
     },
 
-    _project(this: Internals & { _scene: Scene; _toLayer(): Affine }) {
+    // Frame units to layer pixels as shown: through the preview of a drag in progress
+    _shown(this: { _preview?: Affine | null; _toLayer(): Affine }): Affine {
+        return this._preview ? compose(this._preview, this._toLayer()) : this._toLayer();
+    },
+
+    _project(this: Internals & { _scene: Scene; _shown(): Affine }) {
         const bounds = this._scene.bounds;
         if (!bounds) return void (this._pxBounds = undefined);
-        const [k, , , , x, y] = this._toLayer();
-        this._pxBounds = L.bounds([bounds[0] * k + x, bounds[1] * k + y], [bounds[2] * k + x, bounds[3] * k + y]);
+        const [x1, y1, x2, y2] = transformedBox(this._shown(), bounds);
+        this._pxBounds = L.bounds([x1, y1], [x2, y2]);
+    },
+
+    /** Shows the drawing moved or turned by `delta` (in layer pixels) without projecting it again; null ends it. */
+    preview(this: L.Path & { _preview?: Affine | null }, delta: Affine | null) {
+        this._preview = delta;
+        this.redraw();
     },
 
     _update() {},
 
-    _updatePath(this: Internals & { _scene: Scene; _paths: ReturnType<typeof scenePaths>; _toLayer(): Affine; _dots?: Dots }) {
+    _updatePath(this: Internals & { _scene: Scene; _paths: ReturnType<typeof scenePaths>; _shown(): Affine; _dots?: Dots }) {
         const renderer = this._renderer;
         if (!renderer._drawing) return;
         const ctx = renderer._ctx;
-        const toLayer = this._toLayer();
-        const [k, , , , ox, oy] = toLayer;
+        const toLayer = this._shown();
+        const k = Math.sqrt(Math.abs(toLayer[0] * toLayer[3] - toLayer[1] * toLayer[2]));
         const atLayer = new DOMMatrix([...toLayer]);
         const view = renderer._bounds;
-        const [vx1, vy1, vx2, vy2] = [(view.min!.x - ox) / k, (view.min!.y - oy) / k, (view.max!.x - ox) / k, (view.max!.y - oy) / k];
+        // The view in frame units, to skip what is out of it
+        const [vx1, vy1, vx2, vy2] = transformedBox(invert(toLayer), [view.min!.x, view.min!.y, view.max!.x, view.max!.y]);
         const visible = (box: readonly number[]) => box[2]! >= vx1 && box[0]! <= vx2 && box[3]! >= vy1 && box[1]! <= vy2;
         const tiny = (box: readonly number[]) => Math.max(box[2]! - box[0]!, box[3]! - box[1]!) * k < DOT_PX;
 
@@ -156,10 +176,12 @@ const SceneLayer = L.Path.extend({
             const color = packedColor(dotColor);
             for (const { box } of block.placements) {
                 if (!visible(box) || !tiny(box)) continue;
-                const x1 = clamp(Math.floor((box[0] * k + ox - view.min!.x) * ratio), dots.width);
-                const x2 = clamp(Math.ceil((box[2] * k + ox - view.min!.x) * ratio), dots.width);
-                const y1 = clamp(Math.floor((box[1] * k + oy - view.min!.y) * ratio), dots.height);
-                const y2 = clamp(Math.ceil((box[3] * k + oy - view.min!.y) * ratio), dots.height);
+                const [cx, cy] = apply(toLayer, (box[0] + box[2]) / 2, (box[1] + box[3]) / 2);
+                const [rx, ry] = [((box[2] - box[0]) * k) / 2, ((box[3] - box[1]) * k) / 2];
+                const x1 = clamp(Math.floor((cx - rx - view.min!.x) * ratio), dots.width);
+                const x2 = clamp(Math.ceil((cx + rx - view.min!.x) * ratio), dots.width);
+                const y1 = clamp(Math.floor((cy - ry - view.min!.y) * ratio), dots.height);
+                const y2 = clamp(Math.ceil((cy + ry - view.min!.y) * ratio), dots.height);
                 for (let y = y1; y <= y2; y++) dots.pixels.fill(color, y * dots.width + x1, y * dots.width + x2 + 1);
                 anyDot = true;
             }
@@ -216,15 +238,28 @@ const SceneLayer = L.Path.extend({
         const [x0, y0] = this._scene.origin;
         return L.latLngBounds([unmercator(x0 + bounds[0] / FRAME_SCALE, y0 + bounds[1] / FRAME_SCALE), unmercator(x0 + bounds[2] / FRAME_SCALE, y0 + bounds[3] / FRAME_SCALE)]);
     },
-}) as unknown as new (scene: Scene) => L.Path & { getBounds(): L.LatLngBounds };
+}) as unknown as new (scene: Scene) => L.Path & { getBounds(): L.LatLngBounds; preview(delta: Affine | null): void };
+
+// Lucide's "move" and "rotate-ccw" icons (ISC licence), as markup for Leaflet's handles
+const icon = (paths: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const MOVE_ICON = icon('<path d="M12 2v20"/><path d="m15 19-3 3-3-3"/><path d="m19 9 3 3-3 3"/><path d="M2 12h20"/><path d="m5 9-3 3 3 3"/><path d="m9 5 3-3 3 3"/>');
+const TURN_ICON = icon('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>');
+
+/** A turn of `radians` counter-clockwise on screen (y down) about a point. */
+function turnAbout(x: number, y: number, radians: number): Affine {
+    const [cos, sin] = [Math.cos(radians), Math.sin(radians)];
+    return [cos, -sin, sin, cos, x - cos * x - sin * y, y + sin * x - cos * y];
+}
 
 /** The drawing on a Leaflet map, over the plain map or satellite imagery. */
-export function LayoutMap({ scene, satellite, fitKey, active, label, onMove }: Props) {
+export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, satellite, fitKey, active, label, onMove }: Props) {
     const element = useRef<HTMLDivElement>(null);
     const map = useRef<L.Map | null>(null);
-    const overlay = useRef<{ getBounds(): L.LatLngBounds } | null>(null);
+    const overlay = useRef<InstanceType<typeof SceneLayer> | null>(null);
     const moved = useRef(onMove);
     moved.current = onMove;
+    const placed = useRef(onPlace);
+    placed.current = onPlace;
 
     useEffect(() => {
         const created = L.map(element.current!, { preferCanvas: true, worldCopyJump: true }).setView([20, 0], 2);
@@ -257,6 +292,54 @@ export function LayoutMap({ scene, satellite, fitKey, active, label, onMove }: P
             overlay.current = null;
         };
     }, [scene]);
+
+    // Handles: one at the centre moves the drawing, one above it turns it; while dragging, the drawing is only redrawn
+    useEffect(() => {
+        const created = map.current!;
+        const layer = overlay.current;
+        if (!layer || placement.mode !== "point") return;
+        const centre = L.latLng(placement.lat, placement.lon);
+        const turn = (placement.rotationDeg * Math.PI) / 180;
+        const handle = (kind: string, title: string, html: string, at: L.LatLng) =>
+            L.marker(at, { icon: L.divIcon({ className: `map-handle ${kind}`, html, iconSize: [36, 36] }), draggable: true, keyboard: false, title, autoPan: true }).addTo(created);
+        const turnerAt = () => {
+            const p = created.latLngToLayerPoint(centre);
+            return created.layerPointToLatLng([p.x - Math.sin(turn) * TURN_PX, p.y - Math.cos(turn) * TURN_PX]);
+        };
+        const mover = handle("move", moveLabel, MOVE_ICON, centre);
+        const turner = handle("turn", turnLabel, TURN_ICON, turnerAt());
+        const keepTurner = () => turner.setLatLng(turnerAt());
+        created.on("zoomend", keepTurner);
+
+        mover.on("dragstart", () => turner.setOpacity(0));
+        mover.on("drag", () => {
+            const [from, to] = [created.latLngToLayerPoint(centre), created.latLngToLayerPoint(mover.getLatLng())];
+            layer.preview([1, 0, 0, 1, to.x - from.x, to.y - from.y]);
+        });
+        mover.on("dragend", () => {
+            const { lat, lng } = mover.getLatLng();
+            placed.current({ ...placement, lat: Math.max(-85, Math.min(85, lat)), lon: ((((lng + 180) % 360) + 360) % 360) - 180 });
+        });
+
+        // The handle's direction from the centre is the drawing's rotation: straight up is 0°, counter-clockwise positive
+        const rotationAt = () => {
+            const [c, p] = [created.latLngToLayerPoint(centre), created.latLngToLayerPoint(turner.getLatLng())];
+            const degrees = (Math.atan2(c.y - p.y, p.x - c.x) * 180) / Math.PI - 90;
+            return Math.round((((((degrees + 180) % 360) + 360) % 360) - 180) * 2) / 2;
+        };
+        turner.on("dragstart", () => mover.setOpacity(0));
+        turner.on("drag", () => {
+            const c = created.latLngToLayerPoint(centre);
+            layer.preview(turnAbout(c.x, c.y, ((rotationAt() - placement.rotationDeg) * Math.PI) / 180));
+        });
+        turner.on("dragend", () => placed.current({ ...placement, rotationDeg: rotationAt() }));
+
+        return () => {
+            created.off("zoomend", keepTurner);
+            mover.remove();
+            turner.remove();
+        };
+    }, [scene, placement, moveLabel, turnLabel]);
 
     useEffect(() => {
         const bounds = overlay.current?.getBounds();

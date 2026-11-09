@@ -89,6 +89,8 @@
     "layout.longitude": "経度",
     "layout.placeHere": "地図の中心に配置",
     "layout.rotation": "回転",
+    "layout.move": "ドラッグして図面を移動",
+    "layout.turn": "ドラッグして図面を回転",
     "layout.utm": "UTM ゾーン",
     "layout.proj": "座標系（proj4）",
     "layout.projInvalid": "この座標系は無効か、図面がその範囲外にあります。",

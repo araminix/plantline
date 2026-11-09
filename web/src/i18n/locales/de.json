@@ -89,6 +89,8 @@
     "layout.longitude": "Längengrad",
     "layout.placeHere": "In der Kartenmitte platzieren",
     "layout.rotation": "Drehung",
+    "layout.move": "Ziehen, um die Zeichnung zu verschieben",
+    "layout.turn": "Ziehen, um die Zeichnung zu drehen",
     "layout.utm": "UTM-Zone",
     "layout.proj": "Koordinatensystem (proj4)",
     "layout.projInvalid": "Dieses Koordinatensystem ist ungültig, oder die Zeichnung liegt außerhalb davon.",

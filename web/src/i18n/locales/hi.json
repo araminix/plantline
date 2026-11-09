@@ -89,6 +89,8 @@
     "layout.longitude": "देशांतर",
     "layout.placeHere": "मानचित्र के केंद्र में रखें",
     "layout.rotation": "घुमाव",
+    "layout.move": "ड्रॉइंग खिसकाने के लिए खींचें",
+    "layout.turn": "ड्रॉइंग घुमाने के लिए खींचें",
     "layout.utm": "UTM ज़ोन",
     "layout.proj": "निर्देशांक प्रणाली (proj4)",
     "layout.projInvalid": "यह निर्देशांक प्रणाली मान्य नहीं है, या ड्रॉइंग उसके बाहर है।",

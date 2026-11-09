@@ -89,6 +89,8 @@
     "layout.longitude": "Longitude",
     "layout.placeHere": "Place at the map centre",
     "layout.rotation": "Rotation",
+    "layout.move": "Drag to move the drawing",
+    "layout.turn": "Drag to turn the drawing",
     "layout.utm": "UTM zone",
     "layout.proj": "Coordinate system (proj4)",
     "layout.projInvalid": "This coordinate system is not valid, or the drawing lies outside it.",

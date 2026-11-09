@@ -19,6 +19,7 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   drawing with 27,000 nested block copies: read in 10 s instead of 61 s, reader memory 0.5 GB instead of 1.3 GB, and
   the page receives 12 MB instead of 77 million characters; zooming redraws in under 100 ms.
 - Arrays of block copies (MINSERT) show every copy, not only the first.
+- Move and turn a drawing on the map by dragging its handles; it follows smoothly however large it is.
 - Scaled blocks with a base point are placed correctly.
 
 ## 0.1.0 (unreleased)

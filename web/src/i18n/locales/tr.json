@@ -89,6 +89,8 @@
     "layout.longitude": "Boylam",
     "layout.placeHere": "Harita merkezine yerleştir",
     "layout.rotation": "Döndürme",
+    "layout.move": "Çizimi taşımak için sürükleyin",
+    "layout.turn": "Çizimi döndürmek için sürükleyin",
     "layout.utm": "UTM dilimi",
     "layout.proj": "Koordinat sistemi (proj4)",
     "layout.projInvalid": "Bu koordinat sistemi geçerli değil ya da çizim bunun dışında kalıyor.",

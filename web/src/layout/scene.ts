@@ -1,4 +1,4 @@
-import { apply, compose, corners, createBoxes, extend, forEachShape, shapesBox, walk, type Affine, type Block, type Box, type Drawing } from "./drawing";
+import { apply, compose, corners, createBoxes, extend, forEachShape, shapesBox, transformedBox, walk, type Affine, type Block, type Box, type Drawing } from "./drawing";
 import type { Projector } from "./place";
 import type { Recognition } from "./recognize";
 
@@ -171,9 +171,3 @@ function addShapes(drawing: Drawing, block: Block, recognition: Recognition, col
 }
 
 const emptyPolylines = (): Polylines => ({ coords: [], ends: [], closed: [] });
-
-function transformedBox(t: Affine, box: Box): Box {
-    const result: Box = [Infinity, Infinity, -Infinity, -Infinity];
-    for (const [x, y] of corners(box)) extend(result, ...apply(t, x, y));
-    return result;
-}

@@ -89,6 +89,8 @@
     "layout.longitude": "경도",
     "layout.placeHere": "지도 중앙에 배치",
     "layout.rotation": "회전",
+    "layout.move": "끌어서 도면 이동",
+    "layout.turn": "끌어서 도면 회전",
     "layout.utm": "UTM 구역",
     "layout.proj": "좌표계(proj4)",
     "layout.projInvalid": "이 좌표계가 올바르지 않거나 도면이 그 범위를 벗어납니다.",

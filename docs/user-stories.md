@@ -104,7 +104,8 @@ invalid pattern is marked and matches nothing; I can reset the rules.
 its geometry is in metres), and all lengths and the map follow.
 
 **US-35 Put it on the map.** I place the drawing:
-- on a point: its centre at a latitude and longitude (or at the map centre), turned by a rotation;
+- on a point: its centre at a latitude and longitude (or at the map centre), turned by a rotation; on the map I drag
+  its centre handle to move it and its turning handle to turn it, and it follows smoothly however large it is;
 - in map coordinates: a UTM zone or any proj4 definition; an invalid one says so.
 
 **US-36 Check against the ground.** I switch between the plain map and satellite imagery.

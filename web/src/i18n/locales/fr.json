@@ -89,6 +89,8 @@
     "layout.longitude": "Longitude",
     "layout.placeHere": "Placer au centre de la carte",
     "layout.rotation": "Rotation",
+    "layout.move": "Faites glisser pour déplacer le plan",
+    "layout.turn": "Faites glisser pour faire pivoter le plan",
     "layout.utm": "Zone UTM",
     "layout.proj": "Système de coordonnées (proj4)",
     "layout.projInvalid": "Ce système de coordonnées n’est pas valide, ou le plan se trouve en dehors.",

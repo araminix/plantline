@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
 // Any uncaught error in the page fails the test that caused it (tests in one worker run one at a time)
@@ -113,6 +113,28 @@ for (const sample of samples) {
         await expectNoSidewaysScroll(page);
     });
 }
+
+test("moves and turns a drawing on the map with its handles", async ({ page }) => {
+    await start(page, "Wind farm");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    await page.getByRole("button", { name: /Try a sample/ }).click();
+    const drag = async (handle: Locator, dx: number, dy: number) => {
+        await expect(handle).toBeVisible({ timeout: 60_000 });
+        const box = (await handle.boundingBox())!;
+        const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        await page.mouse.move(x + dx, y + dy, { steps: 8 });
+        await page.mouse.up();
+    };
+    await drag(page.locator(".map-handle.move"), 60, -40);
+    // From straight above the centre to its right: a quarter turn clockwise
+    await drag(page.locator(".map-handle.turn"), 72, 72);
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    await expect(page.getByText("(-90°)")).toBeVisible();
+    expect(Number(await page.getByRole("textbox", { name: "Latitude" }).inputValue())).toBeGreaterThan(38.62);
+    expect(Number(await page.getByRole("textbox", { name: "Longitude" }).inputValue())).toBeGreaterThan(27.18);
+});
 
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");

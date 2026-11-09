@@ -62,6 +62,20 @@ export const compose = (outer: Affine, inner: Affine): Affine => [
 
 export const apply = (t: Affine, x: number, y: number): [number, number] => [t[0] * x + t[2] * y + t[4], t[1] * x + t[3] * y + t[5]];
 
+/** The transform that undoes `t` (which must not flatten the plane). */
+export function invert(t: Affine): Affine {
+    const det = t[0] * t[3] - t[1] * t[2];
+    const [a, b, c, d] = [t[3] / det, -t[1] / det, -t[2] / det, t[0] / det];
+    return [a, b, c, d, -(a * t[4] + c * t[5]), -(b * t[4] + d * t[5])];
+}
+
+/** The extent of a box after a transform. */
+export function transformedBox(t: Affine, box: Box): Box {
+    const result: Box = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, y] of corners(box)) extend(result, ...apply(t, x, y));
+    return result;
+}
+
 /** The reader's two outputs as a drawing; throws when they are not one (the reader and the app are out of step). */
 export function parseDrawing(json: string, pointBytes: ArrayBuffer): Drawing {
     const value = JSON.parse(json) as Partial<Drawing> & { pointCount?: unknown };

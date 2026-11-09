@@ -89,6 +89,8 @@
     "layout.longitude": "Longitudine",
     "layout.placeHere": "Posiziona al centro della mappa",
     "layout.rotation": "Rotazione",
+    "layout.move": "Trascina per spostare il disegno",
+    "layout.turn": "Trascina per ruotare il disegno",
     "layout.utm": "Fuso UTM",
     "layout.proj": "Sistema di coordinate (proj4)",
     "layout.projInvalid": "Questo sistema di coordinate non è valido, oppure il disegno è al di fuori.",

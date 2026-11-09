@@ -147,6 +147,9 @@ Each rule has a kind, a pattern (a case-insensitive regular expression) and a me
 - **On each move or zoom**, Leaflet's canvas renderer places the canvas and the layer draws: blocks out of view are
   skipped, blocks under 4 pixels become dots written as pixels into one image, everything else goes into one path per
   colour, stroked once in lines one screen pixel wide (canvases draw those about nine times faster than wider lines).
+- **Moving and turning** (a point placement): a handle at the drawing's centre moves it, one above it turns it. While
+  a handle is dragged, the layer redraws the same scene through one more transform (a shift, or a turn about the
+  centre), so nothing is projected again; the new placement is applied once, when the drag ends.
 - A real 7.5 MB plant drawing (27,000 nested block copies, 265,000 shapes when expanded) reads in about 10 s in the
   browser, with the reader at 0.5 GB; the page receives 1.6 million characters of JSON and 10.5 MB of points, holds
   about 80 MB, and redraws in well under 100 ms.

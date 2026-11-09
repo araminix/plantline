@@ -89,6 +89,8 @@
     "layout.longitude": "خط الطول",
     "layout.placeHere": "الوضع في مركز الخريطة",
     "layout.rotation": "الدوران",
+    "layout.move": "اسحب لتحريك الرسم",
+    "layout.turn": "اسحب لتدوير الرسم",
     "layout.utm": "نطاق UTM",
     "layout.proj": "نظام الإحداثيات (proj4)",
     "layout.projInvalid": "نظام الإحداثيات هذا غير صالح، أو أن الرسم يقع خارجه.",

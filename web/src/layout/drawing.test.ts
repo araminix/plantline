@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apply, createBoxes, drawingBounds, MAX_DEPTH, parseDrawing, shapeLength, walk, type Affine, type Drawing } from "./drawing";
+import { apply, compose, createBoxes, drawingBounds, invert, MAX_DEPTH, parseDrawing, shapeLength, transformedBox, walk, type Affine, type Drawing } from "./drawing";
 import { makeDrawing, solarFixture } from "./fixture";
 
 /** The reader's two outputs for a drawing: its JSON (without points) and its points as bytes. */
@@ -65,4 +65,13 @@ describe("drawing data", () => {
         expect(shapeLength(new Float64Array([0, 0, 10, 0, 10, 10, 0, 10]), 0, 4, true)).toBe(40);
         expect(shapeLength(new Float64Array([0, 0, 10, 0, 10, 10, 0, 10]), 0, 4, false)).toBe(30);
     });
+
+    it("undoes a transform and measures a box after one", () => {
+        const t: Affine = [0, 2, -2, 0, 5, 7];
+        const round = (values: readonly number[]) => values.map((value) => Math.round(value * 1e12) / 1e12 + 0);
+        expect(round(compose(t, invert(t)))).toEqual([1, 0, 0, 1, 0, 0]);
+        expect(round(apply(invert(t), ...apply(t, 3, 4)))).toEqual([3, 4]);
+        expect(round(transformedBox(t, [0, 0, 1, 2]))).toEqual([1, 7, 5, 9]);
+    });
 });
+
