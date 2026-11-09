@@ -25,6 +25,7 @@
     "file.confirmNew": "Start a new diagram? The current one is replaced; save it first if you need it.",
     "file.invalid": "This file is not a plantline diagram.",
     "file.tooLarge": "This file is too large to be a diagram.",
+    "file.notKept": "This browser could not keep the diagram (its storage is full or blocked). Save it as a file.",
     "action.undo": "Undo",
     "action.redo": "Redo",
     "action.connect": "Connect elements",
@@ -125,5 +126,9 @@
     "kind.building": "Building",
     "kind.cable": "Cable",
     "kind.road": "Road",
-    "kind.fence": "Fence"
+    "kind.fence": "Fence",
+    "error.title": "Something went wrong.",
+    "error.body": "Your diagram is kept in this browser. Reload the page, or download the diagram first.",
+    "error.reload": "Reload",
+    "error.download": "Download the diagram"
 }

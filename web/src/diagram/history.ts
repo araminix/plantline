@@ -32,15 +32,22 @@ export function redo<T>(history: History<T>): History<T> {
 
 export function useHistory<T>(initial: () => T) {
     const [history, setHistory] = useState<History<T>>(() => ({ past: [], present: initial(), future: [] }));
+    // Counts the changes worth saving: a step, an undo, a redo or a new document, never a preview
+    const [version, setVersion] = useState(0);
+    const step = useCallback((change: (h: History<T>) => History<T>) => {
+        setHistory(change);
+        setVersion((v) => v + 1);
+    }, []);
     return {
         state: history.present,
+        version,
         canUndo: history.past.length > 0,
         canRedo: history.future.length > 0,
-        commit: useCallback((next: T, base?: T) => setHistory((h) => commit(h, next, base)), []),
+        commit: useCallback((next: T, base?: T) => step((h) => commit(h, next, base)), [step]),
         preview: useCallback((next: T) => setHistory((h) => preview(h, next)), []),
-        undo: useCallback(() => setHistory(undo), []),
-        redo: useCallback(() => setHistory(redo), []),
+        undo: useCallback(() => step(undo), [step]),
+        redo: useCallback(() => step(redo), [step]),
         /** A new document: no undo back into the old one. */
-        reset: useCallback((next: T) => setHistory({ past: [], present: next, future: [] }), []),
+        reset: useCallback((next: T) => step(() => ({ past: [], present: next, future: [] })), [step]),
     };
 }

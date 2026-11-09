@@ -25,6 +25,7 @@
     "file.confirmNew": "Ein neues Schaltbild beginnen? Das aktuelle wird ersetzt; speichern Sie es vorher, wenn Sie es noch brauchen.",
     "file.invalid": "Diese Datei ist kein plantline-Schaltbild.",
     "file.tooLarge": "Diese Datei ist zu groß für ein Schaltbild.",
+    "file.notKept": "Dieser Browser konnte das Schaltbild nicht behalten (sein Speicher ist voll oder gesperrt). Speichern Sie es als Datei.",
     "action.undo": "Rückgängig",
     "action.redo": "Wiederholen",
     "action.connect": "Elemente verbinden",
@@ -125,5 +126,9 @@
     "kind.building": "Gebäude",
     "kind.cable": "Kabel",
     "kind.road": "Weg",
-    "kind.fence": "Zaun"
+    "kind.fence": "Zaun",
+    "error.title": "Etwas ist schiefgelaufen.",
+    "error.body": "Ihr Schaltbild ist in diesem Browser gespeichert. Laden Sie die Seite neu oder laden Sie das Schaltbild vorher herunter.",
+    "error.reload": "Neu laden",
+    "error.download": "Schaltbild herunterladen"
 }

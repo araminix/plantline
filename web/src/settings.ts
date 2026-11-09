@@ -25,10 +25,12 @@ export function readStored(key: string): unknown {
     }
 }
 
-export function writeStored(key: string, value: unknown) {
+/** Keeps the value in this browser; false when storage is full or blocked. */
+export function writeStored(key: string, value: unknown): boolean {
     try {
         localStorage.setItem(key, JSON.stringify(value));
+        return true;
     } catch {
-        // Storage blocked or full: nothing is kept
+        return false;
     }
 }

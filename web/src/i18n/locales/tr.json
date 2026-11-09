@@ -25,6 +25,7 @@
     "file.confirmNew": "Yeni bir şemaya başlansın mı? Mevcut şema değiştirilecek; gerekiyorsa önce kaydedin.",
     "file.invalid": "Bu dosya bir plantline şeması değil.",
     "file.tooLarge": "Bu dosya bir şema için çok büyük.",
+    "file.notKept": "Bu tarayıcı şemayı saklayamadı (depolama alanı dolu veya engellenmiş). Şemayı dosya olarak kaydedin.",
     "action.undo": "Geri al",
     "action.redo": "Yinele",
     "action.connect": "Elemanları bağla",
@@ -125,5 +126,9 @@
     "kind.building": "Bina",
     "kind.cable": "Kablo",
     "kind.road": "Yol",
-    "kind.fence": "Çit"
+    "kind.fence": "Çit",
+    "error.title": "Bir şeyler ters gitti.",
+    "error.body": "Şemanız bu tarayıcıda saklanıyor. Sayfayı yeniden yükleyin ya da önce şemayı indirin.",
+    "error.reload": "Yeniden yükle",
+    "error.download": "Şemayı indir"
 }

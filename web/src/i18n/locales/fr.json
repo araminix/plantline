@@ -25,6 +25,7 @@
     "file.confirmNew": "Commencer un nouveau schéma ? Le schéma actuel sera remplacé ; enregistrez-le d’abord si nécessaire.",
     "file.invalid": "Ce fichier n’est pas un schéma plantline.",
     "file.tooLarge": "Ce fichier est trop volumineux pour être un schéma.",
+    "file.notKept": "Ce navigateur n’a pas pu conserver le schéma (son stockage est plein ou bloqué). Enregistrez-le dans un fichier.",
     "action.undo": "Annuler",
     "action.redo": "Rétablir",
     "action.connect": "Relier des éléments",
@@ -125,5 +126,9 @@
     "kind.building": "Bâtiment",
     "kind.cable": "Câble",
     "kind.road": "Route",
-    "kind.fence": "Clôture"
+    "kind.fence": "Clôture",
+    "error.title": "Une erreur s’est produite.",
+    "error.body": "Votre schéma est conservé dans ce navigateur. Rechargez la page, ou téléchargez d’abord le schéma.",
+    "error.reload": "Recharger",
+    "error.download": "Télécharger le schéma"
 }

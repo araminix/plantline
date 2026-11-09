@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { I18nProvider } from "./i18n/i18n";
 
@@ -11,13 +11,18 @@ const renderApp = () =>
     );
 
 const palette = () => within(screen.getByRole("complementary", { name: "Elements" }));
+const keptNodes = (): { label: string; kind: string }[] => JSON.parse(JSON.parse(localStorage.getItem("plantline.diagram")!)).diagram.nodes;
+const diagramWrites = (setItem: { mock: { calls: unknown[][] } }) => setItem.mock.calls.filter(([key]) => key === "plantline.diagram").length;
 
 describe("the app", () => {
     beforeEach(() => {
         localStorage.clear();
         localStorage.setItem("plantline.lang", '"en"');
     });
-    afterEach(cleanup);
+    afterEach(() => {
+        cleanup();
+        vi.restoreAllMocks();
+    });
 
     it("asks for the plant type on the first visit and shows that plant's elements first", () => {
         renderApp();
@@ -72,5 +77,52 @@ describe("the app", () => {
         act(() => fireEvent.click(screen.getByRole("button", { name: "Dark theme" })));
         expect(document.documentElement.dataset.theme).toBe("dark");
         expect(screen.getByRole("button", { name: "Light theme" })).toBeTruthy();
+    });
+
+    it("saves typed text onto the element it was typed for, not the one clicked next", () => {
+        localStorage.setItem("plantline.plant", '"substation"');
+        const { container } = renderApp();
+        fireEvent.click(palette().getByRole("button", { name: "Transformer" }));
+        fireEvent.click(palette().getByRole("button", { name: "Circuit breaker" }));
+        const [transformer, breaker] = [...container.querySelectorAll("[data-node]")] as [Element, Element];
+        fireEvent.pointerDown(transformer, { pointerId: 1 });
+        fireEvent.pointerUp(transformer, { pointerId: 1 });
+        const field = screen.getByRole("textbox", { name: "Label" });
+        act(() => field.focus());
+        fireEvent.change(field, { target: { value: "T1" } });
+        fireEvent.pointerDown(breaker, { pointerId: 1 });
+        // A browser moves focus away from the field after the pointer goes down
+        act(() => (document.activeElement as HTMLElement | null)?.blur());
+        expect(keptNodes().map((node) => [node.kind, node.label])).toEqual([
+            ["transformer", "T1"],
+            ["breaker", ""],
+        ]);
+        expect((screen.getByRole("textbox", { name: "Label" }) as HTMLInputElement).value).toBe("");
+    });
+
+    it("saves a drag once, at its end, not on every frame", () => {
+        localStorage.setItem("plantline.plant", '"substation"');
+        const { container } = renderApp();
+        fireEvent.click(palette().getByRole("button", { name: "Transformer" }));
+        const svg = container.querySelector("svg.canvas")!;
+        const node = container.querySelector("[data-node]")!;
+        const setItem = vi.spyOn(Storage.prototype, "setItem");
+        fireEvent.pointerDown(node, { pointerId: 1, clientX: 100, clientY: 100 });
+        for (let step = 1; step <= 10; step++) fireEvent.pointerMove(svg, { pointerId: 1, clientX: 100 + step * 10, clientY: 100 });
+        fireEvent.pointerUp(svg, { pointerId: 1, clientX: 200, clientY: 100 });
+        expect(diagramWrites(setItem)).toBe(1);
+        fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+        expect(diagramWrites(setItem)).toBe(2);
+    });
+
+    it("says so when the browser cannot keep the diagram", () => {
+        localStorage.setItem("plantline.plant", '"substation"');
+        renderApp();
+        expect(screen.queryByRole("alert")).toBeNull();
+        vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+            throw new DOMException("full", "QuotaExceededError");
+        });
+        fireEvent.click(palette().getByRole("button", { name: "Transformer" }));
+        expect(screen.getByRole("alert").textContent).toMatch(/could not keep the diagram/);
     });
 });

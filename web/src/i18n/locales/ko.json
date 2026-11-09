@@ -25,6 +25,7 @@
     "file.confirmNew": "새 결선도를 시작할까요? 현재 결선도는 대체됩니다. 필요하면 먼저 저장하세요.",
     "file.invalid": "이 파일은 plantline 결선도가 아닙니다.",
     "file.tooLarge": "이 파일은 결선도라기에는 너무 큽니다.",
+    "file.notKept": "이 브라우저에 결선도를 보관하지 못했습니다(저장 공간이 가득 찼거나 차단됨). 파일로 저장하세요.",
     "action.undo": "실행 취소",
     "action.redo": "다시 실행",
     "action.connect": "요소 연결",
@@ -125,5 +126,9 @@
     "kind.building": "건물",
     "kind.cable": "케이블",
     "kind.road": "도로",
-    "kind.fence": "울타리"
+    "kind.fence": "울타리",
+    "error.title": "문제가 발생했습니다.",
+    "error.body": "결선도는 이 브라우저에 보관되어 있습니다. 페이지를 새로 고치거나 먼저 결선도를 다운로드하세요.",
+    "error.reload": "새로 고침",
+    "error.download": "결선도 다운로드"
 }

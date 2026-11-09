@@ -25,6 +25,7 @@
     "file.confirmNew": "¿Empezar un esquema nuevo? El actual se reemplaza; guárdelo antes si lo necesita.",
     "file.invalid": "Este archivo no es un esquema de plantline.",
     "file.tooLarge": "Este archivo es demasiado grande para ser un esquema.",
+    "file.notKept": "Este navegador no pudo guardar el esquema (su almacenamiento está lleno o bloqueado). Guárdelo como archivo.",
     "action.undo": "Deshacer",
     "action.redo": "Rehacer",
     "action.connect": "Conectar elementos",
@@ -125,5 +126,9 @@
     "kind.building": "Edificio",
     "kind.cable": "Cable",
     "kind.road": "Camino",
-    "kind.fence": "Vallado"
+    "kind.fence": "Vallado",
+    "error.title": "Algo salió mal.",
+    "error.body": "Su esquema se guarda en este navegador. Recargue la página o descargue antes el esquema.",
+    "error.reload": "Recargar",
+    "error.download": "Descargar el esquema"
 }

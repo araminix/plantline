@@ -25,6 +25,7 @@
     "file.confirmNew": "Começar um novo diagrama? O atual será substituído; salve-o antes, se precisar dele.",
     "file.invalid": "Este arquivo não é um diagrama do plantline.",
     "file.tooLarge": "Este arquivo é grande demais para ser um diagrama.",
+    "file.notKept": "Este navegador não conseguiu guardar o diagrama (o armazenamento está cheio ou bloqueado). Salve-o como arquivo.",
     "action.undo": "Desfazer",
     "action.redo": "Refazer",
     "action.connect": "Conectar elementos",
@@ -125,5 +126,9 @@
     "kind.building": "Edificação",
     "kind.cable": "Cabo",
     "kind.road": "Estrada",
-    "kind.fence": "Cerca"
+    "kind.fence": "Cerca",
+    "error.title": "Algo deu errado.",
+    "error.body": "Seu diagrama está guardado neste navegador. Recarregue a página ou baixe o diagrama antes.",
+    "error.reload": "Recarregar",
+    "error.download": "Baixar o diagrama"
 }

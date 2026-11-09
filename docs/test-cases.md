@@ -32,10 +32,11 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-20 | US-10 | Tapping a palette element adds it, selected, and shows its properties. | `App.test.tsx` › adds an element from the palette…; e2e › builds, connects… |
 | TC-21 | US-10, US-11 | A new element lands on the grid; a busbar gets its length. | `model.test.ts` › adds an element on the grid… |
 | TC-22 | US-11 | A drag moves freely and snaps to the grid at its end. | `model.test.ts` › moves elements freely during a drag… |
-| TC-23 | US-11, US-15 | A drag is one undo step; previews are not steps. | `history.test.ts` › makes a drag one step… |
+| TC-23 | US-11, US-15 | A drag is one undo step; previews are not steps. | `history.test.ts` › makes a drag one step…, counts the changes worth saving… |
 | TC-24 | US-12 | Two elements connect once; never an element to itself. | `model.test.ts` › connects two elements once… |
 | TC-25 | US-12 | Connecting by picking elements on the canvas, with a mouse and with touch. | e2e › builds, connects, checks and saves… |
 | TC-26 | US-13, US-14 | Fields are edited; removing an element removes its lines. | `model.test.ts` › removes an element together with its links… |
+| TC-26a | US-13 | Text typed for one element is saved onto it, not onto the element clicked next. | `App.test.tsx` › saves typed text onto the element it was typed for… |
 | TC-27 | US-15 | Undo and redo; a new step clears redo; nothing to undo changes nothing. | `history.test.ts` › undoes and redoes…; `App.test.tsx` › adds an element… and undoes it; e2e › builds… |
 | TC-28 | US-16 | Arrangement: grid connection on top, one row per level, rows centred, a manual order kept. | `arrange.test.ts` › puts the grid connection on top… |
 | TC-29 | US-16 | Unconnected groups side by side without overlap. | `arrange.test.ts` › places unconnected groups side by side… |
@@ -45,6 +46,9 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-33 | US-17 | Different voltages on a line are reported, except across a transformer or inverter. | `checks.test.ts` › reports different voltages… |
 | TC-34 | US-17 | A reference designation used twice is reported. | `checks.test.ts` › reports a reference designation used twice |
 | TC-35 | US-19 | The diagram is still there after a reload. | `App.test.tsx` › keeps the diagram in the browser between visits |
+| TC-35a | US-19 | A drag is saved once, at its end, not on every frame. | `App.test.tsx` › saves a drag once… |
+| TC-35b | US-19 | A full or blocked storage is reported. | `App.test.tsx` › says so when the browser cannot keep the diagram |
+| TC-35c | US-19 | An unexpected error shows a message, a reload and the kept diagram to download. | `ErrorBoundary.test.tsx` (2 tests) |
 | TC-36 | US-20 | A saved file reads back exactly. | `file.test.ts` › read back exactly what was saved; e2e › builds… (the downloaded file) |
 | TC-37 | US-20, US-42 | Files that are not plantline diagrams, are inconsistent, hostile (unknown kinds, huge coordinates or texts, duplicate ids, dangling lines, too many elements) or over 5 MB are refused. | `file.test.ts` › refuse…  (3 tests); e2e › refuses a file that is not a diagram… |
 | TC-38 | US-20, US-21 | Files are named after the diagram, in any script, or “diagram”. | `export.test.tsx` › name files after the diagram…; e2e › builds… (`diagram.plantline.json`) |

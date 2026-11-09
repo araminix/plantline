@@ -25,6 +25,7 @@
     "file.confirmNew": "要新建单线图吗？当前单线图将被替换；如有需要请先保存。",
     "file.invalid": "此文件不是 plantline 单线图。",
     "file.tooLarge": "此文件太大，不可能是单线图。",
+    "file.notKept": "此浏览器无法保存单线图（存储空间已满或被阻止）。请将其另存为文件。",
     "action.undo": "撤销",
     "action.redo": "重做",
     "action.connect": "连接元件",
@@ -125,5 +126,9 @@
     "kind.building": "建筑物",
     "kind.cable": "电缆",
     "kind.road": "道路",
-    "kind.fence": "围栏"
+    "kind.fence": "围栏",
+    "error.title": "出现了问题。",
+    "error.body": "您的单线图保存在此浏览器中。请重新加载页面，或先下载单线图。",
+    "error.reload": "重新加载",
+    "error.download": "下载单线图"
 }

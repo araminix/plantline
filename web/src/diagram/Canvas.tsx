@@ -110,6 +110,8 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
     };
 
     const onPointerDown = (event: ReactPointerEvent<SVGSVGElement>) => {
+        // A field being edited saves to its own element before the selection moves on
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
         const point = local(event);
         pointers.current.set(event.pointerId, point);
         event.currentTarget.setPointerCapture?.(event.pointerId);

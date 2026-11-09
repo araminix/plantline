@@ -25,6 +25,7 @@
     "file.confirmNew": "Iniziare un nuovo schema? Quello attuale verrà sostituito; salvalo prima se ti serve.",
     "file.invalid": "Questo file non è uno schema plantline.",
     "file.tooLarge": "Questo file è troppo grande per essere uno schema.",
+    "file.notKept": "Questo browser non è riuscito a conservare lo schema (la memoria è piena o bloccata). Salvalo come file.",
     "action.undo": "Annulla",
     "action.redo": "Ripeti",
     "action.connect": "Collega elementi",
@@ -125,5 +126,9 @@
     "kind.building": "Edificio",
     "kind.cable": "Cavo",
     "kind.road": "Strada",
-    "kind.fence": "Recinzione"
+    "kind.fence": "Recinzione",
+    "error.title": "Si è verificato un errore.",
+    "error.body": "Il tuo schema è conservato in questo browser. Ricarica la pagina, oppure scarica prima lo schema.",
+    "error.reload": "Ricarica",
+    "error.download": "Scarica lo schema"
 }

@@ -25,6 +25,7 @@
     "file.confirmNew": "新しい結線図を作成しますか？現在の結線図は置き換えられます。必要な場合は先に保存してください。",
     "file.invalid": "このファイルは plantline の結線図ではありません。",
     "file.tooLarge": "このファイルは結線図としては大きすぎます。",
+    "file.notKept": "このブラウザーに結線図を保存できませんでした（ストレージがいっぱいか、ブロックされています）。ファイルとして保存してください。",
     "action.undo": "元に戻す",
     "action.redo": "やり直す",
     "action.connect": "要素を接続",
@@ -125,5 +126,9 @@
     "kind.building": "建物",
     "kind.cable": "ケーブル",
     "kind.road": "道路",
-    "kind.fence": "フェンス"
+    "kind.fence": "フェンス",
+    "error.title": "問題が発生しました。",
+    "error.body": "結線図はこのブラウザーに保存されています。ページを再読み込みするか、先に結線図をダウンロードしてください。",
+    "error.reload": "再読み込み",
+    "error.download": "結線図をダウンロード"
 }

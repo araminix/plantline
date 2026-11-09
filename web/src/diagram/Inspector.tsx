@@ -55,7 +55,7 @@ export function Inspector({ diagram, selection, issues, onChange, onSelect, onCo
     if (node) {
         const set = (patch: Partial<DiagramNode>) => onChange(updateNode(diagram, node.id, patch));
         return (
-            <div className="inspector">
+            <div className="inspector" key={node.id}>
                 <h2 className="with-icon">
                     <SymbolIcon kind={node.kind} size={28} />
                     {t(`kind.${node.kind}`)}

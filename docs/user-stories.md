@@ -53,7 +53,8 @@ start from the selected one); lines run straight down and across, and reach anyw
 cannot be connected to itself or twice to the same element.
 
 **US-13 Describe equipment.** I give a selected element a label, a reference designation (IEC 81346), a voltage
-(kV) and a rating (kVA); a busbar also has a length. A field is saved when I leave it or press Enter, as one undo step.
+(kV) and a rating (kVA); a busbar also has a length. A field is saved when I leave it or press Enter, as one undo step,
+and always onto the element I typed it for, even when I click another element next.
 
 **US-14 Remove.** I delete the selected elements (their lines go with them) or a selected line, with the toolbar, the
 properties panel or the Delete key.
@@ -72,7 +73,9 @@ inverters may join two), a reference designation used twice.
 **US-18 Navigate.** I zoom with the wheel, the toolbar or two fingers, pan by dragging the background, and fit the
 diagram to the screen. An opened diagram is fitted once; adding the first element does not zoom.
 
-**US-19 Keep my work.** The diagram is kept in the browser and is still there when I come back.
+**US-19 Keep my work.** The diagram is kept in the browser and is still there when I come back. If the browser cannot
+keep it (its storage is full or blocked), I am told to save it as a file. If the app fails unexpectedly, it says so and
+offers to reload or to download the kept diagram, instead of a blank page.
 
 **US-20 Save and open files.** I save the diagram as a `.plantline.json` file and open it again later or on another
 computer. A file that is not a plantline diagram, is inconsistent or is over 5 MB is refused with a message, and the

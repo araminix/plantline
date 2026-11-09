@@ -2,6 +2,17 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 0.2.0 (unreleased)
+
+### Fixed
+
+- The File menu opens over the page: no toolbar or panel hides it any more; arrow keys move through it, Escape closes
+  it and returns to its button.
+- Text typed in the properties panel is saved onto its own element, never onto the element clicked next.
+- The diagram is saved in the browser once per change, not on every frame of a drag; a full or blocked browser storage
+  is reported.
+- An unexpected error shows a message with Reload and "Download the diagram" instead of a blank page.
+
 ## 0.1.0 (unreleased)
 
 The first version.

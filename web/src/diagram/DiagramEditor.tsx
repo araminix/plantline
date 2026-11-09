@@ -14,7 +14,8 @@ import { Inspector } from "./Inspector";
 import { addNode, connect, emptyDiagram, GRID, removeItems, type Diagram } from "./model";
 import { Palette } from "./Palette";
 
-const AUTOSAVE_KEY = "plantline.diagram";
+/** Where the diagram is kept in this browser. */
+export const AUTOSAVE_KEY = "plantline.diagram";
 const NONE: Selection = { nodes: [], link: null };
 
 function restore(plant: PlantType): Diagram {
@@ -42,7 +43,9 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const kindName = (kind: NodeKind) => t(`kind.${kind}`);
     const baseName = fileNameOf(diagram.name, "diagram");
 
-    useEffect(() => writeStored(AUTOSAVE_KEY, serializeDiagram(diagram)), [diagram]);
+    // Saved once per change: a drag's frames are previews and are not saved, its end is. A full or blocked storage is reported.
+    const [notKept, setNotKept] = useState(false);
+    useEffect(() => setNotKept(!writeStored(AUTOSAVE_KEY, serializeDiagram(diagram))), [history.version, diagram.plantType]);
 
     // The plant type is chosen in the header; an undone step never brings an old one back
     useEffect(() => {
@@ -183,6 +186,11 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                 </IconButton>
             </div>
             {connectFrom !== undefined && <p className="banner">{t(connectFrom ? "connect.second" : "connect.first")}</p>}
+            {notKept && (
+                <p className="banner error" role="alert">
+                    {t("file.notKept")}
+                </p>
+            )}
             {notice && (
                 <p className="banner error" role="alert">
                     {notice}
