@@ -21,6 +21,32 @@ interface Props {
     /** While true, a click on the map tells where the drawing lies. */
     picking: boolean;
     onPick: (at: { lat: number; lon: number }) => void;
+    /** The counted objects' extents, described on hover (a tooltip) and on a click or tap (a popup). */
+    targets: Target[];
+    describe: (index: number) => HTMLElement;
+    /** Changing it shows that object: the map fits it and opens its popup. */
+    focus: { index: number; nonce: number } | null;
+}
+
+/** Where a counted object lies: its index and extent in latitude and longitude. */
+export interface Target {
+    index: number;
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+}
+
+/** The smallest target under a point (an inverter over the table it stands on), or null. */
+export function targetAt(targets: readonly Target[], lat: number, lon: number): Target | null {
+    let best: Target | null = null;
+    let area = Infinity;
+    for (const target of targets) {
+        if (lat < target.south || lat > target.north || lon < target.west || lon > target.east) continue;
+        const size = (target.north - target.south) * (target.east - target.west);
+        if (size < area) [best, area] = [target, size];
+    }
+    return best;
 }
 
 // Leaflet 1.9: a canvas redraw scheduled just before its layer or map is removed runs after the removal and throws
@@ -255,7 +281,7 @@ function turnAbout(x: number, y: number, radians: number): Affine {
 }
 
 /** The drawing on a Leaflet map, over the plain map or satellite imagery. */
-export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, satellite, fitKey, active, label, onMove, picking, onPick }: Props) {
+export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, satellite, fitKey, active, label, onMove, picking, onPick, targets, describe, focus }: Props) {
     const element = useRef<HTMLDivElement>(null);
     const map = useRef<L.Map | null>(null);
     const overlay = useRef<InstanceType<typeof SceneLayer> | null>(null);
@@ -265,6 +291,10 @@ export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, sat
     placed.current = onPlace;
     const picked = useRef(onPick);
     picked.current = onPick;
+    const described = useRef(describe);
+    described.current = describe;
+    // One popup for the map: a new object's replaces the last one's
+    const popup = useRef(L.popup({ className: "object-popup" }));
 
     useEffect(() => {
         const created = L.map(element.current!, { preferCanvas: true, worldCopyJump: true }).setView([20, 0], 2);
@@ -274,7 +304,11 @@ export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, sat
         };
         created.on("moveend", report);
         map.current = created;
+        // The map's box can change while the window does not (the layout around it): Leaflet must know, or its middle drifts
+        const resized = new ResizeObserver(() => created.invalidateSize());
+        resized.observe(element.current!);
         return () => {
+            resized.disconnect();
             created.remove();
             map.current = null;
         };
@@ -345,6 +379,51 @@ export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, sat
             turner.remove();
         };
     }, [scene, placement, moveLabel, turnLabel]);
+
+    // A tooltip follows the pointer over a counted object; a click or tap opens its popup
+    useEffect(() => {
+        const created = map.current!;
+        if (picking || targets.length === 0) return;
+        const tooltip = L.tooltip({ direction: "top", offset: [0, -8], className: "object-tooltip" });
+        // A scan of the extents is quick enough for every move (tens of thousands of objects)
+        let shown: Target | null = null;
+        const hover = (event: L.LeafletMouseEvent) => {
+            const target = targetAt(targets, event.latlng.lat, event.latlng.wrap().lng);
+            if (!target) return leave();
+            if (target !== shown) tooltip.setContent(described.current(target.index));
+            tooltip.setLatLng(event.latlng);
+            if (!shown) tooltip.addTo(created);
+            shown = target;
+        };
+        const leave = () => {
+            shown = null;
+            tooltip.remove();
+        };
+        const open = (event: L.LeafletMouseEvent) => {
+            const target = targetAt(targets, event.latlng.lat, event.latlng.wrap().lng);
+            if (!target) return;
+            tooltip.remove();
+            popup.current.setLatLng(event.latlng).setContent(described.current(target.index)).openOn(created);
+        };
+        created.on("mousemove", hover);
+        created.on("mouseout", leave);
+        created.on("click", open);
+        return () => {
+            leave();
+            created.off("mousemove", hover);
+            created.off("mouseout", leave);
+            created.off("click", open);
+        };
+    }, [targets, picking]);
+
+    useEffect(() => {
+        const created = map.current!;
+        const target = focus && targets.find((candidate) => candidate.index === focus.index);
+        if (!target) return;
+        const bounds = L.latLngBounds([target.south, target.west], [target.north, target.east]);
+        created.fitBounds(bounds, { padding: [80, 80], maxZoom: 20, animate: false });
+        popup.current.setLatLng(bounds.getCenter()).setContent(described.current(target.index)).openOn(created);
+    }, [focus]); // a new request (its nonce) shows the object; new targets alone do not move the map
 
     useEffect(() => {
         if (!picking) return;

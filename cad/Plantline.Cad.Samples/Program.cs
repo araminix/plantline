@@ -26,7 +26,7 @@ Save(Hydro(), output, "hydro-plant");
 Save(Substation(), output, "substation");
 Save(Transmission(), output, "transmission-line");
 
-// A 4 MW solar plant in UTM zone 36N coordinates: 4 inverter blocks of 10 tables, 2 strings per table.
+// A 1.2 MWp solar plant in UTM zone 36N coordinates: 4 inverter blocks of 10 tables of 56 modules, 2 strings per table.
 static CadDocument Solar()
 {
     var (document, add) = New();
@@ -35,7 +35,15 @@ static CadDocument Solar()
     var inverters = Layer(document, "INVERTERS", 1);
     var cables = Layer(document, "CABLES", 6);
     var fence = Layer(document, "FENCE", 8);
-    var table = Block(document, "PV_TABLE_2x28", 20, 4);
+    // A table holds its modules, 2 rows of 28, as module blocks named after their power
+    var module = Block(document, "PV_MODULE_550W", 0.68, 1.9);
+    var modules = Layer(document, "PV-MODULES", 4);
+    var table = Block(
+        document,
+        "PV_TABLE_2x28",
+        20,
+        4,
+        Enumerable.Range(0, 56).Select(i => (Entity)new Insert(module) { InsertPoint = new XYZ(-10 + 0.357 + i % 28 * 0.714, i < 28 ? -1 : 1, 0), Layer = modules }).ToArray());
     var inverter = Block(document, "INVERTER_250KW", 2, 1);
     var station = Block(document, "TRANSFORMER_STATION", 6, 3);
     const double east = 470_000, north = 4_330_000;

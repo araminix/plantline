@@ -8,10 +8,11 @@ import { IconButton, NumberField, TextField } from "../ui/controls";
 import { CadReadError, fitsDevice, readDrawing, type CadError } from "./cad";
 import { drawingBounds, LENGTH_UNITS, METRES_PER_UNIT, type Drawing, type LengthUnit } from "./drawing";
 import { toCsv, toGeoJson } from "./exports";
-import { LayoutMap } from "./LayoutMap";
+import { findObjects, moduleWp } from "./found";
+import { LayoutMap, type Target } from "./LayoutMap";
 import { createProjector, utmProj, type Placement } from "./place";
 import { Inventory } from "./Inventory";
-import { createMatcher, entersBlock, inventory, NO_ASSIGNMENTS, recognize, type Assignments } from "./recognize";
+import { createMatcher, inventory, NO_ASSIGNMENTS, recognize, type Assignments } from "./recognize";
 import { buildScene, GREY } from "./scene";
 import { fetchSample, SAMPLES } from "./samples";
 import { looksProjected, sizeOf, unitAdvice } from "./where";
@@ -38,7 +39,10 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const [satellite, setSatellite] = usePersisted("plantline.satellite", false, isBoolean);
     const [mapCentre, setMapCentre] = useState({ lat: 0, lon: 0 });
     const [fitNonce, setFitNonce] = useState(0);
-    const [solar, setSolar] = useState({ modulesPerTable: 56, moduleWp: 550 });
+    // The module power typed, or null to take it from the module block names (else 550 Wp)
+    const [solar, setSolar] = useState<{ modulesPerTable: number; moduleWp: number | null }>({ modulesPerTable: 56, moduleWp: null });
+    const [query, setQuery] = useState("");
+    const [focus, setFocus] = useState<{ index: number; nonce: number } | null>(null);
     const [panelOpen, setPanelOpen] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
 
@@ -60,9 +64,35 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const scene = useMemo(() => {
         if (!drawing || !recognition || !projector) return null;
         const hidden = new Set(drawing.layers.flatMap((name, index) => (hiddenLayers.has(name) ? [index] : [])));
-        return buildScene(drawing, recognition, { project: projector, metresPerUnit: metres, colorOf: (kind) => colorOf(kind as LayoutKind), isFilled: (kind) => MEASURE[kind as LayoutKind] === "count", hidden, enter: entersBlock(drawing, assignments) });
-    }, [drawing, recognition, projector, metres, colorOf, hiddenLayers, assignments]);
+        return buildScene(drawing, recognition, { project: projector, metresPerUnit: metres, colorOf: (kind) => colorOf(kind as LayoutKind), isFilled: (kind) => MEASURE[kind as LayoutKind] === "count", hidden });
+    }, [drawing, recognition, projector, metres, colorOf, hiddenLayers]);
     const kindName = (kind: LayoutKind) => t(`kind.${kind}`);
+    const found = useMemo(() => (drawing && recognition ? findObjects(drawing, recognition) : []), [drawing, recognition]);
+    const targets = useMemo<Target[]>(() => {
+        if (!projector) return [];
+        return found.map((object, index) => {
+            const points = object.corners.map(([x, y]) => projector(x, y));
+            const [lats, lons] = [points.map(([lat]) => lat), points.map(([, lon]) => lon)];
+            return { index, south: Math.min(...lats), west: Math.min(...lons), north: Math.max(...lats), east: Math.max(...lons) };
+        });
+    }, [found, projector]);
+    const suggestedWp = useMemo(() => moduleWp(found.filter((object) => object.kind === "pvModule").map((object) => `${object.block ?? ""} ${object.layer}`)), [found]);
+    // What an object is, for its tooltip and popup: built as text, never as markup
+    const describe = (index: number) => {
+        const object = found[index]!;
+        const box = document.createElement("div");
+        const title = document.createElement("strong");
+        title.textContent = `${kindName(object.kind)} · ${object.label}`;
+        box.append(title);
+        const lines: [string, string | null][] = [[t("layout.block"), object.block], [t("layout.layer"), object.layer], ...Object.entries(object.attributes)];
+        for (const [key, value] of lines) {
+            if (!value) continue;
+            const line = document.createElement("div");
+            line.textContent = `${key}: ${value}`;
+            box.append(line);
+        }
+        return box;
+    };
 
     useEffect(() => {
         if (status !== "loading") return;
@@ -90,6 +120,9 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
             setPlacement(preset ?? suggestedPlacement(loaded, loadedUnit));
             setAssignments(NO_ASSIGNMENTS);
             setHiddenLayers(new Set());
+            setSolar((before) => ({ ...before, moduleWp: null }));
+            setFocus(null);
+            setQuery("");
             setFitNonce((n) => n + 1);
             setStatus("idle");
         } catch (error) {
@@ -172,8 +205,16 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     }
 
     const fitKey = `${fileName}:${unit}:${fitNonce}:${placement === null ? "none" : placement.mode === "crs" ? placement.proj : "point"}`;
-    const tables = recognition?.totals.find((total) => total.kind === "pvTable")?.count ?? 0;
-    const kwp = (tables * solar.modulesPerTable * solar.moduleWp) / 1000;
+    const countOf = (kind: LayoutKind) => recognition?.totals.find((total) => total.kind === kind)?.count ?? 0;
+    // Counted modules when the drawing has module blocks; else tables times the modules per table typed
+    const [modules, wp] = [countOf("pvModule"), solar.moduleWp ?? suggestedWp ?? 550];
+    const kwp = ((modules > 0 ? modules : countOf("pvTable") * solar.modulesPerTable) * wp) / 1000;
+    // Objects matching the search; modules (thousands of them) only when searched for
+    const SHOWN = 50;
+    const words = query.trim().toLowerCase();
+    const matches = found.flatMap((object, index) =>
+        (words ? [object.label, kindName(object.kind), object.block ?? "", object.layer].some((text) => text.toLowerCase().includes(words)) : object.kind !== "pvModule") ? [{ object, index }] : [],
+    );
     const baseName = fileName.replace(/\.(dwg|dxf)$/i, "");
     const amount = (lengthM: number) => (lengthM >= 1000 ? `${number(lengthM / 1000, 2)} km` : `${number(lengthM, 1)} m`);
     const useUnit = (next: LengthUnit) => {
@@ -217,8 +258,23 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                             setPlacement({ mode: "point", lat, lon, rotationDeg: 0 });
                             setFitNonce((n) => n + 1);
                         }}
+                        targets={targets}
+                        describe={describe}
+                        focus={focus}
                     />
                     {notices}
+                    {recognition && (
+                        <ul className="map-legend" aria-label={t("layout.legend")}>
+                            {recognition.totals
+                                .filter((total) => total.count > 0)
+                                .map((total) => (
+                                    <li key={total.kind}>
+                                        <span className="dot" style={{ background: colorOf(total.kind) }} />
+                                        {kindName(total.kind)}
+                                    </li>
+                                ))}
+                        </ul>
+                    )}
                     <div className="map-tools">
                         <IconButton label={t("layout.satellite")} pressed={satellite} onClick={() => setSatellite(!satellite)}>
                             <Layers size={18} />
@@ -259,13 +315,36 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                     </table>
                     {plant === "solar" && (
                         <div className="solar">
-                            <NumberField label={t("layout.modulesPerTable")} value={solar.modulesPerTable} onCommit={(value) => setSolar({ ...solar, modulesPerTable: value ?? 0 })} />
-                            <NumberField label={t("layout.moduleWp")} unit="Wp" value={solar.moduleWp} onCommit={(value) => setSolar({ ...solar, moduleWp: value ?? 0 })} />
+                            {modules === 0 && <NumberField label={t("layout.modulesPerTable")} value={solar.modulesPerTable} onCommit={(value) => setSolar({ ...solar, modulesPerTable: value ?? 0 })} />}
+                            <NumberField label={t("layout.moduleWp")} unit="Wp" value={wp} onCommit={(value) => setSolar({ ...solar, moduleWp: value })} />
                             <p className="capacity">
                                 {t("layout.capacity")}: <strong>{kwp >= 1000 ? `${number(kwp / 1000, 2)} MWp` : `${number(kwp, 1)} kWp`}</strong>
+                                {modules > 0 && <span className="muted"> {t("layout.fromModules", { count: number(modules) })}</span>}
                             </p>
                         </div>
                     )}
+
+                    <h3>{t("layout.find")}</h3>
+                    <input type="search" className="inventory-search" aria-label={t("layout.find")} placeholder={t("layout.find")} value={query} onChange={(event) => setQuery(event.target.value)} />
+                    <ul className="found-list">
+                        {matches.slice(0, SHOWN).map(({ object, index }) => (
+                            <li key={index}>
+                                <button
+                                    type="button"
+                                    disabled={!projector}
+                                    onClick={() => {
+                                        setFocus({ index, nonce: Date.now() });
+                                        setPanelOpen(false);
+                                    }}
+                                >
+                                    <span className="dot" style={{ background: colorOf(object.kind) }} />
+                                    <span dir="auto">{object.label}</span>
+                                    <span className="muted">{kindName(object.kind)}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                    {matches.length === 0 ? <p className="muted small">{t("layout.noneFound")}</p> : matches.length > SHOWN && <p className="muted small">{t("layout.more", { count: number(matches.length - SHOWN) })}</p>}
 
                     <h3>{t("layout.placement")}</h3>
                     <label className="field">

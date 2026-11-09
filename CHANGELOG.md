@@ -14,6 +14,15 @@ Plant layouts that work with real drawings.
   leave a block out with what is inside, for a key plan that repeats the plant); show or hide layers. The name
   patterns moved under Advanced.
 - PV modules are recognised (block names such as "590W", panel layers), and PVcase tables ("… PVBlock").
+- The solar capacity comes from the modules counted in the drawing, with the module power read from their block
+  names; the modules per table typed are used only when the drawing has no module blocks.
+- A legend on the map; hover, click or tap a counted object to see its kind, ID, block, layer and attributes; search
+  the found objects and show one on the map.
+- The solar sample's tables hold their 56 module blocks.
+
+### Fixed
+
+- The map keeps its centre right when its box changes without the window changing.
 - A unit that makes the plant implausibly small or large is noticed ("In mm, this plant would be 1.5 m across. Is the
   drawing in m?"), with a button to use the suggested unit.
 

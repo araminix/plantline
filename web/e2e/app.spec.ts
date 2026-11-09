@@ -495,6 +495,38 @@ test("says what a block of the drawing is, and hides a layer", async ({ page }) 
     await expect(eye).toHaveAttribute("aria-pressed", "false");
 });
 
+test("describes a counted object from the list, on a click and on hover, and counts modules for the capacity", async ({ page }) => {
+    await start(page, "Solar PV");
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    await page.getByRole("button", { name: /Try a sample/ }).click();
+    if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
+    // 40 tables of 56 module blocks named "…550W"
+    const capacity = page.getByText(/Installed capacity/);
+    await expect(capacity).toContainText("1.23 MWp", { timeout: 60_000 });
+    await expect(capacity).toContainText("from 2,240 counted modules");
+
+    await page.getByRole("searchbox", { name: "Find an object" }).fill("INV-03");
+    await page.getByRole("button", { name: /INV-03/ }).click();
+    const popup = page.locator(".object-popup");
+    await expect(popup).toContainText("Inverter · INV-03");
+    await expect(popup).toContainText("Block: INVERTER_250KW");
+    await popup.locator(".leaflet-popup-close-button").click();
+
+    // The inverter now lies in the middle of the map: pointing at it (a mouse) or tapping it (a phone) describes it
+    const map = (await page.locator(".map").boundingBox())!;
+    const [x, y] = [map.x + map.width / 2, map.y + map.height / 2];
+    if (isPhone(page)) {
+        await page.mouse.click(x, y);
+        await expect(popup).toContainText("INV-03");
+    } else {
+        // Chrome hands the last move to the page with the next frame: one more small move delivers the one onto it
+        await page.mouse.move(x - 40, y - 40);
+        await page.mouse.move(x, y, { steps: 4 });
+        await page.mouse.move(x + 2, y + 2);
+        await expect(page.locator(".object-tooltip")).toContainText("Inverter · INV-03");
+    }
+});
+
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();

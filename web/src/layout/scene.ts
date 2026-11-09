@@ -1,4 +1,4 @@
-import { apply, compose, corners, createBoxes, extend, forEachShape, shapesBox, transformedBox, walk, type Affine, type Block, type Box, type Drawing, type Reference } from "./drawing";
+import { apply, compose, corners, createBoxes, extend, forEachShape, shapesBox, transformedBox, walk, type Affine, type Block, type Box, type Drawing } from "./drawing";
 import type { Projector } from "./place";
 import type { Recognition } from "./recognize";
 
@@ -68,11 +68,9 @@ interface Options {
     isFilled: (kind: string) => boolean;
     /** Layers not drawn (by index): their shapes, and the blocks placed on them. */
     hidden?: ReadonlySet<number>;
-    /** Whether a reference is drawn at all (a block left out is not). */
-    enter?: (reference: Reference) => boolean;
 }
 
-export function buildScene(drawing: Drawing, recognition: Recognition, { project, metresPerUnit, colorOf, isFilled, hidden = new Set(), enter = () => true }: Options): Scene {
+export function buildScene(drawing: Drawing, recognition: Recognition, { project, metresPerUnit, colorOf, isFilled, hidden = new Set() }: Options): Scene {
     const boxOf = createBoxes(drawing);
     const whole = boxOf(drawing.model, 0);
     const origin = whole ? mercator(...project((whole[0] + whole[2]) / 2, (whole[1] + whole[3]) / 2)) : ([0, 0] as [number, number]);
@@ -146,7 +144,7 @@ export function buildScene(drawing: Drawing, recognition: Recognition, { project
         const kinds = recognition.kinds.get(block)!;
         block.references.forEach((reference, i) => {
             const kind = kinds.references[i];
-            const box = kind && !hidden.has(reference.layer) && enter(reference) && boxOf(drawing.blocks[reference.block]!, depth + 1);
+            const box = kind && !hidden.has(reference.layer) && boxOf(drawing.blocks[reference.block]!, depth + 1);
             if (!kind || !box) return;
             const toDrawing = compose(transform, reference.transform);
             const color = colorFor(kind);
@@ -154,7 +152,7 @@ export function buildScene(drawing: Drawing, recognition: Recognition, { project
             for (const [x, y] of corners(box)) target.push(...(toFrame ? apply(compose(toFrame, toDrawing), x, y) : frame(...apply(toDrawing, x, y))));
         });
         return toFrame;
-    }, (reference) => !hidden.has(reference.layer) && enter(reference));
+    }, (reference) => !hidden.has(reference.layer) && recognition.enters(reference));
 
     const placed: PlacedBlock[] = [...placedByBlock.values()].filter((block) => block !== null && block.placements.length > 0).map((block) => ({ paint: block!.paint, placements: block!.placements }));
     return { origin, bounds: bounds[0] <= bounds[2] ? bounds : null, colors: [...colors], projected, placed, boxes, complete };

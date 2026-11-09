@@ -34,6 +34,8 @@ export interface Recognition {
     invalidRules: number[];
     /** False when the drawing places more copies than can be counted (see MAX_PLACED). */
     complete: boolean;
+    /** Whether a reference is opened at all: not one to a block left out. Every later walk uses it. */
+    enters: (reference: Reference) => boolean;
 }
 
 /** The rules compiled: the kind the first matching rule of a measure gives a name, or null. */
@@ -66,6 +68,7 @@ export const entersBlock = (drawing: Drawing, assignments: Assignments) => (refe
  */
 export function recognize(drawing: Drawing, rules: readonly LayoutRule[], metresPerUnit: number, assignments: Assignments = NO_ASSIGNMENTS): Recognition {
     const { match, invalid } = createMatcher(rules);
+    const enters = entersBlock(drawing, assignments);
 
     const kinds = new Map<Block, Kinds>();
     for (const block of [drawing.model, ...drawing.blocks]) {
@@ -104,9 +107,9 @@ export function recognize(drawing: Drawing, rules: readonly LayoutRule[], metres
             if (total.measure === "length") total.lengthM += shapeLength(drawing.points, first, count, closed, transform) * metresPerUnit;
         });
         return null;
-    }, entersBlock(drawing, assignments));
+    }, enters);
 
-    return { totals: [...totals.values()], kinds, invalidRules: invalid, complete };
+    return { totals: [...totals.values()], kinds, invalidRules: invalid, complete, enters };
 }
 
 /** The drawing's blocks and layers in use, most used first: each block's placed copies, each layer's shapes and references. */

@@ -40,7 +40,7 @@ export function toGeoJson(drawing: Drawing, recognition: Recognition, project: P
             features.push({ type: "Feature", geometry, properties: { kind, layer: drawing.layers[layer]! } });
         });
         return null;
-    });
+    }, recognition.enters);
     return JSON.stringify({ type: "FeatureCollection", features });
 }
 

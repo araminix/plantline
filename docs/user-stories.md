@@ -192,8 +192,15 @@ I place the drawing:
 
 **US-36 Check against the ground.** I switch between the plain map and satellite imagery.
 
-**US-37 Solar capacity.** For a solar plant, I give the modules per table and the module power; the installed capacity
-is shown in kWp or MWp.
+**US-37 Solar capacity.** For a solar plant, the installed capacity (kWp or MWp) is the modules counted in the drawing
+times the module power; the module power is read from the module blocks' names ("590W") when they agree, and I can
+change it. When the drawing has no module blocks, I give the modules per table instead, times the tables counted.
+
+**US-37a Find and inspect objects.** A legend on the map gives each counted kind's colour. Pointing at a counted object
+(a tap on a touch screen, or a click) shows what it is: its kind, its ID (or tag, name or number from its attributes,
+else its block and a number), its block, its layer and its attributes. I search the found objects by ID, kind, block or
+layer (modules only when searched for, since there are thousands) and show one on the map, which zooms to it and
+describes it.
 
 **US-38 Take the results away.** I export the recognised objects as GeoJSON (points for blocks, lines and polygons for
 shapes, with their kind, block, layer and attributes) and the totals as CSV. CSV cells cannot run as spreadsheet
