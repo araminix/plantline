@@ -13,7 +13,15 @@ export interface DiagramNode {
     ratingKva: number | null;
     /** Busbars only: their length. */
     width: number | null;
+    /** Turned clockwise, in degrees; a busbar is either across (0) or upright (90). */
+    rotation: Rotation;
+    /** The symbol mirrored across its own axis (before it is turned). */
+    flip: boolean;
+    /** Where the label starts, from the element's centre; null for its usual place. */
+    labelAt: Point | null;
 }
+
+export type Rotation = 0 | 90 | 180 | 270;
 
 /**
  * A right-angled line's path between its two ends, as the positions of its middle segments: the y of a horizontal
@@ -64,17 +72,20 @@ export const newId = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(
 
 export const emptyDiagram = (plantType: PlantType, name = ""): Diagram => ({ plantType, name, nodes: [], links: [] });
 
-/** The room an element takes: its symbol with the label beside it, or a busbar with its label above. */
-export function footprint(node: Pick<DiagramNode, "kind" | "x" | "y" | "width">): Box {
+/** The room an element takes: its symbol with the label beside it, or a busbar with its label above (or beside it, upright). */
+export function footprint(node: Pick<DiagramNode, "kind" | "x" | "y" | "width" | "rotation">): Box {
     if (node.kind === "busbar") {
         const half = (node.width ?? BUSBAR_WIDTH) / 2;
+        if (node.rotation % 180 === 90) return { minX: node.x - 8, minY: node.y - half - 8, maxX: node.x + 8, maxY: node.y + half };
         return { minX: node.x - half, minY: node.y - 24, maxX: node.x + half, maxY: node.y + 8 };
     }
     const half = NODE_SIZE / 2;
+    // A symbol turned across the page has its label above it
+    if (node.rotation % 180 === 90) return { minX: node.x - half, minY: node.y - half - 24, maxX: node.x - half + LABEL_ROOM, maxY: node.y + half };
     return { minX: node.x - half, minY: node.y - half, maxX: node.x + half + LABEL_ROOM, maxY: node.y + half };
 }
 
-const overlaps = (a: Box, b: Box) => a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY;
+export const overlaps = (a: Box, b: Box) => a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY;
 const MAX_RING = 100;
 
 /** The grid point nearest to (x, y), ring by ring, where an element of this kind and width overlaps no other. */
@@ -89,7 +100,7 @@ export function freeSpot(diagram: Diagram, kind: NodeKind, width: number | null,
             }
         }
         spots.sort((a, b) => Math.hypot(a.x - x0, a.y - y0) - Math.hypot(b.x - x0, b.y - y0));
-        const free = spots.find((spot) => !taken.some((box) => overlaps(footprint({ kind, width, ...spot }), box)));
+        const free = spots.find((spot) => !taken.some((box) => overlaps(footprint({ kind, width, rotation: 0, ...spot }), box)));
         if (free) return free;
     }
     return { x: x0, y: y0 };
@@ -107,6 +118,9 @@ export function addNode(diagram: Diagram, kind: NodeKind, x: number, y: number):
         voltageKv: null,
         ratingKva: null,
         width,
+        rotation: 0,
+        flip: false,
+        labelAt: null,
     };
     return { diagram: { ...diagram, nodes: [...diagram.nodes, node] }, id: node.id };
 }

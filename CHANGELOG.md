@@ -13,17 +13,23 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 - Line routes: drag a segment to move it, an end segment to add a bend; double-click a segment to remove it; Route
   automatically; straight lines as an option. Routes are saved in the file (format version 2; version 1 files still
   open).
+- Group editing: select an area by dragging over the empty drawing (CAD style: left to right selects what is inside,
+  right to left what it touches; on a touch screen, hold still first); Ctrl+A; copy, cut, paste and duplicate; arrow
+  keys nudge; rotate 90° and flip (elements and groups, busbars stand upright); align edges and centres; space evenly.
+- Resize a busbar by dragging its ends; drag an element's label to another place.
+
+### Changed
+
+- Dragging the empty drawing with a mouse now selects an area; pan with the middle button, Space and drag, or a
+  finger.
+- A new logo, a busbar with three feeders, and a green colour in both themes.
+- The Inter and Estedad fonts, served with the site: Persian and Arabic look the same on every device.
+- Icons for a phone's home screen and a picture for link previews.
 
 ### Fixed
 
 - A line from an element whose only lead points away (a grid connection under its busbar) no longer runs back through
   the symbol; it goes around it.
-
-### Changed
-
-- A new logo, a busbar with three feeders, and a green colour in both themes.
-- The Inter and Estedad fonts, served with the site: Persian and Arabic look the same on every device.
-- Icons for a phone's home screen and a picture for link previews.
 
 ## 0.2.0 (unreleased)
 

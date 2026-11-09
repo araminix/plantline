@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
-import { addNode, connect, emptyDiagram, updateLink } from "./model";
+import { addNode, connect, emptyDiagram, updateLink, updateNode } from "./model";
 
 const sample = () => {
     const a = addNode(emptyDiagram("hydro", "Unit 1"), "generator", 0, 0);
     const b = addNode(a.diagram, "transformer", 0, 120);
     const c = addNode(b.diagram, "breaker", 200, 240);
     const linked = connect(connect(c.diagram, a.id, b.id)!, b.id, c.id)!;
-    return updateLink(linked, linked.links[1]!.id, { route: [180, 120, 200] });
+    return updateNode(updateLink(linked, linked.links[1]!.id, { route: [180, 120, 200] }), c.id, { rotation: 90, flip: true, labelAt: { x: 30, y: -40 } });
 };
 
 const withDiagram = (patch: (diagram: Record<string, unknown>) => void) => {
@@ -42,18 +42,22 @@ describe("diagram files", () => {
             withDiagram((d) => ((d.links as Record<string, unknown>[])[1]!.route = [180, "120", 200])),
             withDiagram((d) => ((d.links as Record<string, unknown>[])[1]!.route = Array.from({ length: 65 }, () => 0))),
             withDiagram((d) => delete (d.links as Record<string, unknown>[])[1]!.straight),
+            withDiagram((d) => ((d.nodes as Record<string, unknown>[])[0]!.rotation = 45)),
+            withDiagram((d) => ((d.nodes as Record<string, unknown>[])[0]!.labelAt = { x: 1e9, y: 0 })),
         ];
         for (const text of cases) expect(parseDiagram(text)).toEqual({ ok: false, error: "invalid" });
     });
 
     it("read version 1 files, whose lines route themselves", () => {
         const diagram = sample();
-        const old = { format: "plantline", version: 1, diagram: { ...diagram, links: diagram.links.map(({ id, from, to }) => ({ id, from, to })) } };
+        const nodes = diagram.nodes.map(({ rotation: _r, flip: _f, labelAt: _l, ...node }) => node);
+        const old = { format: "plantline", version: 1, diagram: { ...diagram, nodes, links: diagram.links.map(({ id, from, to }) => ({ id, from, to })) } };
         const read = parseDiagram(JSON.stringify(old));
         expect(read.ok && read.diagram.links.map((link) => [link.route, link.straight])).toEqual([
             [null, false],
             [null, false],
         ]);
+        expect(read.ok && read.diagram.nodes[2]).toMatchObject({ rotation: 0, flip: false, labelAt: null });
     });
 
     it("refuse a file over the size limit before parsing it", () => {

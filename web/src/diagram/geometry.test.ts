@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { autoRoute, dragSegment, linkShape, portTowards, removeSegment, sidesOf, tidyRoute } from "./geometry";
 import { addNode, emptyDiagram, type DiagramNode, type Route } from "./model";
 
-const node = (kind: DiagramNode["kind"], x: number, y: number, width: number | null = null): DiagramNode => ({ ...addNode(emptyDiagram("solar"), kind, x, y).diagram.nodes[0]!, width: width ?? (kind === "busbar" ? 240 : null) });
+const node = (kind: DiagramNode["kind"], x: number, y: number, width: number | null = null, rotation: DiagramNode["rotation"] = 0): DiagramNode => ({
+    ...addNode(emptyDiagram("solar"), kind, x, y).diagram.nodes[0]!,
+    width: width ?? (kind === "busbar" ? 240 : null),
+    rotation,
+});
 const shape = (from: DiagramNode, to: DiagramNode, route: Route | null = null, straight = false) => linkShape({ route, straight }, from, to);
 const xy = (points: { x: number; y: number }[]) => points.map(({ x, y }) => [x, y]);
 
@@ -87,5 +91,27 @@ describe("line geometry", () => {
         const [a, b] = [node("breaker", 0, 0), node("fuse", 200, 200)];
         expect(removeSegment(a, b, [44, -60, 100], 2)).toEqual([44]);
         expect(removeSegment(a, b, [100], 1)).toBeNull();
+    });
+
+    it("turns leads with their element: across the page, and from down to across in one bend", () => {
+        expect(sidesOf(node("breaker", 0, 0, null, 90))).toEqual(["right", "left"]);
+        expect(sidesOf(node("gridConnection", 0, 0, null, 90))).toEqual(["left"]);
+        // Two turned symbols on one row: straight across, from the right lead to the left one
+        expect(xy(shape(node("breaker", 0, 0, null, 90), node("fuse", 200, 0, null, 90)).points)).toEqual([
+            [24, 0],
+            [100, 0],
+            [100, 0],
+            [176, 0],
+        ]);
+        // Upright to turned: down, then across into the left lead
+        expect(xy(shape(node("breaker", 0, 0), node("fuse", 200, 200, null, 90)).points)).toEqual([
+            [0, 24],
+            [0, 200],
+            [176, 200],
+        ]);
+    });
+
+    it("meets an upright busbar from the side, level with the other element", () => {
+        expect(portTowards(node("busbar", 0, 0, 200, 90), { x: 100, y: 50 })).toEqual({ x: 0, y: 50, side: "right" });
     });
 });

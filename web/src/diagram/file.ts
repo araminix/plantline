@@ -1,10 +1,10 @@
 import { isNodeKind, isPlantType } from "../plants";
-import type { Diagram, DiagramLink, DiagramNode } from "./model";
+import type { Diagram, DiagramLink, DiagramNode, Point, Rotation } from "./model";
 
 /** A saved diagram (a .plantline.json file). The format is described in docs/architecture.md. */
 export interface DiagramFile {
     format: "plantline";
-    /** 2 added line routes; version 1 files are still read (their lines route themselves). */
+    /** 2 added line routes and turned, mirrored and relabelled elements; version 1 files are still read. */
     version: 2;
     diagram: Diagram;
 }
@@ -38,7 +38,7 @@ function readDiagram(value: unknown, version: 1 | 2): Diagram | null {
     if (!isRecord(value) || !isPlantType(value.plantType) || !isText(value.name)) return null;
     if (!Array.isArray(value.nodes) || !Array.isArray(value.links) || value.nodes.length > MAX_NODES || value.links.length > MAX_LINKS) return null;
 
-    const nodes = value.nodes.map(readNode);
+    const nodes = value.nodes.map((node) => readNode(node, version));
     const ids = new Set(nodes.map((node) => node?.id));
     if (nodes.some((node) => node === null) || ids.size !== nodes.length) return null;
 
@@ -48,10 +48,12 @@ function readDiagram(value: unknown, version: 1 | 2): Diagram | null {
     return { plantType: value.plantType, name: value.name, nodes: nodes as DiagramNode[], links: links as DiagramLink[] };
 }
 
-function readNode(value: unknown): DiagramNode | null {
+function readNode(value: unknown, version: 1 | 2): DiagramNode | null {
     if (!isRecord(value) || !isId(value.id) || !isNodeKind(value.kind) || !isCoordinate(value.x) || !isCoordinate(value.y)) return null;
     if (!isText(value.label) || !isText(value.designation)) return null;
     if (!isOptionalNumber(value.voltageKv) || !isOptionalNumber(value.ratingKva) || !isOptionalNumber(value.width)) return null;
+    const placed = version === 1 ? { rotation: 0, flip: false, labelAt: null } : value;
+    if (!isRotation(placed.rotation) || typeof placed.flip !== "boolean" || !(placed.labelAt === null || isOffset(placed.labelAt))) return null;
     return {
         id: value.id,
         kind: value.kind,
@@ -62,8 +64,15 @@ function readNode(value: unknown): DiagramNode | null {
         voltageKv: value.voltageKv,
         ratingKva: value.ratingKva,
         width: value.width,
+        rotation: placed.rotation,
+        flip: placed.flip,
+        labelAt: placed.labelAt === null ? null : { x: placed.labelAt.x, y: placed.labelAt.y },
     };
 }
+
+const isRotation = (value: unknown): value is Rotation => value === 0 || value === 90 || value === 180 || value === 270;
+const MAX_OFFSET = 1_000;
+const isOffset = (value: unknown): value is Point => isRecord(value) && [value.x, value.y].every((v) => typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= MAX_OFFSET);
 
 function readLink(value: unknown, version: 1 | 2): DiagramLink | null {
     if (!isRecord(value) || !isId(value.id) || !isId(value.from) || !isId(value.to)) return null;

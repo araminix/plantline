@@ -38,6 +38,10 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-21a | US-10 | A new element takes the free grid point nearest to where it was asked, never on top of another. | `model.test.ts` › adds every element at the free grid point nearest…; e2e › drags an element from the palette… |
 | TC-21b | US-10, US-05 | An element dragged from the palette lands under the pointer, with a mouse on a desktop and a finger on a phone; dropped on the palette, nothing is added. | e2e › drags an element from the palette onto the drawing… |
 | TC-22 | US-11 | A drag moves freely and snaps to the grid at its end. | `model.test.ts` › moves elements freely during a drag… |
+| TC-23a | US-11a | An area selects what is wholly inside left to right and what it touches right to left; copies paste with new ids and their lines where they overlap nothing; a group turns a quarter around its middle and mirrors (a busbar stands up; lines route themselves again); edges and centres align; centres space evenly; a busbar resizes from one end. | `edit.test.ts` (6 tests) |
+| TC-23b | US-11a | Turned elements: leads turn with them, lines run across between turned symbols and bend once from upright to turned, an upright busbar is met from the side. | `geometry.test.ts` › turns leads with their element…, meets an upright busbar… |
+| TC-23c | US-11a, US-05 | An area selected with a mouse and with a held finger; aligned centres; duplicates never overlap; one element turned. | e2e › selects elements by area, aligns, duplicates and turns them |
+| TC-23d | US-11a | A busbar resized by its end handle, a label dragged, with a mouse and a finger; Ctrl+A, Ctrl+C, Ctrl+V and an arrow key on a desktop. | e2e › resizes a busbar by its end and moves a label… |
 | TC-23 | US-11, US-15 | A drag is one undo step; previews are not steps. | `history.test.ts` › makes a drag one step…, counts the changes worth saving… |
 | TC-24 | US-12 | Two elements connect once; never an element to itself. | `model.test.ts` › connects two elements once… |
 | TC-25 | US-12 | Connecting by picking elements on the canvas, with a mouse and with touch. | e2e › builds, connects, checks and saves… |
@@ -47,7 +51,7 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-25e | US-12a | A line routing itself goes around a symbol whose lead points away, never through it; a straight line runs lead to lead. | `geometry.test.ts` › routes out of a lead that points away…, joins two symbols on one row… |
 | TC-25f | US-12a | Moving both elements keeps a line's route; moving one keeps the route and stretches the line; arranging resets routes. | `model.test.ts` › keeps a line's shape…; `arrange.test.ts` › puts the grid connection on top… |
 | TC-25g | US-12a, US-15 | Dragging a line adds a bend; undo and redo restore it; a double click removes it. | e2e › bends a line by dragging it… |
-| TC-25h | US-12a, US-20 | Routes are saved and read back; version 1 files open with self-routing lines; malformed routes are refused. | `file.test.ts` › read back exactly…, read version 1 files…, refuse inconsistent or hostile content |
+| TC-25h | US-12a, US-20 | Routes, turns, mirrors and label places are saved and read back; version 1 files open with self-routing lines and upright elements; malformed routes, turns or label places are refused. | `file.test.ts` › read back exactly…, read version 1 files…, refuse inconsistent or hostile content |
 | TC-25c | US-12 | Connection points are where symbols have leads; lines leave the upper element at the bottom, meet a busbar within its length, and join two symbols on one row from side to side. | `geometry.test.ts` (4 tests) |
 | TC-26 | US-13, US-14 | Fields are edited; removing an element removes its lines. | `model.test.ts` › removes an element together with its links… |
 | TC-26a | US-13 | Text typed for one element is saved onto it, not onto the element clicked next. | `App.test.tsx` › saves typed text onto the element it was typed for… |

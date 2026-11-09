@@ -55,8 +55,8 @@ plantline is a static web app. Everything happens in the browser: there is no se
     "plantType": "solar",
     "name": "Field A",
     "nodes": [
-      { "id": "n-1a2b3c4d", "kind": "gridConnection", "x": 160, "y": 80, "label": "", "designation": "=E01", "voltageKv": 34.5, "ratingKva": null, "width": null },
-      { "id": "n-5e6f7a8b", "kind": "busbar", "x": 160, "y": 200, "label": "MV bus", "designation": "", "voltageKv": 34.5, "ratingKva": null, "width": 320 }
+      { "id": "n-1a2b3c4d", "kind": "gridConnection", "x": 160, "y": 80, "label": "", "designation": "=E01", "voltageKv": 34.5, "ratingKva": null, "width": null, "rotation": 0, "flip": false, "labelAt": { "x": 30, "y": -40 } },
+      { "id": "n-5e6f7a8b", "kind": "busbar", "x": 160, "y": 200, "label": "MV bus", "designation": "", "voltageKv": 34.5, "ratingKva": null, "width": 320, "rotation": 0, "flip": false, "labelAt": null }
     ],
     "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b", "route": [140, 100, 180], "straight": false }]
   }
@@ -67,13 +67,17 @@ plantline is a static web app. Everything happens in the browser: there is no se
 - `kind`: one of the 23 element kinds of `NODE_KINDS` in `web/src/plants.ts`.
 - `x`, `y`: the element's centre, in diagram units (the grid is 20); a symbol is 48 × 48.
 - `width`: the length of a busbar; `null` for anything else.
+- `rotation`: 0, 90, 180 or 270, turned clockwise; a busbar is 0 (across) or 90 (upright). `flip`: the symbol mirrored
+  across its own axis before it is turned. `labelAt`: where the label starts, from the element's centre (within
+  ±1,000), or `null` for its usual place.
 - Links have no direction.
 - `route`: `null` while a line routes itself; once dragged into shape, the positions of its middle segments, which are
   alternately horizontal and vertical: the y of the first horizontal segment, the x of the next vertical one, and so
   on, an odd count. The segments at the two ends run straight out of the elements' leads, so moving an element keeps
   the route whole; on a busbar, the line meets the bar under the nearest vertical segment.
 - `straight`: drawn straight from lead to lead instead of at right angles (`route` is then not used).
-- Version 1 files (without `route` and `straight`) are still read; their lines route themselves.
+- Version 1 files (without `route`, `straight`, `rotation`, `flip` and `labelAt`) are still read; their lines route
+  themselves and their elements stand upright with their labels in place.
 - Limits, checked when a file is opened: 5 MB, 5,000 elements, 10,000 links, 200 characters per text, coordinates
   within ±1,000,000, ids of at most 64 letters, digits, `_` or `-`, unique, links between existing elements, and
   routes of at most 63 coordinates.

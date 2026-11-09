@@ -55,6 +55,22 @@ the grid point under the pointer, or I tap it and it appears in the middle of th
 **US-11 Place it on the grid.** I drag elements, one or several (Shift or Ctrl adds to the selection); they land on a
 20-unit grid. A drag is one undo step.
 
+**US-11a Edit groups.** I work on several elements at once.
+- I select an area by dragging over the empty drawing (on a touch screen, after holding my finger still), as in CAD:
+  left to right selects what is wholly inside (solid outline), right to left what the area touches (dashed); Shift or
+  Ctrl adds to the selection. Ctrl+A selects everything.
+- Ctrl+C, Ctrl+X and Ctrl+V copy, cut and paste elements with the lines between them; Duplicate (Ctrl+D) copies in
+  place. Copies land a few grid steps away, where they overlap nothing.
+- The arrow keys move the selection one grid step, five with Shift.
+- Rotate 90° (R) turns the selection a quarter clockwise around its middle; a busbar stands upright and back. Flip
+  (Shift+H) mirrors it left to right. Lines of turned or mirrored elements route themselves again, and a symbol turned
+  across the page has its label above it.
+- With several elements selected, the properties panel aligns their left edges, centres, right edges, top edges,
+  middles or bottom edges, and spaces three or more evenly across or down.
+- A busbar selected alone shows a handle at each end; dragging one resizes the bar from the other end, in steps of two
+  grid units.
+- The label of the element selected alone can be dragged to another place.
+
 **US-12 Connect equipment.** I connect two elements by dragging from a connection point of one onto the other, or
 with Connect, picking the first and then the second element (or starting from the selected one). Lines run straight
 down and across, and reach anywhere along a busbar. An element cannot be connected to itself or twice to the same
@@ -95,8 +111,8 @@ fits the result.
 elements concerned: no grid connection, an unconnected element, different voltages on one line (transformers and
 inverters may join two), a reference designation used twice.
 
-**US-18 Navigate.** I zoom with the wheel, the toolbar or two fingers, pan by dragging the background, and fit the
-diagram to the screen. An opened diagram is fitted once; adding the first element does not zoom.
+**US-18 Navigate.** I zoom with the wheel, the toolbar or two fingers, pan with the middle mouse button, by holding
+Space and dragging, or with one finger, and fit the diagram to the screen. An opened diagram is fitted once; adding the first element does not zoom.
 
 **US-19 Keep my work.** The diagram is kept in the browser and is still there when I come back. If the browser cannot
 keep it (its storage is full or blocked), I am told to save it as a file. If the app fails unexpectedly, it says so and

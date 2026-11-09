@@ -4,6 +4,7 @@ import { useI18n } from "../i18n/i18n";
 import type { NodeKind, PlantType } from "../plants";
 import { readStored, writeStored } from "../settings";
 import { IconButton, Menu } from "../ui/controls";
+import { isTyping } from "../ui/keys";
 import { arrange } from "./arrange";
 import { Canvas, type CanvasHandle, type Selection } from "./Canvas";
 import { checkDiagram } from "./checks";
@@ -11,7 +12,8 @@ import { DiagramSheet, diagramSvg, download, fileNameOf, svgToPng } from "./expo
 import { FILE_EXTENSION, MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
 import { useHistory } from "./history";
 import { Inspector } from "./Inspector";
-import { addNode, connect, emptyDiagram, removeItems, type Diagram, type Point } from "./model";
+import { alignNodes, copyItems, distributeNodes, flipNodes, pasteItems, rotateNodes, type Alignment, type Clip } from "./edit";
+import { addNode, connect, emptyDiagram, GRID, moveNodes, removeItems, type Diagram, type Point } from "./model";
 import { Palette } from "./Palette";
 
 /** Where the diagram is kept in this browser. */
@@ -24,7 +26,6 @@ function restore(plant: PlantType): Diagram {
     return parsed?.ok ? parsed.diagram : emptyDiagram(plant);
 }
 
-const isTyping = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
 /** The single-line diagram editor: toolbar, palette, canvas and inspector; the diagram is kept in this browser. */
 export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantType; onPlantChange: (plant: PlantType) => void; hidden: boolean }) {
@@ -39,6 +40,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const [notice, setNotice] = useState<string | null>(null);
     const [printing, setPrinting] = useState(false);
     const canvas = useRef<CanvasHandle>(null);
+    const clipboard = useRef<Clip | null>(null);
     const fileInput = useRef<HTMLInputElement>(null);
     const issues = useMemo(() => checkDiagram(diagram), [diagram]);
     const kindName = (kind: NodeKind) => t(`kind.${kind}`);
@@ -65,6 +67,26 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         history.commit(added.diagram);
         setSelection({ nodes: [added.id], link: null });
         setSheet(null);
+    };
+
+    const chosen = new Set(selection.nodes);
+    /** A change to the selected elements, as one step, leaving `nodes` selected. */
+    const change = (next: Diagram, nodes = selection.nodes) => {
+        if (next === diagram) return;
+        history.commit(next);
+        setSelection({ nodes, link: null });
+    };
+    const paste = (clip: Clip | null) => {
+        if (!clip || clip.nodes.length === 0) return;
+        const pasted = pasteItems(diagram, clip);
+        change(pasted.diagram, pasted.ids);
+    };
+    const groupActions = {
+        onRotate: () => change(rotateNodes(diagram, chosen)),
+        onFlip: () => change(flipNodes(diagram, chosen)),
+        onDuplicate: () => paste(copyItems(diagram, chosen)),
+        onAlign: (how: Alignment) => change(alignNodes(diagram, chosen, how)),
+        onDistribute: (across: boolean) => change(distributeNodes(diagram, chosen, across)),
     };
 
     const remove = () => {
@@ -110,7 +132,22 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
             if (isTyping(event.target)) return;
             const command = event.ctrlKey || event.metaKey;
             const key = event.key.toLowerCase();
+            const any = selection.nodes.length > 0;
+            const arrow = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }[key];
             if (key === "delete" || key === "backspace") remove();
+            else if (command && key === "a") setSelection({ nodes: diagram.nodes.map((node) => node.id), link: null });
+            else if (command && key === "c" && any) clipboard.current = copyItems(diagram, chosen);
+            else if (command && key === "x" && any) {
+                clipboard.current = copyItems(diagram, chosen);
+                remove();
+            } else if (command && key === "v" && clipboard.current) paste(clipboard.current);
+            else if (command && key === "d" && any) groupActions.onDuplicate();
+            else if (arrow && any && !command) {
+                // A grid step, five with Shift
+                const step = (event.shiftKey ? 5 : 1) * GRID;
+                change(moveNodes(diagram, chosen, arrow[0]! * step, arrow[1]! * step, true));
+            } else if (key === "r" && any && !command) groupActions.onRotate();
+            else if (key === "h" && event.shiftKey && any && !command) groupActions.onFlip();
             else if (key === "escape") {
                 setConnectFrom(undefined);
                 setSelection(NONE);
@@ -219,7 +256,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                 {panel(
                     "inspector",
                     t("inspector.title"),
-                    <Inspector diagram={diagram} selection={selection} issues={issues} onChange={(next) => history.commit(next)} onSelect={setSelection} onConnectFrom={startConnect} onDelete={remove} />,
+                    <Inspector diagram={diagram} selection={selection} issues={issues} onChange={(next) => history.commit(next)} onSelect={setSelection} onConnectFrom={startConnect} onDelete={remove} {...groupActions} />,
                 )}
             </div>
             <nav className="mobile-bar" aria-label={t("toolbar.label")}>

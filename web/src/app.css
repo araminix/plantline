@@ -538,11 +538,47 @@ select {
     color: var(--ink);
     background-color: var(--bg);
     background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.2px);
-    cursor: grab;
+    cursor: default;
 }
 
 .canvas.connecting {
     cursor: crosshair;
+}
+
+/* Space held: the whole drawing is a handle to pan */
+.canvas.panning,
+.canvas.panning * {
+    cursor: grab !important;
+}
+
+/* The area being selected: solid for "wholly inside" (dragged left to right), dashed for "touched" */
+.canvas .select-box {
+    fill: color-mix(in srgb, var(--accent) 8%, transparent);
+    stroke: var(--accent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}
+
+.canvas .select-box.crossing {
+    stroke-dasharray: 5 4;
+}
+
+/* The label of the element selected alone can be dragged */
+.canvas .sld-node.selected [data-label] {
+    cursor: move;
+}
+
+/* A lone selected busbar's ends: drag to resize */
+.canvas .resize {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 2;
+    cursor: ew-resize;
+}
+
+.canvas .resize.upright {
+    cursor: ns-resize;
 }
 
 .canvas .sld-node,
@@ -976,4 +1012,8 @@ select {
 /* Leaflet's controls and attribution in the app's font (Leaflet's own stylesheet loads later, hence :root) */
 :root .leaflet-container {
     font-family: inherit;
+}
+
+.inspector-actions {
+    margin-block-start: 16px;
 }

@@ -43,11 +43,11 @@ async function expectOnTop(page: Page, name: string) {
 type Point = { x: number; y: number };
 
 /** A real finger: touch, hold a moment, move, lift (Playwright's mouse would be a mouse even on a phone). */
-async function touchDrag(page: Page, from: Point, to: Point) {
+async function touchDrag(page: Page, from: Point, to: Point, holdMs = 400) {
     const cdp = await page.context().newCDPSession(page);
     const touch = (type: "touchStart" | "touchMove" | "touchEnd", at?: Point) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: at ? [at] : [] });
     await touch("touchStart", from);
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(holdMs);
     for (let i = 1; i <= 10; i++) await touch("touchMove", { x: from.x + ((to.x - from.x) * i) / 10, y: from.y + ((to.y - from.y) * i) / 10 });
     await touch("touchEnd");
     await cdp.detach();
@@ -207,6 +207,71 @@ test("bends a line by dragging it, undoes and redoes that, and removes the bend 
     const moved = await alongLine(page, 0.6);
     await page.mouse.dblclick(moved.x, moved.y);
     await expect.poll(() => bends(page)).toBe(3);
+});
+
+/** Each element's place on the drawing, from its transform. */
+const places = (page: Page) =>
+    page.locator("[data-node]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("transform")!.match(/translate\(([-\d.]+) ([-\d.]+)\)/)!.slice(1).map(Number) as [number, number]));
+
+const openProperties = async (page: Page) => {
+    if (isPhone(page)) await page.getByRole("navigation").getByRole("button", { name: /Properties/ }).click();
+};
+const closeSheet = async (page: Page) => {
+    if (isPhone(page)) await page.locator(".panel.open .sheet-close").click();
+};
+
+test("selects elements by area, aligns, duplicates and turns them", async ({ page }) => {
+    await start(page, "Substation");
+    for (const element of ["Circuit breaker", "Disconnector", "Energy meter"]) await add(page, element);
+    // Around all three, from an empty corner (a finger holds still first)
+    const boxes = await elementBoxes(page);
+    const from = { x: Math.min(...boxes.map((b) => b.left)) - 30, y: Math.min(...boxes.map((b) => b.top)) - 30 };
+    const to = { x: Math.max(...boxes.map((b) => b.right)) + 10, y: Math.max(...boxes.map((b) => b.bottom)) + 10 };
+    if (isPhone(page)) await touchDrag(page, from, to, 700);
+    else await mouseDrag(page, from, to);
+    await openProperties(page);
+    await expect(page.getByRole("heading", { name: "3 elements selected" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Align centres" }).click();
+    expect(new Set((await places(page)).map(([x]) => x)).size).toBe(1);
+    await page.getByRole("button", { name: "Duplicate" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(6);
+    const all = await elementBoxes(page);
+    all.forEach((a, i) => all.slice(i + 1).forEach((b) => expect(a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom, "two elements overlap").toBe(false)));
+
+    await closeSheet(page);
+    await page.locator("[data-node]").first().click();
+    await openProperties(page);
+    await page.getByRole("button", { name: "Rotate 90°" }).click();
+    await expect(page.locator("[data-node]").first().locator("g[transform]").first()).toHaveAttribute("transform", /rotate\(90\)/);
+});
+
+test("resizes a busbar by its end and moves a label; copies, pastes and nudges with the keyboard", async ({ page }) => {
+    await start(page, "Substation");
+    await add(page, "Busbar");
+    const drag = (a: Point, b: Point) => (isPhone(page) ? touchDrag(page, a, b) : mouseDrag(page, a, b));
+    const end = await centreOf(page.locator('[data-resize="end"]'));
+    await drag(end, { x: end.x + 80, y: end.y });
+    await openProperties(page);
+    await expect(page.getByRole("textbox", { name: "Length" })).toHaveValue("320");
+    await closeSheet(page);
+
+    await add(page, "Circuit breaker");
+    const label = page.locator("[data-node]").nth(1).locator("[data-label]");
+    const before = Number(await label.getAttribute("x"));
+    const grip = await centreOf(label);
+    await drag(grip, { x: grip.x + 40, y: grip.y - 30 });
+    await expect.poll(async () => Number(await label.getAttribute("x"))).toBeGreaterThan(before + 20);
+
+    if (isPhone(page)) return;
+    await page.keyboard.press("Control+a");
+    await expect(page.getByRole("heading", { name: "2 elements selected" })).toBeVisible();
+    await page.keyboard.press("Control+c");
+    await page.keyboard.press("Control+v");
+    await expect(page.locator("[data-node]")).toHaveCount(4);
+    const pasted = (await places(page)).slice(2);
+    await page.keyboard.press("ArrowRight");
+    expect((await places(page)).slice(2)).toEqual(pasted.map(([x, y]) => [x + 20, y]));
 });
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {

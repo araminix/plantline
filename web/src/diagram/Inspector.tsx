@@ -1,8 +1,24 @@
-import { Cable, Spline, Trash2 } from "lucide-react";
+import {
+    AlignCenterHorizontal,
+    AlignCenterVertical,
+    AlignEndHorizontal,
+    AlignEndVertical,
+    AlignHorizontalDistributeCenter,
+    AlignStartHorizontal,
+    AlignStartVertical,
+    AlignVerticalDistributeCenter,
+    Cable,
+    CopyPlus,
+    RotateCw,
+    Spline,
+    Trash2,
+    TrianglesCenterlineDashedVertical,
+} from "lucide-react";
 import { useI18n } from "../i18n/i18n";
-import { NumberField, TextField } from "../ui/controls";
+import { IconButton, NumberField, TextField } from "../ui/controls";
 import type { Selection } from "./Canvas";
 import type { Issue } from "./checks";
+import type { Alignment } from "./edit";
 import { updateLink, updateNode, type Diagram, type DiagramNode } from "./model";
 import { SymbolIcon } from "./symbols";
 
@@ -14,10 +30,25 @@ interface Props {
     onSelect: (selection: Selection) => void;
     onConnectFrom: (nodeId: string) => void;
     onDelete: () => void;
+    onRotate: () => void;
+    onFlip: () => void;
+    onDuplicate: () => void;
+    onAlign: (how: Alignment) => void;
+    onDistribute: (across: boolean) => void;
 }
 
+const ALIGNMENTS = [
+    ["left", AlignStartVertical],
+    ["centre", AlignCenterVertical],
+    ["right", AlignEndVertical],
+    ["top", AlignStartHorizontal],
+    ["middle", AlignCenterHorizontal],
+    ["bottom", AlignEndHorizontal],
+] as const;
+
 /** The selected element or line, or (nothing selected) the diagram: its name, its size and its checks. */
-export function Inspector({ diagram, selection, issues, onChange, onSelect, onConnectFrom, onDelete }: Props) {
+export function Inspector(props: Props) {
+    const { diagram, selection, issues, onChange, onSelect, onConnectFrom, onDelete, onRotate, onFlip, onDuplicate, onAlign, onDistribute } = props;
     const { t } = useI18n();
     const byId = new Map(diagram.nodes.map((node) => [node.id, node]));
     const nameOf = (node: DiagramNode | undefined) => (node ? node.label || node.designation || t(`kind.${node.kind}`) : "?");
@@ -55,11 +86,41 @@ export function Inspector({ diagram, selection, issues, onChange, onSelect, onCo
         );
     }
 
+    // Turn, mirror and copy, for one element or several
+    const shapeButtons = (
+        <>
+            <IconButton label={t("action.rotate")} onClick={onRotate}>
+                <RotateCw size={18} />
+            </IconButton>
+            <IconButton label={t("action.flip")} onClick={onFlip}>
+                <TrianglesCenterlineDashedVertical size={18} />
+            </IconButton>
+            <IconButton label={t("action.duplicate")} onClick={onDuplicate}>
+                <CopyPlus size={18} />
+            </IconButton>
+        </>
+    );
+
     if (nodes.length > 1) {
         return (
             <div className="inspector">
                 <h2>{t("inspector.selected", { count: nodes.length })}</h2>
-                {deleteButton}
+                <div className="row">{shapeButtons}</div>
+                <h3>{t("align.title")}</h3>
+                <div className="row">
+                    {ALIGNMENTS.map(([how, Icon]) => (
+                        <IconButton key={how} label={t(`align.${how}`)} onClick={() => onAlign(how)}>
+                            <Icon size={18} />
+                        </IconButton>
+                    ))}
+                    <IconButton label={t("align.across")} onClick={() => onDistribute(true)} disabled={nodes.length < 3}>
+                        <AlignHorizontalDistributeCenter size={18} />
+                    </IconButton>
+                    <IconButton label={t("align.down")} onClick={() => onDistribute(false)} disabled={nodes.length < 3}>
+                        <AlignVerticalDistributeCenter size={18} />
+                    </IconButton>
+                </div>
+                <div className="row inspector-actions">{deleteButton}</div>
             </div>
         );
     }
@@ -78,6 +139,7 @@ export function Inspector({ diagram, selection, issues, onChange, onSelect, onCo
                 <NumberField label={t("field.voltage")} unit="kV" value={node.voltageKv} onCommit={(voltageKv) => set({ voltageKv })} />
                 <NumberField label={t("field.rating")} unit="kVA" value={node.ratingKva} onCommit={(ratingKva) => set({ ratingKva })} />
                 {node.kind === "busbar" && <NumberField label={t("field.length")} value={node.width} onCommit={(width) => set({ width: width === null ? null : Math.max(40, Math.min(4000, width)) })} />}
+                <div className="row">{shapeButtons}</div>
                 <div className="row">
                     <button type="button" className="button" onClick={() => onConnectFrom(node.id)}>
                         <Cable size={16} aria-hidden="true" />
