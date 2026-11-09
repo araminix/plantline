@@ -30,6 +30,7 @@ battery storage, hydropower, substation or transmission line), so the tool shows
   Korean, Turkish and Italian, each in its own name.
 - The browser's language is chosen on the first visit when the app speaks it; else English.
 - Arabic and Persian lay the whole page out right to left; drawings stay left to right.
+- Latin, Greek and Cyrillic letters use Inter and Arabic and Persian use Estedad on every device, served with the site.
 - Every message exists in every language.
 
 **US-04 Light or dark.** As a user, I choose a light or dark theme; the first one follows my system. The map stays
@@ -39,6 +40,7 @@ readable in both, and satellite imagery keeps its real colours.
 - The page never scrolls sideways; the toolbar scrolls within the screen.
 - The palette, properties and drawing details open as sheets from a bar at the bottom.
 - The diagram pans with a finger and zooms with two.
+- Added to the home screen, it has its own icon.
 
 ## Epic B: Single-line diagram
 
@@ -129,7 +131,8 @@ blocks nested more than 8 deep are counted but not opened.
 from OpenStreetMap and Esri.
 
 **US-41 Host or fork it.** As a developer, I build plantline into static files, host them anywhere, and change it
-freely under the Apache 2.0 license.
+freely under the Apache 2.0 license. A link to the site shows a preview picture; a fork hosted elsewhere changes its
+address in `index.html`.
 
 **US-42 Safe with untrusted files.** As a user, I can open any file without risk: drawings and diagram files are
 validated and bounded, the drawing reader runs in a worker that is ended after each file, a drawing likely too large

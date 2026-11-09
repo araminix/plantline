@@ -2,6 +2,14 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- A new logo, a busbar with three feeders, and a green colour in both themes.
+- The Inter and Estedad fonts, served with the site: Persian and Arabic look the same on every device.
+- Icons for a phone's home screen and a picture for link previews.
+
 ## 0.2.0 (unreleased)
 
 ### Fixed

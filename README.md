@@ -1,10 +1,15 @@
-# plantline
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
+    <img alt="plantline" src="docs/images/logo-light.png" height="64">
+  </picture>
+</h1>
 
 > **Single-line diagrams and DWG/DXF plant layouts in your browser, for solar, wind, storage, hydro, substations and transmission lines. Free and open source.**
 
 [![CI](https://github.com/araminix/plantline/actions/workflows/ci.yml/badge.svg)](https://github.com/araminix/plantline/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Try it](https://img.shields.io/badge/try%20it-online-0f766e.svg)](https://araminix.github.io/plantline/)
+[![Try it](https://img.shields.io/badge/try%20it-online-15803d.svg)](https://araminix.github.io/plantline/)
 
 plantline is a web tool for the people who design, build and run power plants. Draw the plant's **single-line diagram**, open its **AutoCAD drawing**, and see the plant **on the map** with its tables, inverters, turbines, towers and cables found and counted. It needs no account and no server: everything runs in your browser, and your files never leave your computer.
 

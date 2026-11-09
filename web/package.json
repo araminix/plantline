@@ -10,6 +10,7 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "brand": "node scripts/brand.mjs",
     "cad": "node scripts/build-cad.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -20,6 +21,8 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@fontsource-variable/estedad": "5.3.0",
+    "@fontsource-variable/inter": "5.3.0",
     "leaflet": "^1.9.4",
     "lucide-react": "1.61.0",
     "proj4": "^2.22.0",

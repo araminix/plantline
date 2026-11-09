@@ -190,6 +190,27 @@ test("opens a DXF chosen by the user, and reports a file that is not a drawing",
     await expect(page.getByText(/Installed capacity/)).toContainText("1.23 MWp");
 });
 
+test("shows its own fonts, Estedad for Persian, and has app icons and a link preview", async ({ page, request }) => {
+    const loadedFonts = () =>
+        page.evaluate(async () => {
+            await document.fonts.ready;
+            return [...document.fonts].filter((font) => font.status === "loaded").map((font) => font.family.replaceAll('"', ""));
+        });
+    await start(page, "Solar PV");
+    await expect(page.getByRole("link", { name: "plantline" })).toBeVisible();
+    await expect.poll(loadedFonts).toContain("Inter Variable");
+    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    await expect.poll(loadedFonts).toContain("Estedad Variable");
+
+    const href = (selector: string, name: string) => page.locator(selector).getAttribute(name).then((value) => new URL(value!, page.url()));
+    const manifestUrl = await href('link[rel="manifest"]', "href");
+    const manifest = (await (await request.get(manifestUrl.href)).json()) as { icons: { src: string }[] };
+    const previewImage = (await href('meta[property="og:image"]', "content")).pathname.split("/").pop()!;
+    const files = [...manifest.icons.map((icon) => new URL(icon.src, manifestUrl)), await href('link[rel="apple-touch-icon"]', "href"), new URL(previewImage, page.url())];
+    expect(files).toHaveLength(6);
+    for (const file of files) expect((await request.get(file.href)).ok(), file.href).toBe(true);
+});
+
 test("mirrors the layout in Persian and keeps it usable", async ({ page }) => {
     await start(page, "Wind farm");
     await page.getByRole("combobox", { name: "Language" }).selectOption("fa");

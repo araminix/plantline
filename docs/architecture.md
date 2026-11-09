@@ -166,7 +166,7 @@ files others open.
 | A block bomb (deep or self-referencing nesting, exponential copies) | The reader never expands blocks: each is read once, from a list rather than by recursion, so no nesting can overflow its stack; at most 1,000,000 shapes and references and 4,000,000 points are kept. The app opens references at most 8 levels deep and stops a walk at 5,000,000 placed shapes and references. Block extents come from the shapes kept, not from ACadSharp's own recursive bounding box. |
 | A hostile diagram file | Strict validation: format, version, every field's type and range, unique ids, existing link ends, size limits; anything unexpected is refused. |
 | Script injection (XSS) | React escapes all text; there is no `dangerouslySetInnerHTML`, no `eval`, no HTML built from strings. Exported SVG is rendered by React, so typed text is escaped. |
-| Third-party scripts | A Content Security Policy in `index.html` allows scripts only from the site itself (and WebAssembly), images only from the site and the two tile servers, and no connections elsewhere. |
+| Third-party scripts | A Content Security Policy in `index.html` allows scripts and fonts only from the site itself (and WebAssembly), images only from the site and the two tile servers, and no connections elsewhere. |
 | Formula injection in CSV | Cells starting with `=`, `+`, `-`, `@`, tab or carriage return are prefixed with `'`. |
 | Supply chain | Few dependencies; exact versions at least two weeks old at release; pnpm refuses packages published less than 7 days ago; Dependabot waits as long; GitHub Actions pinned to commits. |
 | Privacy | No server, analytics or cookies. Settings and the autosaved diagram are in `localStorage`; drawings are never stored. |
@@ -183,6 +183,8 @@ files others open.
 | No CSS framework | One stylesheet with theme tokens and logical properties, which mirror for right-to-left languages by themselves. |
 | Our own small translation layer | 14 flat dictionaries; message keys are type-checked, so a missing English message fails the build. |
 | Diagrams read left to right in every language | An electrical drawing is the same drawing in Arabic or English; only the interface mirrors. |
+| Inter and Estedad, served with the site | The same letters on every device (Persian and Arabic used to be whatever font the device had). Variable fonts from the `@fontsource-variable` packages: each part (Latin, Cyrillic, Arabic…) downloads only when the page shows its letters, about 48 KB for English and 57 KB more for Persian or Arabic. Chinese, Japanese, Korean and Hindi keep the system's font; theirs would weigh megabytes. |
+| One mark, drawn once | `public/favicon.svg` is the logo. The header draws the same mark in the theme's colours (`ui/Logo.tsx`; a test keeps them equal), and `pnpm brand` renders the app icons, the link preview image and the README header from it. |
 
 ## Known limits
 

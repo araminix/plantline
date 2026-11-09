@@ -25,6 +25,9 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-09 | US-03, US-05 | In Persian the layout mirrors (palette on the right) and nothing scrolls sideways, on desktop and phone. | e2e › mirrors the layout in Persian… |
 | TC-10 | US-04 | The theme switches between light and dark. | `App.test.tsx` › switches between the light and dark themes |
 | TC-11 | US-05 | No view scrolls sideways on a phone or a desktop. | e2e › every test ends with this check |
+| TC-76 | US-03 | English shows Inter and Persian Estedad, both served with the site. | e2e › shows its own fonts, Estedad for Persian… |
+| TC-77 | US-05, US-41 | The app icons in the manifest, the home screen icon and the link preview image exist. | e2e › shows its own fonts… and has app icons and a link preview |
+| TC-78 | US-04 | The header's logo is the favicon's mark, drawn in the theme's colours. | `Logo.test.tsx` › draws the same mark as the favicon |
 
 ## Single-line diagram
 
@@ -104,3 +107,4 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-92 | US-40 | The browser's network panel shows no request other than the site's own files and map tiles. |
 | TC-93 | US-05 | On a real phone: pinch zoom, the bottom bar, sheets open and close. |
 | TC-94 | US-39 | A real plant drawing with tens of thousands of block copies (kept local) opens without crashing on desktop and phone; zooming and panning stay smooth. |
+| TC-95 | US-41 | Pasting the site's link in a chat shows the preview picture; on a phone, “Add to home screen” shows the icon. |

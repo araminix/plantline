@@ -66,6 +66,13 @@ misses a key or a `{{placeholder}}`.
 Plant types, their palettes and their recognition rules are in `web/src/plants.ts`. If your drawings name things
 differently, a rule's pattern can include it, for example `table|tisch|mesa`.
 
+## Logo, colours and fonts
+
+The mark is `web/public/favicon.svg` (`web/src/ui/Logo.tsx` draws it in the app); the colours are the tokens at the
+top of `web/src/app.css`. After changing either, run `pnpm brand` in `web/` to render the app icons, the link preview
+image and the README header again, and commit them. Fonts come from the `@fontsource-variable` packages and are served
+with the site, never from a font service.
+
 ## Sample drawings
 
 The samples in `web/public/samples` are made up and written by `cad/Plantline.Cad.Samples`:

@@ -7,6 +7,7 @@ import { PlantPicker } from "./PlantPicker";
 import { isPlantType, PLANT_TYPES, type PlantType } from "./plants";
 import { usePersisted } from "./settings";
 import { IconButton } from "./ui/controls";
+import { Logo } from "./ui/Logo";
 
 type View = "diagram" | "layout";
 type Theme = "light" | "dark";
@@ -36,8 +37,10 @@ export function App() {
             <div className="app">
                 <header className="app-header">
                     <a className="brand" href="./">
-                        <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={28} height={28} />
-                        <span>plantline</span>
+                        <Logo size={28} />
+                        <span>
+                            plant<span className="brand-accent">line</span>
+                        </span>
                     </a>
                     <nav className="tabs" role="tablist" aria-label={t("nav.label")}>
                         {(["diagram", "layout"] as const).map((name) => (
