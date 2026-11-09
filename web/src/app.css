@@ -1395,8 +1395,73 @@ select {
     gap: 6px;
 }
 
-.map-tools .icon-button {
+/* Satellite and Fit, named, on one card */
+.map-tools {
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
     box-shadow: var(--shadow);
+}
+
+.map-tools .icon-button {
+    justify-content: flex-start;
+    width: auto;
+    padding-inline: 9px 12px;
+    border-color: transparent;
+    background: none;
+    box-shadow: none;
+}
+
+.map-tools .icon-button[aria-pressed="true"] {
+    background: var(--accent-soft);
+}
+
+@media (max-width: 720px) {
+    .map-tools .icon-button {
+        padding-inline: 9px;
+    }
+
+    .map-tools .text {
+        display: none;
+    }
+}
+
+/* Leaflet's zoom buttons, attribution and scale in the app's colours (its stylesheet loads later, hence :root) */
+:root .leaflet-bar {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+:root .leaflet-bar a,
+:root .leaflet-bar a:hover {
+    width: 36px;
+    height: 36px;
+    border-block-end-color: var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    line-height: 36px;
+}
+
+:root .leaflet-bar a:hover {
+    background: var(--surface-2);
+}
+
+:root .leaflet-control-scale-line {
+    border-color: var(--ink);
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    color: var(--ink);
+}
+
+:root .leaflet-control-attribution {
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    color: var(--muted);
+}
+
+:root .leaflet-control-attribution a {
+    color: var(--accent);
 }
 
 /* What the drawing still needs, over the top of the map: a unit to check, a place to click, a zone to choose */
@@ -1434,14 +1499,92 @@ select {
     cursor: crosshair;
 }
 
+/* The drawing's panel: its header, then cards and sections that fold, each closed one with a summary */
+.panel.layout-panel {
+    background: var(--bg);
+}
+
+.layout-panel > * + * {
+    margin-block-start: 12px;
+}
+
+.drawing-head {
+    margin: 0;
+}
+
+.drawing-head > div:not(.row) {
+    flex: 1;
+    min-width: 0;
+}
+
+.drawing-head h2 {
+    font-size: 1.05rem;
+}
+
+.drawing-head p {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.drawing-head .inspector-icon {
+    width: 42px;
+    height: 42px;
+}
+
+.summary-text {
+    margin-inline-start: auto;
+    padding-inline-start: 8px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: end;
+}
+
+/* The solar capacity in large figures */
+.capacity {
+    border-color: var(--accent-line);
+    background: linear-gradient(160deg, var(--accent-soft), var(--surface) 70%);
+}
+
+.capacity h3 {
+    margin-block-end: 2px;
+}
+
+.capacity-value {
+    margin: 0;
+    font-size: 2.1rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+.capacity-value small {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 650;
+}
+
+.capacity .fields {
+    margin-block-start: 10px;
+}
+
 .totals {
     width: 100%;
     border-collapse: collapse;
 }
 
 .totals td {
-    padding: 6px 0;
+    padding: 7px 0;
     border-block-end: 1px solid var(--line);
+    font-size: 0.9rem;
+}
+
+.totals tr:last-child td {
+    border-block-end: 0;
+}
+
+.totals td:last-child {
+    font-weight: 600;
 }
 
 .totals td:last-child {
@@ -1879,21 +2022,22 @@ kbd {
     text-decoration: line-through;
 }
 
-/* The kinds on the map and their colours */
+/* The kinds on the map, their colours and amounts */
 .map-legend {
     position: absolute;
     inset-block-end: 24px;
     inset-inline-start: 12px;
     z-index: 500;
     display: grid;
-    gap: 2px;
-    max-height: 40%;
+    gap: 3px;
+    min-width: 190px;
+    max-height: 45%;
     margin: 0;
-    padding: 8px 10px;
+    padding: 10px 12px;
     overflow-y: auto;
     border: 1px solid var(--line);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
     box-shadow: var(--shadow);
     font-size: 0.8rem;
     list-style: none;
@@ -1904,18 +2048,60 @@ kbd {
     align-items: center;
 }
 
-/* What a counted object is, over the map */
+.map-legend .legend-title {
+    margin-block-end: 2px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.legend-amount {
+    margin-inline-start: auto;
+    padding-inline-start: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* What a counted object is, over the map: a dark tooltip, and a popup in the app's colours */
 .object-tooltip,
 .object-popup .leaflet-popup-content {
     font: inherit;
     font-size: 0.8rem;
-    line-height: 1.4;
+    line-height: 1.45;
+}
+
+:root .object-tooltip {
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: #111827;
+    color: #f9fafb;
+    box-shadow: var(--shadow);
+}
+
+:root .object-tooltip.leaflet-tooltip-top::before {
+    border-top-color: #111827;
+}
+
+:root[data-theme="dark"] .object-tooltip {
+    background: #e6eaef;
+    color: #0d1117;
+}
+
+:root[data-theme="dark"] .object-tooltip.leaflet-tooltip-top::before {
+    border-top-color: #e6eaef;
 }
 
 .object-popup .leaflet-popup-content-wrapper,
 .object-popup .leaflet-popup-tip {
     background: var(--surface);
     color: var(--ink);
+}
+
+.object-popup .leaflet-popup-content-wrapper {
+    border-radius: 12px;
 }
 
 /* The objects found, to show on the map */

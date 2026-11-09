@@ -14,6 +14,10 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 - Properties start with the element's symbol, name and kind and one row of actions; fields are on cards, side by
   side, with units inside the boxes, the status as a segmented control and the notes folded away. A selected element
   has an accent outline with a soft glow; the element under the pointer a quiet tint.
+- The plant layout's map has zoom buttons in the app's colours, Satellite and Fit named on one card, a legend with
+  the amounts, a dark tooltip and a scale bar. Its panel starts with the drawing's name, coordinate system and size
+  and (solar) the capacity in large figures; placement, layers and blocks, name patterns and export fold away with a
+  summary.
 
 - The sample drawings are drawn as real plant drawings are: on a sheet with a title block, legend, notes, details and
   coordinate grid, with the layers, blocks and attributes design teams use, and (for the solar, wind, hydropower and

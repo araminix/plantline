@@ -524,7 +524,7 @@ test("describes a counted object from the list, on a click and on hover, and cou
     await page.getByRole("button", { name: /Try a sample/ }).click();
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     // 292 tables of 56 and 24 of 28 module blocks named "…590W"
-    const capacity = page.getByText(/Installed capacity/);
+    const capacity = page.locator(".capacity");
     await expect(capacity).toContainText("10.04 MWp", { timeout: 60_000 });
     await expect(capacity).toContainText("from 17,024 counted modules");
 
@@ -607,7 +607,7 @@ test("opens a DXF chosen by the user, and reports a file that is not a drawing",
     await good.setFiles("public/samples/solar-plant.dxf");
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     await expect(page.locator(".totals tr", { hasText: "PV string" }).locator("td").last()).toHaveText("608", { timeout: 60_000 });
-    await expect(page.getByText(/Installed capacity/)).toContainText("10.04 MWp");
+    await expect(page.locator(".capacity")).toContainText("10.04 MWp");
 });
 
 test("shows its own fonts, Estedad for Persian, and has app icons and a link preview", async ({ page, request }) => {

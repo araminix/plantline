@@ -1,4 +1,4 @@
-import { ChevronDown, Crosshair, Download, FileUp, Layers, Map as MapIcon, RotateCcw, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { ChevronDown, Crosshair, Download, FileText, FileUp, Layers, Map as MapIcon, RotateCcw, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useI18n } from "../i18n/i18n";
 import { LAYOUT_RULES, MEASURE, type LayoutKind, type LayoutRule, type PlantType } from "../plants";
@@ -53,6 +53,8 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     const [query, setQuery] = useState("");
     const [focus, setFocus] = useState<{ index: number; nonce: number } | null>(null);
     const [panelOpen, setPanelOpen] = useState(false);
+    // The placement section opens by itself while the drawing still needs placing, or lies on a point to adjust
+    const [placementOpen, setPlacementOpen] = useState(true);
     const fileInput = useRef<HTMLInputElement>(null);
 
 
@@ -133,7 +135,9 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
             setFileName(file.name);
             setMemoryKey(key);
             setUnit(loadedUnit);
-            setPlacement(known ? known.placement : (preset ?? suggestedPlacement(loaded, loadedUnit)));
+            const where = known ? known.placement : (preset ?? suggestedPlacement(loaded, loadedUnit));
+            setPlacement(where);
+            setPlacementOpen(where === null || where.mode === "point" || where.proj === "");
             setRuleEdits(known?.rules ?? {});
             setAssignments(known?.assignments ?? NO_ASSIGNMENTS);
             setHiddenLayers(new Set(known?.hidden));
@@ -234,6 +238,20 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
     );
     const baseName = fileName.replace(/\.(dwg|dxf)$/i, "");
     const amount = (lengthM: number) => (lengthM >= 1000 ? `${number(lengthM / 1000, 2)} km` : `${number(lengthM, 1)} m`);
+    // Where the drawing lies, in a few words, and its size
+    const zone = placement?.mode === "crs" ? /\+zone=(\d+)( \+south)?/.exec(placement.proj) : null;
+    const placed =
+        placement === null || zoneMissing
+            ? t("layout.notPlaced")
+            : placement.mode === "point"
+              ? `${t("layout.modePoint")} · ${number(placement.lat, 4)}, ${number(placement.lon, 4)}`
+              : zone
+                ? t("layout.utmSummary", { zone: `${zone[1]}${zone[2] ? "S" : "N"}` })
+                : t("layout.modeCrs");
+    const sizeText = (box: [number, number, number, number]) => {
+        const [w, h] = [(box[2] - box[0]) * metres, (box[3] - box[1]) * metres];
+        return w >= 1000 || h >= 1000 ? `${number(w / 1000, 1)} × ${number(h / 1000, 1)} km` : `${number(w, 0)} × ${number(h, 0)} m`;
+    };
     const useUnit = (next: LengthUnit) => {
         setUnit(next);
         // Not placed yet: where it lies may look different in the right unit
@@ -282,30 +300,42 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                     {notices}
                     {recognition && (
                         <ul className="map-legend" aria-label={t("layout.legend")}>
+                            <li className="legend-title" aria-hidden="true">
+                                {t("layout.legend")}
+                            </li>
                             {recognition.totals
                                 .filter((total) => total.count > 0)
                                 .map((total) => (
                                     <li key={total.kind}>
                                         <span className="dot" style={{ background: colorOf(total.kind) }} />
                                         {kindName(total.kind)}
+                                        <span className="legend-amount">{total.measure === "length" ? amount(total.lengthM) : number(total.count)}</span>
                                     </li>
                                 ))}
                         </ul>
                     )}
                     <div className="map-tools">
-                        <IconButton label={t("layout.satellite")} pressed={satellite} onClick={() => setSatellite(!satellite)}>
+                        <IconButton label={t("layout.satellite")} text={t("layout.satelliteShort")} pressed={satellite} onClick={() => setSatellite(!satellite)}>
                             <Layers size={18} />
                         </IconButton>
-                        <IconButton label={t("action.fit")} onClick={() => setFitNonce((n) => n + 1)}>
+                        <IconButton label={t("action.fit")} text={t("toolbar.fit")} onClick={() => setFitNonce((n) => n + 1)}>
                             <Crosshair size={18} />
                         </IconButton>
                     </div>
                 </div>
                 <aside className={panelOpen ? "panel layout-panel open" : "panel layout-panel"} aria-label={t("layout.details")}>
-                    <header className="panel-header">
-                        <h2 title={fileName}>{fileName}</h2>
+                    <header className="panel-header drawing-head">
+                        <span className="inspector-icon">
+                            <FileText size={22} />
+                        </span>
+                        <div>
+                            <h2 title={fileName} dir="auto">
+                                {fileName}
+                            </h2>
+                            <p>{[placed, bounds && sizeText(bounds)].filter(Boolean).join(" · ")}</p>
+                        </div>
                         <div className="row">
-                            <IconButton label={t("layout.close")} onClick={() => setDrawing(null)}>
+                            <IconButton className="ghost" label={t("layout.close")} onClick={() => setDrawing(null)}>
                                 <X size={18} />
                             </IconButton>
                             <IconButton label={t("action.close")} className="sheet-close" onClick={() => setPanelOpen(false)}>
@@ -316,111 +346,131 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                     {readingStatus}
                     {(drawing.truncated || recognition?.complete === false) && <p className="banner error">{t("layout.truncated")}</p>}
 
-                    <h3>{t("layout.objects")}</h3>
-                    <table className="totals">
-                        <tbody>
-                            {recognition?.totals.map((total) => (
-                                <tr key={total.kind} className={total.count === 0 ? "muted" : undefined}>
-                                    <td>
-                                        <span className="dot" style={{ background: colorOf(total.kind) }} />
-                                        {kindName(total.kind)}
-                                    </td>
-                                    <td>{total.measure === "length" ? amount(total.lengthM) : number(total.count)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
                     {plant === "solar" && (
-                        <div className="solar">
-                            {modules === 0 && <NumberField label={t("layout.modulesPerTable")} value={solar.modulesPerTable} onCommit={(value) => setSolar({ ...solar, modulesPerTable: value ?? 0 })} />}
-                            <NumberField label={t("layout.moduleWp")} unit="Wp" value={wp} onCommit={(value) => setSolar({ ...solar, moduleWp: value })} />
-                            <p className="capacity">
-                                {t("layout.capacity")}: <strong>{kwp >= 1000 ? `${number(kwp / 1000, 2)} MWp` : `${number(kwp, 1)} kWp`}</strong>
-                                {modules > 0 && <span className="muted"> {t("layout.fromModules", { count: number(modules) })}</span>}
+                        <section className="card capacity">
+                            <h3>{t("layout.capacity")}</h3>
+                            <p className="capacity-value">
+                                {kwp >= 1000 ? number(kwp / 1000, 2) : number(kwp, 1)} <small>{kwp >= 1000 ? "MWp" : "kWp"}</small>
                             </p>
-                        </div>
-                    )}
-
-                    <h3>{t("layout.find")}</h3>
-                    <input type="search" className="inventory-search" aria-label={t("layout.find")} placeholder={t("layout.find")} value={query} onChange={(event) => setQuery(event.target.value)} />
-                    <ul className="found-list">
-                        {matches.slice(0, SHOWN).map(({ object, index }) => (
-                            <li key={index}>
-                                <button
-                                    type="button"
-                                    disabled={!projector}
-                                    onClick={() => {
-                                        setFocus({ index, nonce: Date.now() });
-                                        setPanelOpen(false);
-                                    }}
-                                >
-                                    <span className="dot" style={{ background: colorOf(object.kind) }} />
-                                    <span dir="auto">{object.label}</span>
-                                    <span className="muted">{kindName(object.kind)}</span>
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                    {matches.length === 0 ? <p className="muted small">{t("layout.noneFound")}</p> : matches.length > SHOWN && <p className="muted small">{t("layout.more", { count: number(matches.length - SHOWN) })}</p>}
-
-                    <h3>{t("layout.placement")}</h3>
-                    <label className="field">
-                        <span>{t("layout.units")}</span>
-                        <select value={unit} onChange={(event) => useUnit(event.target.value as LengthUnit)}>
-                            {LENGTH_UNITS.filter((u) => u !== "unitless").map((u) => (
-                                <option key={u} value={u}>
-                                    {u}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <div className="segmented" role="radiogroup" aria-label={t("layout.placement")}>
-                        <button type="button" role="radio" aria-checked={placement?.mode !== "crs"} onClick={() => placement?.mode === "crs" && setPlacement(null)}>
-                            {t("layout.modePoint")}
-                        </button>
-                        <button type="button" role="radio" aria-checked={placement?.mode === "crs"} onClick={() => placement?.mode !== "crs" && setPlacement({ mode: "crs", proj: "" })}>
-                            {t("layout.modeCrs")}
-                        </button>
-                    </div>
-                    {placement === null ? (
-                        <p className="hint">{t("layout.pick")}</p>
-                    ) : placement.mode === "point" ? (
-                        <>
-                            <div className="row">
-                                <NumberField signed label={t("layout.latitude")} value={round(placement.lat)} onCommit={(lat) => setPlacement({ ...placement, lat: Math.max(-85, Math.min(85, lat ?? 0)) })} />
-                                <NumberField signed label={t("layout.longitude")} value={round(placement.lon)} onCommit={(lon) => setPlacement({ ...placement, lon: Math.max(-180, Math.min(180, lon ?? 0)) })} />
+                            {modules > 0 && (
+                                <p className="muted small">
+                                    {t("layout.fromModules", { count: number(modules) })} × {number(wp)} Wp
+                                </p>
+                            )}
+                            <div className="fields">
+                                {modules === 0 && <NumberField label={t("layout.modulesPerTable")} value={solar.modulesPerTable} onCommit={(value) => setSolar({ ...solar, modulesPerTable: value ?? 0 })} />}
+                                <NumberField label={t("layout.moduleWp")} unit="Wp" value={wp} onCommit={(value) => setSolar({ ...solar, moduleWp: value })} />
                             </div>
-                            <button type="button" className="button" onClick={() => setPlacement({ ...placement, lat: mapCentre.lat, lon: mapCentre.lon })}>
-                                <Crosshair size={16} aria-hidden="true" />
-                                {t("layout.placeHere")}
-                            </button>
-                            <label className="field">
-                                <span>
-                                    {t("layout.rotation")} <small>({placement.rotationDeg}°)</small>
-                                </span>
-                                <input type="range" min={-180} max={180} step={0.5} value={placement.rotationDeg} onChange={(event) => setPlacement({ ...placement, rotationDeg: Number(event.target.value) })} />
-                            </label>
-                        </>
-                    ) : (
-                        <>
-                            <label className="field">
-                                <span>{t("layout.utm")}</span>
-                                <select value={utmZoneOf(placement.proj)} onChange={(event) => setPlacement({ mode: "crs", proj: event.target.value })}>
-                                    <option value="">—</option>
-                                    {Array.from({ length: 60 }, (_, i) => i + 1).flatMap((zone) =>
-                                        [false, true].map((south) => (
-                                            <option key={`${zone}${south}`} value={utmProj(zone, south)}>
-                                                {zone}
-                                                {south ? "S" : "N"}
-                                            </option>
-                                        )),
-                                    )}
-                                </select>
-                            </label>
-                            <TextField label={t("layout.proj")} value={placement.proj} maxLength={500} onCommit={(proj) => setPlacement({ mode: "crs", proj })} />
-                            {zoneMissing ? <p className="hint">{t("layout.zonePrompt", { section: t("layout.placement") })}</p> : !projector && <p className="error">{t("layout.projInvalid")}</p>}
-                        </>
+                        </section>
                     )}
+
+                    <section className="card">
+                        <h3>{t("layout.objects")}</h3>
+                        <table className="totals">
+                            <tbody>
+                                {recognition?.totals.map((total) => (
+                                    <tr key={total.kind} className={total.count === 0 ? "muted" : undefined}>
+                                        <td>
+                                            <span className="dot" style={{ background: colorOf(total.kind) }} />
+                                            {kindName(total.kind)}
+                                        </td>
+                                        <td>{total.measure === "length" ? amount(total.lengthM) : number(total.count)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section className="card">
+                        <h3>{t("layout.find")}</h3>
+                        <label className="search-field">
+                            <Search size={16} aria-hidden="true" />
+                            <input type="search" aria-label={t("layout.find")} placeholder={t("layout.find")} value={query} onChange={(event) => setQuery(event.target.value)} />
+                        </label>
+                        <ul className="found-list">
+                            {matches.slice(0, SHOWN).map(({ object, index }) => (
+                                <li key={index}>
+                                    <button
+                                        type="button"
+                                        disabled={!projector}
+                                        onClick={() => {
+                                            setFocus({ index, nonce: Date.now() });
+                                            setPanelOpen(false);
+                                        }}
+                                    >
+                                        <span className="dot" style={{ background: colorOf(object.kind) }} />
+                                        <span dir="auto">{object.label}</span>
+                                        <span className="muted">{kindName(object.kind)}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        {matches.length === 0 ? <p className="muted small">{t("layout.noneFound")}</p> : matches.length > SHOWN && <p className="muted small">{t("layout.more", { count: number(matches.length - SHOWN) })}</p>}
+                    </section>
+
+                    <details className="card" open={placementOpen} onToggle={(event) => setPlacementOpen(event.currentTarget.open)}>
+                        <summary>
+                            <h3>{t("layout.placement")}</h3>
+                            {!placementOpen && <span className="summary-text">{placed}</span>}
+                        </summary>
+                        <label className="field">
+                            <span>{t("layout.units")}</span>
+                            <select value={unit} onChange={(event) => useUnit(event.target.value as LengthUnit)}>
+                                {LENGTH_UNITS.filter((u) => u !== "unitless").map((u) => (
+                                    <option key={u} value={u}>
+                                        {u}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <div className="segmented" role="radiogroup" aria-label={t("layout.placement")}>
+                            <button type="button" role="radio" aria-checked={placement?.mode !== "crs"} onClick={() => placement?.mode === "crs" && setPlacement(null)}>
+                                {t("layout.modePoint")}
+                            </button>
+                            <button type="button" role="radio" aria-checked={placement?.mode === "crs"} onClick={() => placement?.mode !== "crs" && setPlacement({ mode: "crs", proj: "" })}>
+                                {t("layout.modeCrs")}
+                            </button>
+                        </div>
+                        {placement === null ? (
+                            <p className="hint">{t("layout.pick")}</p>
+                        ) : placement.mode === "point" ? (
+                            <>
+                                <div className="fields">
+                                    <NumberField signed label={t("layout.latitude")} value={round(placement.lat)} onCommit={(lat) => setPlacement({ ...placement, lat: Math.max(-85, Math.min(85, lat ?? 0)) })} />
+                                    <NumberField signed label={t("layout.longitude")} value={round(placement.lon)} onCommit={(lon) => setPlacement({ ...placement, lon: Math.max(-180, Math.min(180, lon ?? 0)) })} />
+                                </div>
+                                <button type="button" className="button" onClick={() => setPlacement({ ...placement, lat: mapCentre.lat, lon: mapCentre.lon })}>
+                                    <Crosshair size={16} aria-hidden="true" />
+                                    {t("layout.placeHere")}
+                                </button>
+                                <label className="field rotation">
+                                    <span>
+                                        {t("layout.rotation")} <small>({placement.rotationDeg}°)</small>
+                                    </span>
+                                    <input type="range" min={-180} max={180} step={0.5} value={placement.rotationDeg} onChange={(event) => setPlacement({ ...placement, rotationDeg: Number(event.target.value) })} />
+                                </label>
+                            </>
+                        ) : (
+                            <>
+                                <label className="field">
+                                    <span>{t("layout.utm")}</span>
+                                    <select value={utmZoneOf(placement.proj)} onChange={(event) => setPlacement({ mode: "crs", proj: event.target.value })}>
+                                        <option value="">—</option>
+                                        {Array.from({ length: 60 }, (_, i) => i + 1).flatMap((zone) =>
+                                            [false, true].map((south) => (
+                                                <option key={`${zone}${south}`} value={utmProj(zone, south)}>
+                                                    {zone}
+                                                    {south ? "S" : "N"}
+                                                </option>
+                                            )),
+                                        )}
+                                    </select>
+                                </label>
+                                <TextField label={t("layout.proj")} value={placement.proj} maxLength={500} onCommit={(proj) => setPlacement({ mode: "crs", proj })} />
+                                {zoneMissing ? <p className="hint">{t("layout.zonePrompt", { section: t("layout.placement") })}</p> : !projector && <p className="error">{t("layout.projInvalid")}</p>}
+                            </>
+                        )}
+                    </details>
 
                     {contents && (
                         <Inventory
@@ -433,8 +483,10 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                         />
                     )}
 
-                    <details className="rules">
-                        <summary>{t("layout.advanced")}</summary>
+                    <details className="card rules">
+                        <summary>
+                            <h3>{t("layout.advanced")}</h3>
+                        </summary>
                         <p className="muted small">{t("layout.rulesHint")}</p>
                         {rules.map((rule, index) => (
                             <label key={rule.kind} className="field">
@@ -456,17 +508,22 @@ export function LayoutView({ plant, hidden }: { plant: PlantType; hidden: boolea
                         </button>
                     </details>
 
-                    <h3>{t("layout.export")}</h3>
-                    <div className="row">
-                        <button type="button" className="button" disabled={!projector} onClick={() => projector && recognition && download(`${baseName}.geojson`, toGeoJson(drawing, recognition, projector), "application/geo+json")}>
-                            <Download size={16} aria-hidden="true" />
-                            GeoJSON
-                        </button>
-                        <button type="button" className="button" onClick={() => recognition && download(`${baseName}.csv`, toCsv(recognition.totals, kindName), "text/csv")}>
-                            <Download size={16} aria-hidden="true" />
-                            CSV
-                        </button>
-                    </div>
+                    <details className="card">
+                        <summary>
+                            <h3>{t("layout.export")}</h3>
+                            <span className="summary-text">GeoJSON · CSV</span>
+                        </summary>
+                        <div className="row">
+                            <button type="button" className="button" disabled={!projector} onClick={() => projector && recognition && download(`${baseName}.geojson`, toGeoJson(drawing, recognition, projector), "application/geo+json")}>
+                                <Download size={16} aria-hidden="true" />
+                                GeoJSON
+                            </button>
+                            <button type="button" className="button" onClick={() => recognition && download(`${baseName}.csv`, toCsv(recognition.totals, kindName), "text/csv")}>
+                                <Download size={16} aria-hidden="true" />
+                                CSV
+                            </button>
+                        </div>
+                    </details>
                     <div className="row">{fileButtons}</div>
                 </aside>
             </div>

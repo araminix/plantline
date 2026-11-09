@@ -298,6 +298,7 @@ export function LayoutMap({ scene, placement, onPlace, moveLabel, turnLabel, sat
 
     useEffect(() => {
         const created = L.map(element.current!, { preferCanvas: true, worldCopyJump: true }).setView([20, 0], 2);
+        L.control.scale({ imperial: false, position: "bottomright" }).addTo(created);
         const report = () => {
             const centre = created.getCenter();
             moved.current({ lat: centre.lat, lon: centre.lng });

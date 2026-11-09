@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Search } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/i18n";
 import { LAYOUT_KINDS, MEASURE, type LayoutKind } from "../plants";
@@ -45,10 +45,16 @@ export function Inventory({ contents, assignments, onAssign, hidden, onToggle, a
     };
 
     return (
-        <details className="inventory">
-            <summary>{t("layout.inventory")}</summary>
+        <details className="card inventory">
+            <summary>
+                <h3>{t("layout.inventory")}</h3>
+                <span className="summary-text">{t("layout.inventorySummary", { layers: number(contents.layers.length), blocks: number(contents.blocks.length) })}</span>
+            </summary>
             <p className="hint">{t("layout.inventoryHint")}</p>
-            <input type="search" className="inventory-search" aria-label={t("layout.search")} placeholder={t("layout.search")} value={query} onChange={(event) => setQuery(event.target.value)} />
+            <label className="search-field">
+                <Search size={16} aria-hidden="true" />
+                <input type="search" aria-label={t("layout.search")} placeholder={t("layout.search")} value={query} onChange={(event) => setQuery(event.target.value)} />
+            </label>
             <h4>{t("layout.blocks")}</h4>
             <ul className="inventory-list">
                 {contents.blocks
