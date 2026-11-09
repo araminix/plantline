@@ -150,7 +150,7 @@ Each rule has a kind, a pattern (a case-insensitive regular expression) and a me
 - **Moving and turning** (a point placement): a handle at the drawing's centre moves it, one above it turns it. While
   a handle is dragged, the layer redraws the same scene through one more transform (a shift, or a turn about the
   centre), so nothing is projected again; the new placement is applied once, when the drag ends.
-- A real 7.5 MB plant drawing (27,000 nested block copies, 265,000 shapes when expanded) reads in about 10 s in the
+- A real 7.5 MB plant drawing (27,000 nested block copies, 265,000 shapes when expanded) opens in about 3.5 s in the
   browser, with the reader at 0.5 GB; the page receives 1.6 million characters of JSON and 10.5 MB of points, holds
   about 80 MB, and redraws in well under 100 ms.
 
@@ -176,7 +176,8 @@ files others open.
 | Decision | Why |
 | --- | --- |
 | Browser only, no backend | Free hosting (GitHub Pages), nothing to operate, files stay with the user, easy to fork. |
-| .NET (ACadSharp) for drawings, compiled to WebAssembly | No free, permissively licensed DWG reader exists in JavaScript (LibreDWG is GPL). ACadSharp is MIT and reads DWG and DXF. Loaded only when a drawing is opened (about 3 MB compressed). |
+| .NET (ACadSharp) for drawings, compiled to WebAssembly | No free, permissively licensed DWG reader exists in JavaScript (LibreDWG is GPL). ACadSharp is MIT and reads DWG and DXF. Loaded only when a drawing is opened. |
+| The reader compiled ahead of time | Measured on a real 7.5 MB plant drawing: 2.2 s instead of 9.9 s in the interpreter; the download is 6.5 MB compressed instead of 2.7 MB, once, then cached. Needs the `wasm-tools` workload to build; without it the same reader is interpreted. |
 | The rest in TypeScript and React, without a state library | The diagram is one immutable value with an undo history; `useState` suffices. |
 | SVG for diagrams, Leaflet for maps | SVG gives crisp, exportable diagrams and accessible elements; Leaflet is small, stable and BSD-licensed. |
 | No CSS framework | One stylesheet with theme tokens and logical properties, which mirror for right-to-left languages by themselves. |

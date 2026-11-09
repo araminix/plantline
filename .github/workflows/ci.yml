@@ -31,6 +31,11 @@ jobs:
         working-directory: cad
         run: dotnet test --project Plantline.Cad.Tests
 
+      # Compiles the browser's reader ahead of time: about 4 times faster on large drawings
+      - name: Install the WebAssembly build tools
+        working-directory: cad
+        run: dotnet workload install wasm-tools
+
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: web/package.json # its packageManager field names the pnpm version
@@ -54,7 +59,20 @@ jobs:
 
       - name: Build the CAD reader for the browser
         working-directory: web
-        run: pnpm cad
+        run: pnpm cad --aot
+
+      # A generated plant the size of a real one (never committed), read three times as a browser does
+      - name: Read a large drawing within the time and memory limits
+        working-directory: web
+        run: |
+          dotnet run --project ../cad/Plantline.Cad.Samples -c Release -- --large "$RUNNER_TEMP/large"
+          node scripts/check-reader.mjs "$RUNNER_TEMP/large/large-plant.dwg" --runs 3 --max-seconds 6 --max-memory-mb 650
+
+      - name: Download sizes within the limits
+        working-directory: web
+        run: |
+          pnpm build
+          node scripts/check-size.mjs --max-app-kb 300 --max-reader-mb 7
 
       - name: End-to-end tests (desktop and phone)
         working-directory: web

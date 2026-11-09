@@ -14,6 +14,10 @@ pnpm cad    # builds the drawing reader (cad/) into public/cad
 pnpm dev    # http://localhost:5173
 ```
 
+With the `wasm-tools` workload (`dotnet workload install wasm-tools`), `pnpm cad` compiles the reader ahead of time, as
+the site ships it: about 4 times faster on large drawings. Without it, the reader is interpreted: slower, the same
+results.
+
 ## Before a pull request
 
 In `web/`:
@@ -31,7 +35,10 @@ In `cad/`, when the reader changed:
 dotnet test --project Plantline.Cad.Tests
 ```
 
-CI runs all of them on every pull request.
+CI runs all of them on every pull request, and two limits: a generated plant the size of a real one must read within
+the time and memory limits (`scripts/check-reader.mjs`), and the compressed download of the app and of the reader must
+stay within theirs (`scripts/check-size.mjs`, after `pnpm build`); both assume the reader compiled ahead of time. A change that needs more says why and raises the
+limit in `.github/workflows/ci.yml`.
 
 ## How we work
 

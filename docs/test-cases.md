@@ -8,6 +8,7 @@ request ([CI](../.github/workflows/ci.yml)).
 | Unit and component | Vitest, Testing Library, jsdom | `web/src/**/*.test.ts(x)` | `pnpm test` in `web/` |
 | Drawing reader | xUnit | `cad/Plantline.Cad.Tests` | `dotnet test --project Plantline.Cad.Tests` in `cad/` |
 | End to end | Playwright, on a desktop and a phone (Pixel 7, touch) | `web/e2e` | `pnpm cad && pnpm e2e` in `web/` |
+| Limits | Node scripts, in CI | `web/scripts/check-reader.mjs`, `check-size.mjs` | see [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
 ## Getting started
 
@@ -91,6 +92,8 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-71 | US-31 | The map's projection is Leaflet's Web Mercator and turns back into latitude and longitude. | `scene.test.ts` › uses Leaflet's Web Mercator pixels… |
 | TC-72 | US-31, US-39 | A small plant is drawn through transforms only, each block's shapes kept once, within 2 cm of exact projection. | `scene.test.ts` › draws a small plant through transforms only… |
 | TC-73 | US-31, US-39 | A large plant's own shapes are projected point by point while its small blocks are still placed through transforms, within 2 cm. | `scene.test.ts` › projects a large plant's own shapes… |
+| TC-74 | US-39 | A generated plant the size of a real one (17,920 modules nested four deep, about 700,000 points) reads three times in the WebAssembly reader within the limits: 6 s and 650 MB. | CI › Read a large drawing… (`scripts/check-reader.mjs`) |
+| TC-75 | US-05, US-39 | The compressed download stays within its limits: the app's scripts and styles 300 KB, the drawing reader 7 MB. | CI › Download sizes… (`scripts/check-size.mjs`) |
 
 ## Checked by hand before each release
 

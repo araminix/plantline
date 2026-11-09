@@ -16,14 +16,18 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 - **Large drawings no longer crash the browser tab.** The reader keeps every block once with its transform instead of
   copying it everywhere it is used, sends the points as binary instead of text, and leaves out texts; the map draws
   each block's shapes once per copy through a transform, with dots for copies too small to see. A real 7.5 MB plant
-  drawing with 27,000 nested block copies: read in 10 s instead of 61 s, reader memory 0.5 GB instead of 1.3 GB, and
+  drawing with 27,000 nested block copies: read in 10 s instead of 61 s (2 s compiled ahead of time, below), reader memory 0.5 GB instead of 1.3 GB, and
   the page receives 12 MB instead of 77 million characters; zooming redraws in under 100 ms.
 - Arrays of block copies (MINSERT) show every copy, not only the first.
 - Move and turn a drawing on the map by dragging its handles; it follows smoothly however large it is.
+- The drawing reader is compiled ahead of time: the real plant drawing above opens in about 3.5 s instead of 11 s, for
+  a one-time download of 6.5 MB instead of 2.7 MB.
 - A drawing reader that cannot start (a file of it failed to download) is reported within seconds with "Try again",
   instead of a "took too long" after two minutes.
 - While a drawing is read, the time so far and Cancel are shown, instead of a fixed two-minute limit; a drawing likely
   too large for the device's memory is read only after asking.
+- CI reads a generated plant the size of a real one three times within limits of time and memory, and limits the
+  compressed download of the app and the reader.
 - The documents no longer say that the reader's worker protects the page from running out of memory: it shares the
   page's memory; the question before large drawings does.
 - Scaled blocks with a base point are placed correctly.

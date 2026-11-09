@@ -7,6 +7,15 @@ using CSMath;
 
 // Writes the made-up sample drawings of the web app (web/public/samples), one per plant type, in metres.
 // Run: dotnet run --project cad/Plantline.Cad.Samples -- web/public/samples
+// With --large, writes only large-plant.dwg, a drawing the size of a real plant for CI's reading limits (not committed):
+// dotnet run --project cad/Plantline.Cad.Samples -- --large <folder>
+if (args is ["--large", var folder])
+{
+    Directory.CreateDirectory(folder);
+    Save(Large(), folder, "large-plant", dwg: true, dxf: false);
+    return;
+}
+
 var output = args.Length > 0 ? args[0] : "samples";
 Directory.CreateDirectory(output);
 
@@ -165,6 +174,62 @@ static CadDocument Transmission()
     return document;
 }
 
+// A real plant's size, in UTM coordinates: 17,920 modules in tables, rows and fields (nested four deep), 60 detail
+// blocks of 800 lines and 400 circles each (equipment drawings, title blocks) and 20,000 lines in model space: about
+// 700,000 points, like the real plant drawing these limits were measured on.
+static CadDocument Large()
+{
+    var (document, add) = New();
+    var module = Block(document, "MODULE", 1.1, 2.3, Line(Layer(document, "PV-MODULES", 8), -0.55, 0, 0.55, 0));
+    var table = Block(document, "PV_TABLE_2x14", 15.6, 4.8);
+    for (var i = 0; i < 28; i++)
+    {
+        table.Entities.Add(Put(module, Layer(document, "PV-MODULES", 8), -7.15 + i % 14 * 1.1, -1.2 + i / 14 * 2.4));
+    }
+
+    var row = Block(document, "PV_ROW", 0, 0);
+    for (var i = 0; i < 10; i++)
+    {
+        row.Entities.Add(Put(table, Layer(document, "PV-TABLES", 5), i * 16, 0));
+    }
+
+    var inverter = Block(document, "INVERTER_3MW", 6, 2.5);
+    var field = Block(document, "PV_FIELD", 0, 0, Rectangle(Layer(document, "FENCE", 8), -12, -8, 160, 80));
+    for (var i = 0; i < 8; i++)
+    {
+        field.Entities.Add(Put(row, Layer(document, "PV-TABLES", 5), 0, i * 9));
+    }
+
+    field.Entities.Add(Put(inverter, Layer(document, "INVERTERS", 1), 150, 74));
+    const double east = 470_000, north = 4_330_000;
+    for (var i = 0; i < 8; i++)
+    {
+        add(Put(field, Layer(document, "PV-FIELDS", 5), east + i % 4 * 180, north + i / 4 * 100, $"F-{i + 1:00}"));
+    }
+
+    for (var d = 0; d < 60; d++)
+    {
+        var detail = Block(document, $"DETAIL_{d:00}", 0, 0);
+        for (var i = 0; i < 1200; i++)
+        {
+            detail.Entities.Add(i % 3 == 2
+                ? new Circle { Center = new XYZ(i % 40, i / 40, 0), Radius = 0.3, Layer = Layer(document, "DETAILS", 7) }
+                : Line(Layer(document, "DETAILS", 7), i % 40, i / 40, i % 40 + 0.8, i / 40 + 0.5));
+        }
+
+        add(Put(detail, Layer(document, "DETAILS", 7), east - 200 + d % 10 * 45, north - 200 + d / 10 * 35));
+    }
+
+    var cables = Layer(document, "CABLES", 6);
+    for (var i = 0; i < 20_000; i++)
+    {
+        var (x, y) = (east + i % 200 * 3.6, north - 300 + i / 200 * 0.9);
+        add(Line(cables, x, y, x + 3, y + 0.4));
+    }
+
+    return document;
+}
+
 static (CadDocument Document, Action<Entity> Add) New()
 {
     var document = new CadDocument();
@@ -231,10 +296,11 @@ static LwPolyline Polyline(Layer? layer, bool closed, params double[] xy)
     return polyline;
 }
 
-static void Save(CadDocument document, string folder, string name, bool dwg = false)
+static void Save(CadDocument document, string folder, string name, bool dwg = false, bool dxf = true)
 {
-    using (var writer = new DxfWriter(Path.Combine(folder, name + ".dxf"), document, false))
+    if (dxf)
     {
+        using var writer = new DxfWriter(Path.Combine(folder, name + ".dxf"), document, false);
         writer.Write();
     }
 
