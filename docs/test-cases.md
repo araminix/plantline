@@ -141,6 +141,7 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-75 | US-05, US-39 | The compressed download stays within its limits: the app's scripts and styles 300 KB, the drawing reader 7 MB. | CI › Download sizes… (`scripts/check-size.mjs`) |
 | TC-100 | US-30a | A DXF dropped onto the plant layout is read and counted. | e2e › opens a drawing dropped onto the plant layout |
 | TC-101 | US-31 | Another plant type's sample card switches the plant type and reads its sample. | e2e › opens the sample of another plant type… |
+| TC-105 | US-40, US-41 | Map tiles come over HTTPS from the sources in `tiles.ts`, each with its attribution (OpenStreetMap's linking its copyright page, "Powered by Esri") and terms; the build writes exactly their servers into the page's Content Security Policy ({s} subdomains as a wildcard) and refuses HTTP tiles or a page without the placeholder. | `tiles.test.ts` |
 
 ## Checked by hand before each release
 

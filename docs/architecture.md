@@ -177,6 +177,24 @@ Each rule has a kind, a pattern (a case-insensitive regular expression) and a me
   browser, with the reader at 0.5 GB; the page receives 1.6 million characters of JSON and 10.5 MB of points, holds
   about 80 MB, and redraws in well under 100 ms.
 
+## Map tiles
+
+The plant layout's map shows tiles from two servers, both named in one file, `web/src/layout/tiles.ts`: the plain
+map from OpenStreetMap, satellite imagery from Esri's World Imagery. The page's Content Security Policy lets images
+come from these servers only; the build writes their origins into it (`%TILE_ORIGINS%` in `index.html`), so to use
+other tiles a fork changes that one file.
+
+| Source | Terms | What they ask |
+| --- | --- | --- |
+| OpenStreetMap | [Tile usage policy](https://operations.osmfoundation.org/policies/tiles/) | The servers are run by volunteers on donations, for light use. Heavy use (a busy or commercial site) is not allowed and may be blocked without notice; no bulk or offline downloading; the attribution links to [the copyright page](https://www.openstreetmap.org/copyright). |
+| Esri World Imagery | [Esri's terms](https://www.esri.com/en-us/legal/terms/full-master-agreement) | An app shows "Powered by Esri" and the imagery's sources; this layer is not for exporting tiles for offline use. |
+
+plantline itself is light use: a person looks at one plant at a time, and only the tiles in view are fetched. A site
+that serves many users should take its tiles from a provider with a plan for it: MapTiler, Stadia Maps and
+Thunderforest have free tiers with an API key, and Esri's ArcGIS Location Platform serves World Imagery with one
+(check each provider's current quotas and terms). A key in a static site is public, so restrict it to the site's
+address in the provider's settings. Another option is to serve tiles yourself from OpenStreetMap's data.
+
 ## Security model
 
 The app's inputs are drawings and diagram files, which may be hostile, and its output is shown in a browser and in
@@ -188,8 +206,8 @@ files others open.
 | A reader that cannot start (a runtime file fails to download) | .NET's start then waits for ever; the worker treats errors that are not recovered from within 5 s as a failed start and reports it at once, and the user can try again. |
 | A block bomb (deep or self-referencing nesting, exponential copies) | The reader never expands blocks: each is read once, from a list rather than by recursion, so no nesting can overflow its stack; at most 1,000,000 shapes and references and 4,000,000 points are kept. The app opens references at most 8 levels deep and stops a walk at 5,000,000 placed shapes and references. Block extents come from the shapes kept, not from ACadSharp's own recursive bounding box. |
 | A hostile diagram file | Strict validation: format, version, every field's type and range, unique ids, existing link ends, size limits; anything unexpected is refused. |
-| Script injection (XSS) | React escapes all text; there is no `dangerouslySetInnerHTML`, no `eval`, no HTML built from strings. Exported SVG is rendered by React, so typed text is escaped. |
-| Third-party scripts | A Content Security Policy in `index.html` allows scripts and fonts only from the site itself (and WebAssembly), images only from the site and the two tile servers, and no connections elsewhere. |
+| Script injection (XSS) | React escapes all text; there is no `dangerouslySetInnerHTML`, no `eval`, and the only HTML from a string is the map's attribution, a constant in `tiles.ts`. Exported SVG is rendered by React, so typed text is escaped. |
+| Third-party scripts | A Content Security Policy in `index.html` allows scripts and fonts only from the site itself (and WebAssembly), images only from the site and the tile servers of `tiles.ts` (written in by the build), and no connections elsewhere. |
 | Formula injection in CSV | Cells starting with `=`, `+`, `-`, `@`, tab or carriage return are prefixed with `'`. |
 | Supply chain | Few dependencies; exact versions at least two weeks old at release; pnpm refuses packages published less than 7 days ago; Dependabot waits as long; GitHub Actions pinned to commits. |
 | Privacy | No server, analytics or cookies. Settings, the autosaved diagram and the settings of the 20 drawings used last (by file name and size: unit, placement, choices; never the drawing itself) are in `localStorage`; drawings are never stored. |

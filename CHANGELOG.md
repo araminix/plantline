@@ -11,6 +11,12 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
   keep the focus inside. The shortcuts sheet lists Tab and Enter.
 - Counts in every language's plural forms ("1 element", "5 элементов", Arabic's six forms), and the ratings in the
   drawing and its exports in the language's digits and decimal mark (Persian ۳۳/۰٫۴ kV).
+- Map tiles in one settings file, `web/src/layout/tiles.ts`; the build writes their servers into the page's Content
+  Security Policy. The providers' terms, and what to use for heavy use, are in the architecture notes.
+
+### Changed
+
+- The map's attribution links to OpenStreetMap's copyright page and says "Powered by Esri", as their terms ask.
 
 ### Fixed
 

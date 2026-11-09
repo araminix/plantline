@@ -58,7 +58,7 @@ plantline is a web tool for the people who design, build and run power plants. D
 - **Drawings are read in your browser**, in a background worker of their own, and never uploaded.
 - **Diagrams are kept in your browser** and in the files you save; for the drawings you open, only their settings (unit, place on the map, your choices) are remembered, never the drawings.
 
-The only things fetched from elsewhere are map tiles (OpenStreetMap and Esri), and only for the part of the map you look at.
+The only things fetched from elsewhere are map tiles (OpenStreetMap and Esri), and only for the part of the map you look at. To host plantline for many users, take tiles from a provider with a plan for it: change them in `web/src/layout/tiles.ts` (see [Map tiles](docs/architecture.md#map-tiles) for the providers' terms).
 
 ## Run it yourself
 

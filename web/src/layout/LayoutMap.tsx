@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { apply, compose, invert, transformedBox, type Affine } from "./drawing";
 import type { Placement } from "./place";
 import { FRAME_SCALE, GREY, unmercator, type Polylines, type Scene } from "./scene";
+import { TILES } from "./tiles";
 
 interface Props {
     scene: Scene | null;
@@ -55,15 +56,6 @@ const canvas = L.Canvas.prototype as unknown as { _redraw(): void; _ctx?: Canvas
 const redraw = canvas._redraw;
 canvas._redraw = function (this: typeof canvas) {
     if (this._ctx) redraw.call(this);
-};
-
-const TILES = {
-    plain: { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: "© OpenStreetMap contributors", maxNativeZoom: 19 },
-    satellite: {
-        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
-        maxNativeZoom: 18,
-    },
 };
 
 const FILL_OPACITY = 0.2;

@@ -242,7 +242,8 @@ from OpenStreetMap and Esri.
 
 **US-41 Host or fork it.** As a developer, I build plantline into static files, host them anywhere, and change it
 freely under the Apache 2.0 license. A link to the site shows a preview picture; a fork hosted elsewhere changes its
-address in `index.html`.
+address in `index.html`. The map's tiles are set in one file, with the providers' terms documented, so a site with
+many users can take them from a provider with a plan for it.
 
 **US-42 Safe with untrusted files.** As a user, I can open any file without risk: drawings and diagram files are
 validated and bounded, the drawing reader runs in a worker that is ended after each file, a drawing likely too large
