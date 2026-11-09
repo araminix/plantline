@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { checkDiagram } from "./checks";
 import { addNode, connect, emptyDiagram, updateNode, type Diagram } from "./model";
+import type { Properties } from "./properties";
+
+const withProps = (diagram: Diagram, id: string, props: Properties) => updateNode(diagram, id, { props });
 
 const build = (...kinds: Parameters<typeof addNode>[1][]) =>
     kinds.reduce<{ diagram: Diagram; ids: string[] }>(
@@ -27,12 +30,39 @@ describe("diagram checks", () => {
         ]);
     });
 
-    it("reports different voltages on a link, except across a transformer or inverter", () => {
-        const { diagram, ids } = build("gridConnection", "busbar", "transformer");
-        const [grid, bus, transformer] = ids as [string, string, string];
-        let d = connect(connect(diagram, grid, bus)!, bus, transformer)!;
-        d = updateNode(updateNode(updateNode(d, grid, { voltageKv: 154 }), bus, { voltageKv: 33 }), transformer, { voltageKv: 0.8 });
+    it("reports different voltages on a line", () => {
+        const { diagram, ids } = build("gridConnection", "busbar");
+        const [grid, bus] = ids as [string, string];
+        const d = withProps(withProps(connect(diagram, grid, bus)!, grid, { voltageKv: 154 }), bus, { voltageKv: 33 });
         expect(checkDiagram(d)).toEqual([{ code: "voltageMismatch", nodeIds: [grid, bus] }]);
+    });
+
+    it("compares a transformer's HV side with what is above it and its LV side with what is below", () => {
+        const diagram = emptyDiagram("substation");
+        const mv = addNode(diagram, "busbar", 0, 0);
+        const transformer = addNode(mv.diagram, "transformer", 0, 200);
+        const lv = addNode(transformer.diagram, "busbar", 0, 400);
+        let d = connect(connect(lv.diagram, mv.id, transformer.id)!, transformer.id, lv.id)!;
+        d = withProps(withProps(withProps(d, mv.id, { voltageKv: 33 }), transformer.id, { hvKv: 33, lvKv: 0.4 }), lv.id, { voltageKv: 0.4 });
+        expect(checkDiagram(d).filter((issue) => issue.code === "voltageMismatch")).toEqual([]);
+        // The LV bar at 0.69 kV no longer matches the LV side
+        expect(checkDiagram(withProps(d, lv.id, { voltageKv: 0.69 })).filter((issue) => issue.code === "voltageMismatch")).toEqual([{ code: "voltageMismatch", nodeIds: [transformer.id, lv.id] }]);
+    });
+
+    it("reports an inverter connected the wrong way round, and PV modules that do not add up", () => {
+        const diagram = emptyDiagram("solar");
+        const inverter = addNode(diagram, "inverter", 0, 0);
+        const pv = addNode(inverter.diagram, "pvArray", 0, 200);
+        const transformer = addNode(pv.diagram, "transformer", 0, -200);
+        // The PV array below the inverter meets its AC side; the transformer above meets its DC side
+        let d = connect(connect(transformer.diagram, inverter.id, pv.id)!, transformer.id, inverter.id)!;
+        d = withProps(d, pv.id, { modules: 100, strings: 4, modulesPerString: 24 });
+        const issues = checkDiagram(d).filter((issue) => issue.code !== "noGrid");
+        expect(issues).toEqual([
+            { code: "inverterSides", nodeIds: [inverter.id, pv.id] },
+            { code: "inverterSides", nodeIds: [inverter.id, transformer.id] },
+            { code: "moduleCount", nodeIds: [pv.id] },
+        ]);
     });
 
     it("reports a reference designation used twice", () => {

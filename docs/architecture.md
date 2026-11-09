@@ -50,15 +50,15 @@ plantline is a static web app. Everything happens in the browser: there is no se
 ```json
 {
   "format": "plantline",
-  "version": 2,
+  "version": 3,
   "diagram": {
     "plantType": "solar",
     "name": "Field A",
     "nodes": [
-      { "id": "n-1a2b3c4d", "kind": "gridConnection", "x": 160, "y": 80, "label": "", "designation": "=E01", "voltageKv": 34.5, "ratingKva": null, "width": null, "rotation": 0, "flip": false, "labelAt": { "x": 30, "y": -40 } },
-      { "id": "n-5e6f7a8b", "kind": "busbar", "x": 160, "y": 200, "label": "MV bus", "designation": "", "voltageKv": 34.5, "ratingKva": null, "width": 320, "rotation": 0, "flip": false, "labelAt": null }
+      { "id": "n-1a2b3c4d", "kind": "gridConnection", "x": 160, "y": 80, "label": "", "designation": "=E01", "props": { "voltageKv": 34.5, "shortCircuitMva": 800 }, "width": null, "rotation": 0, "flip": false, "labelAt": { "x": 30, "y": -40 } },
+      { "id": "n-5e6f7a8b", "kind": "busbar", "x": 160, "y": 200, "label": "MV bus", "designation": "", "props": { "voltageKv": 34.5, "status": "planned" }, "width": 320, "rotation": 0, "flip": false, "labelAt": null }
     ],
-    "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b", "route": [140, 100, 180], "straight": false }],
+    "links": [{ "id": "l-9c0d1e2f", "from": "n-1a2b3c4d", "to": "n-5e6f7a8b", "route": [140, 100, 180], "straight": false, "props": { "lineKind": "cable", "lengthM": 85 } }],
     "notes": [{ "id": "t-3a4b5c6d", "kind": "area", "x": 60, "y": 40, "width": 240, "height": 200, "text": "Bay E01" }]
   }
 }
@@ -77,11 +77,19 @@ plantline is a static web app. Everything happens in the browser: there is no se
   on, an odd count. The segments at the two ends run straight out of the elements' leads, so moving an element keeps
   the route whole; on a busbar, the line meets the bar under the nearest vertical segment.
 - `straight`: drawn straight from lead to lead instead of at right angles (`route` is then not used).
+- `props` (elements and links): only the fields that have a value. Every element may have `status` (`existing`,
+  `planned`, `outOfService`), `manufacturer`, `model` and `notes`, plus its kind's electrical fields; a link may have
+  `lineKind` (`cable`, `overheadLine`, `busduct`), `status`, `voltageKv`, `lengthM`, `conductor`, `crossSectionMm2`,
+  `circuits`, `ratedCurrentA` and `notes`. The fields of each kind, their units and limits are in
+  `web/src/diagram/properties.ts`; a file with a field the kind does not have, or a value out of its range, is refused.
 - `notes`: texts (`kind` `text`, from the top left corner, one line per `\n`, `width` and `height` 0) and areas
   (`kind` `area`, a dashed box of `width` × `height` with `text` as its title); at most 1,000, texts of at most 1,000
   characters. Ids are unique across elements, links and notes.
-- Version 1 files (without `route`, `straight`, `rotation`, `flip`, `labelAt` and `notes`) are still read; their lines
-  route themselves, their elements stand upright with their labels in place, and they have no notes.
+- Versions 1 and 2 are still read and saved as 3. Their elements had `voltageKv` and `ratingKva` instead of `props`:
+  the voltage becomes the kind's voltage (a transformer's HV side, an inverter's AC side, a PV array's, combiner box's
+  or battery's DC voltage in V), the rating its main power field (a capacitor bank's or reactor's in Mvar), and a
+  rating the kind has no field for goes into its notes. Version 1 also lacks `route`, `straight`, `rotation`, `flip`,
+  `labelAt` and `notes`: its lines route themselves, its elements stand upright with their labels in place.
 - Limits, checked when a file is opened: 5 MB, 5,000 elements, 10,000 links, 200 characters per text, coordinates
   within ±1,000,000, ids of at most 64 letters, digits, `_` or `-`, unique, links between existing elements, and
   routes of at most 63 coordinates.

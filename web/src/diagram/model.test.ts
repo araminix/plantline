@@ -78,6 +78,6 @@ describe("diagram model", () => {
         const removed = removeItems(linked, new Set([a]));
         expect(removed.nodes.map((node) => node.id)).toEqual([b]);
         expect(removed.links).toEqual([]);
-        expect(updateNode(diagram, b, { label: "Main bus", voltageKv: 33 }).nodes[1]).toMatchObject({ label: "Main bus", voltageKv: 33 });
+        expect(updateNode(diagram, b, { label: "Main bus", props: { voltageKv: 33 } }).nodes[1]).toMatchObject({ label: "Main bus", props: { voltageKv: 33 } });
     });
 });

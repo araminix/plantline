@@ -93,9 +93,22 @@ element.
 - Moving both elements of a line keeps its shape; moving one stretches it. Routes are undone and redone like any
   change and saved in the file.
 
-**US-13 Describe equipment.** I give a selected element a label, a reference designation (IEC 81346), a voltage
-(kV) and a rating (kVA); a busbar also has a length. A field is saved when I leave it or press Enter, as one undo step,
-and always onto the element I typed it for, even when I click another element next.
+**US-13 Describe equipment.** I describe a selected element with the data its kind has, in three groups:
+- General: label, reference designation (IEC 81346), status (existing, planned, out of service), manufacturer, model;
+  a busbar's length.
+- Electrical, with units: a transformer's HV and LV voltage (and tertiary), rated power, vector group and
+  short-circuit impedance; an inverter's AC and DC power, AC voltage, maximum DC voltage and MPPTs; a PV array's peak
+  power, modules, module power, strings and modules per string; a breaker's voltage, rated and breaking current; and
+  so on for every kind (see `properties.ts`).
+- Notes, in several lines.
+
+A number must suit its field (no negative values, whole numbers for counts, a power factor up to 1); anything else
+goes back to the saved value. A field is saved when I leave it or press Enter, as one undo step, and always onto the
+element I typed it for, even when I click another element next. The drawing shows each element's voltages and main
+ratings under its name; planned equipment is drawn dashed and equipment out of service faded, in exports too.
+
+**US-13a Describe lines.** A selected line has its kind (cable, overhead line, busduct), status, voltage, length,
+conductor or cable type, cross-section, circuits, rated current and notes.
 
 **US-14 Remove.** I delete the selected elements (their lines go with them) or a selected line, with the toolbar, the
 properties panel or the Delete key.
@@ -108,8 +121,11 @@ below the one it hangs from, separate groups side by side, busbars long enough f
 fits the result.
 
 **US-17 Check the diagram.** With nothing selected, the properties panel lists the problems, each selecting the
-elements concerned: no grid connection, an unconnected element, different voltages on one line (transformers and
-inverters may join two), a reference designation used twice.
+elements concerned: no grid connection, an unconnected element, different voltages on one line, a reference
+designation used twice, an inverter with DC and AC sides mixed up, a PV array whose modules are not strings × modules
+per string. Voltages are compared where the line meets each element: a transformer's top lead is its HV side and its
+bottom lead its LV side; an inverter's bottom lead is its AC side and its top lead its DC side, where PV arrays,
+combiner boxes and batteries belong.
 
 **US-18 Navigate.** I zoom with the wheel, the toolbar or two fingers, pan with the middle mouse button, by holding
 Space and dragging, or with one finger, and fit the diagram to the screen.

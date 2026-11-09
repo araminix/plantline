@@ -53,8 +53,12 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-25e | US-12a | A line routing itself goes around a symbol whose lead points away, never through it; a straight line runs lead to lead. | `geometry.test.ts` › routes out of a lead that points away…, joins two symbols on one row… |
 | TC-25f | US-12a | Moving both elements keeps a line's route; moving one keeps the route and stretches the line; arranging resets routes. | `model.test.ts` › keeps a line's shape…; `arrange.test.ts` › puts the grid connection on top… |
 | TC-25g | US-12a, US-15 | Dragging a line adds a bend; undo and redo restore it; a double click removes it. | e2e › bends a line by dragging it… |
+| TC-25i | US-13, US-20 | Version 2 files open: voltages and ratings become the kind's fields (others go into notes), lines get no properties, and they save as version 3; properties a kind does not have or values out of range are refused. | `file.test.ts` › read version 1 files…, read version 2 files…, refuse inconsistent or hostile content |
 | TC-25h | US-12a, US-19a, US-20 | Routes, turns, mirrors, label places and notes are saved and read back; version 1 files open with self-routing lines, upright elements and no notes; malformed routes, turns, label places or notes, and ids used twice, are refused. | `file.test.ts` › read back exactly…, read version 1 files…, refuse inconsistent or hostile content |
 | TC-25c | US-12 | Connection points are where symbols have leads; lines leave the upper element at the bottom, meet a busbar within its length, and join two symbols on one row from side to side. | `geometry.test.ts` (4 tests) |
+| TC-26b | US-13, US-13a | Every kind has its own electrical fields, each named in English; fields accept only suitable values; only a kind's fields are read; empty fields are not stored; drawing details show voltages and main ratings. | `properties.test.ts` (5 tests) |
+| TC-26c | US-13, US-13a | The panel shows the general fields, the kind's electrical fields and notes for every kind; a number with its unit is saved, a fraction of a module refused; a line has its kind. | `Inspector.test.tsx` (3 tests) |
+| TC-26d | US-13, US-03 | A transformer's HV, LV and power show on the drawing; planned is drawn dashed; the Persian panel has the same fields as the English one, with the same values. | e2e › describes a transformer with its own fields… |
 | TC-26 | US-13, US-14 | Fields are edited; removing an element removes its lines. | `model.test.ts` › removes an element together with its links… |
 | TC-26a | US-13 | Text typed for one element is saved onto it, not onto the element clicked next. | `App.test.tsx` › saves typed text onto the element it was typed for… |
 | TC-27 | US-15 | Undo and redo; a new step clears redo; nothing to undo changes nothing. | `history.test.ts` › undoes and redoes…; `App.test.tsx` › adds an element… and undoes it; e2e › builds… |
@@ -64,6 +68,7 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-31 | US-17 | No issues for an empty diagram or a good one. | `checks.test.ts` › finds nothing…; e2e › builds… (“No problems found.”) |
 | TC-32 | US-17 | A missing grid connection and unconnected elements are reported. | `checks.test.ts` › reports a missing grid connection… |
 | TC-33 | US-17 | Different voltages on a line are reported, except across a transformer or inverter. | `checks.test.ts` › reports different voltages… |
+| TC-33a | US-17 | A transformer's HV side is compared with what is above it and its LV side with what is below; an inverter with a PV array on its AC side or a transformer on its DC side is reported; PV modules that are not strings × modules per string are reported. | `checks.test.ts` › compares a transformer's HV side…, reports an inverter connected the wrong way round… |
 | TC-34 | US-17 | A reference designation used twice is reported. | `checks.test.ts` › reports a reference designation used twice |
 | TC-35 | US-19 | The diagram is still there after a reload. | `App.test.tsx` › keeps the diagram in the browser between visits |
 | TC-35a | US-19 | A drag is saved once, at its end, not on every frame. | `App.test.tsx` › saves a drag once… |

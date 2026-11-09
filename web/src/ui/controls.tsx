@@ -108,14 +108,14 @@ export function Menu({ label, icon, items }: { label: string; icon: ReactNode; i
 }
 
 /** A text field that saves when it loses focus or on Enter (several lines: on leaving), so typing is one undo step. */
-export function TextField(props: { label: string; value: string; onCommit: (value: string) => void; maxLength?: number; multiline?: boolean }) {
-    const { label, value, onCommit, maxLength = 200, multiline = false } = props;
+export function TextField(props: { label: string; value: string; onCommit: (value: string) => void; maxLength?: number; multiline?: boolean; hideLabel?: boolean }) {
+    const { label, value, onCommit, maxLength = 200, multiline = false, hideLabel = false } = props;
     const [draft, setDraft] = useState(value);
     useEffect(() => setDraft(value), [value]);
     const commit = () => draft !== value && onCommit(draft);
     return (
         <label className="field">
-            <span>{label}</span>
+            <span className={hideLabel ? "sr-only" : undefined}>{label}</span>
             {multiline ? (
                 <textarea dir="auto" rows={4} value={draft} maxLength={maxLength} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />
             ) : (
@@ -125,15 +125,19 @@ export function TextField(props: { label: string; value: string; onCommit: (valu
     );
 }
 
-/** A number field (empty for none) that saves like TextField; it keeps finite numbers, negative ones when `signed`. */
-export function NumberField(props: { label: string; value: number | null; onCommit: (value: number | null) => void; unit?: string; signed?: boolean }) {
-    const { label, value, onCommit, unit, signed = false } = props;
+/**
+ * A number field (empty for none) that saves like TextField. It keeps finite numbers: negative ones only when `signed`,
+ * whole ones only when `integer`, none above `max`; anything else goes back to the saved value.
+ */
+export function NumberField(props: { label: string; value: number | null; onCommit: (value: number | null) => void; unit?: string | undefined; signed?: boolean; integer?: boolean | undefined; max?: number | undefined }) {
+    const { label, value, onCommit, unit, signed = false, integer = false, max } = props;
     const shown = value === null ? "" : String(value);
     const [draft, setDraft] = useState(shown);
     useEffect(() => setDraft(shown), [shown]);
     const commit = () => {
         const parsed = draft.trim() === "" ? null : Number(draft.replace(",", "."));
-        if (parsed !== null && (!Number.isFinite(parsed) || (!signed && parsed < 0))) return setDraft(shown);
+        const wrong = parsed !== null && (!Number.isFinite(parsed) || (!signed && parsed < 0) || (integer && !Number.isInteger(parsed)) || (max !== undefined && parsed > max));
+        if (wrong) return setDraft(shown);
         if (parsed !== value) onCommit(parsed);
     };
     return (
@@ -142,7 +146,24 @@ export function NumberField(props: { label: string; value: number | null; onComm
                 {label}
                 {unit && <small> ({unit})</small>}
             </span>
-            <input inputMode="decimal" value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => event.key === "Enter" && commit()} />
+            <input inputMode={integer ? "numeric" : "decimal"} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => event.key === "Enter" && commit()} />
+        </label>
+    );
+}
+
+/** A list to choose one value from; it saves at once. */
+export function SelectField(props: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
+    const { label, value, options, onChange } = props;
+    return (
+        <label className="field">
+            <span>{label}</span>
+            <select value={value} onChange={(event) => onChange(event.target.value)}>
+                {options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
         </label>
     );
 }

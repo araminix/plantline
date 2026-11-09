@@ -104,7 +104,7 @@ test("builds, connects, checks and saves a single-line diagram", async ({ page }
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Save", exact: true }).click()]);
     expect(download.suggestedFilename()).toBe("diagram.plantline.json");
     const file = JSON.parse(await readFile((await download.path())!, "utf8"));
-    expect(file).toMatchObject({ format: "plantline", version: 2, diagram: { plantType: "solar" } });
+    expect(file).toMatchObject({ format: "plantline", version: 3, diagram: { plantType: "solar" } });
     expect(file.diagram.nodes).toHaveLength(3);
     expect(file.diagram.links).toHaveLength(2);
     await expectNoSidewaysScroll(page);
@@ -321,6 +321,34 @@ test("shows and resets the zoom, zooms to the selection, moves by the overview; 
     await expect(sheet.getByRole("row")).toHaveCount(19);
     await page.keyboard.press("Escape");
     await expect(sheet).toBeHidden();
+});
+
+test("describes a transformer with its own fields, shows them on the drawing, and has the same fields in Persian", async ({ page }) => {
+    await start(page, "Substation");
+    await add(page, "Transformer");
+    await openProperties(page);
+    const panel = page.getByRole("complementary", { name: "Properties" });
+    for (const [name, value] of [
+        ["HV voltage", "33"],
+        ["LV voltage", "0.4"],
+        ["Rated power", "1600"],
+    ] as const) {
+        const field = panel.getByRole("textbox", { name: new RegExp(`^${name}`) });
+        await field.fill(value);
+        await field.press("Enter");
+    }
+    await panel.getByRole("combobox", { name: "Status" }).selectOption("planned");
+    await expect(page.locator("[data-node] text")).toContainText("33/0.4 kV · 1600 kVA");
+    // Planned equipment is drawn dashed
+    await expect(page.locator("[data-node] > g").first()).toHaveAttribute("stroke-dasharray", "4 3");
+
+    const fields = await panel.locator(".field").count();
+    expect(fields).toBe(2 + 3 + 5 + 1);
+    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    const persian = page.getByRole("complementary", { name: "ویژگی‌ها" });
+    await expect(persian.locator(".field")).toHaveCount(fields);
+    await expect(persian.getByRole("textbox", { name: /^ولتاژ فشار قوی/ })).toHaveValue("33");
+    await expect(persian.getByRole("combobox", { name: "وضعیت" })).toHaveValue("planned");
 });
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {

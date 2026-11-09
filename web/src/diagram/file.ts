@@ -1,11 +1,15 @@
 import { isNodeKind, isPlantType } from "../plants";
 import type { Diagram, DiagramLink, DiagramNode, DiagramNote, Point, Rotation } from "./model";
+import { fieldsOf, lineFieldsOf, readProperties, upgradeProperties, type Properties } from "./properties";
 
 /** A saved diagram (a .plantline.json file). The format is described in docs/architecture.md. */
 export interface DiagramFile {
     format: "plantline";
-    /** 2 added line routes, turned, mirrored and relabelled elements, and notes; version 1 files are still read. */
-    version: 2;
+    /**
+     * 2 added line routes, turned, mirrored and relabelled elements, and notes; 3 replaced each element's voltage and
+     * rating with the properties of its kind and gave lines properties. Versions 1 and 2 are still read.
+     */
+    version: 3;
     diagram: Diagram;
 }
 
@@ -22,7 +26,9 @@ const MAX_SIZE = 100_000;
 
 export type ParseResult = { ok: true; diagram: Diagram } | { ok: false; error: "tooLarge" | "invalid" };
 
-export const serializeDiagram = (diagram: Diagram): string => JSON.stringify({ format: "plantline", version: 2, diagram } satisfies DiagramFile, null, 2);
+export const serializeDiagram = (diagram: Diagram): string => JSON.stringify({ format: "plantline", version: 3, diagram } satisfies DiagramFile, null, 2);
+
+type Version = 1 | 2 | 3;
 
 /** Reads a diagram file. The file is untrusted: anything unexpected, oversized or inconsistent is refused. */
 export function parseDiagram(text: string): ParseResult {
@@ -33,11 +39,11 @@ export function parseDiagram(text: string): ParseResult {
     } catch {
         return { ok: false, error: "invalid" };
     }
-    const diagram = isRecord(file) && file.format === "plantline" && (file.version === 1 || file.version === 2) ? readDiagram(file.diagram, file.version) : null;
+    const diagram = isRecord(file) && file.format === "plantline" && (file.version === 1 || file.version === 2 || file.version === 3) ? readDiagram(file.diagram, file.version) : null;
     return diagram ? { ok: true, diagram } : { ok: false, error: "invalid" };
 }
 
-function readDiagram(value: unknown, version: 1 | 2): Diagram | null {
+function readDiagram(value: unknown, version: Version): Diagram | null {
     if (!isRecord(value) || !isPlantType(value.plantType) || !isText(value.name)) return null;
     if (!Array.isArray(value.nodes) || !Array.isArray(value.links) || value.nodes.length > MAX_NODES || value.links.length > MAX_LINKS) return null;
 
@@ -55,10 +61,14 @@ function readDiagram(value: unknown, version: 1 | 2): Diagram | null {
     return { plantType: value.plantType, name: value.name, nodes: nodes as DiagramNode[], links: links as DiagramLink[], notes: notes as DiagramNote[] };
 }
 
-function readNode(value: unknown, version: 1 | 2): DiagramNode | null {
+function readNode(value: unknown, version: Version): DiagramNode | null {
     if (!isRecord(value) || !isId(value.id) || !isNodeKind(value.kind) || !isCoordinate(value.x) || !isCoordinate(value.y)) return null;
-    if (!isText(value.label) || !isText(value.designation)) return null;
-    if (!isOptionalNumber(value.voltageKv) || !isOptionalNumber(value.ratingKva) || !isOptionalNumber(value.width)) return null;
+    if (!isText(value.label) || !isText(value.designation) || !isOptionalNumber(value.width)) return null;
+    // Before version 3 an element had only a voltage and a rating
+    let props: Properties | null;
+    if (version < 3) props = isOptionalNumber(value.voltageKv) && isOptionalNumber(value.ratingKva) ? upgradeProperties(value.kind, value.voltageKv, value.ratingKva) : null;
+    else props = readProperties(value.props, fieldsOf(value.kind));
+    if (!props) return null;
     const placed = version === 1 ? { rotation: 0, flip: false, labelAt: null } : value;
     if (!isRotation(placed.rotation) || typeof placed.flip !== "boolean" || !(placed.labelAt === null || isOffset(placed.labelAt))) return null;
     return {
@@ -68,8 +78,7 @@ function readNode(value: unknown, version: 1 | 2): DiagramNode | null {
         y: value.y,
         label: value.label,
         designation: value.designation,
-        voltageKv: value.voltageKv,
-        ratingKva: value.ratingKva,
+        props,
         width: value.width,
         rotation: placed.rotation,
         flip: placed.flip,
@@ -81,11 +90,12 @@ const isRotation = (value: unknown): value is Rotation => value === 0 || value =
 const MAX_OFFSET = 1_000;
 const isOffset = (value: unknown): value is Point => isRecord(value) && [value.x, value.y].every((v) => typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= MAX_OFFSET);
 
-function readLink(value: unknown, version: 1 | 2): DiagramLink | null {
+function readLink(value: unknown, version: Version): DiagramLink | null {
     if (!isRecord(value) || !isId(value.id) || !isId(value.from) || !isId(value.to)) return null;
     const link = { id: value.id, from: value.from, to: value.to };
-    if (version === 1) return { ...link, route: null, straight: false };
-    return isRoute(value.route) && typeof value.straight === "boolean" ? { ...link, route: value.route, straight: value.straight } : null;
+    if (version === 1) return { ...link, route: null, straight: false, props: {} };
+    const props = version === 2 ? {} : readProperties(value.props, lineFieldsOf());
+    return isRoute(value.route) && typeof value.straight === "boolean" && props ? { ...link, route: value.route, straight: value.straight, props } : null;
 }
 
 function readNote(value: unknown): DiagramNote | null {

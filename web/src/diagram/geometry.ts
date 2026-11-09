@@ -243,3 +243,10 @@ export function removeSegment(from: DiagramNode, to: DiagramNode, route: Route, 
 }
 
 export const pathOf = (points: readonly Point[]) => points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ");
+
+/** The lead each end of a line leaves from, as the symbol is drawn before it is turned; null for two symbols joined side to side. */
+export function linkLeads(link: Pick<DiagramLink, "route" | "straight">, from: DiagramNode, to: DiagramNode): [Side | null, Side | null] {
+    const { points } = linkShape(link, from, to);
+    const lead = (point: Point, node: DiagramNode) => ("side" in point ? turn((point as Port).side, (360 - node.rotation) % 360) : null);
+    return [lead(points[0]!, from), lead(points.at(-1)!, to)];
+}

@@ -1,4 +1,5 @@
 import type { NodeKind, PlantType } from "../plants";
+import type { Properties } from "./properties";
 
 /** An element of the diagram, centred on (x, y). */
 export interface DiagramNode {
@@ -9,8 +10,8 @@ export interface DiagramNode {
     label: string;
     /** Reference designation, such as "=H02-Q1" (IEC 81346). */
     designation: string;
-    voltageKv: number | null;
-    ratingKva: number | null;
+    /** Status, maker, model, notes and the kind's electrical data (see properties.ts). */
+    props: Properties;
     /** Busbars only: their length. */
     width: number | null;
     /** Turned clockwise, in degrees; a busbar is either across (0) or upright (90). */
@@ -39,6 +40,8 @@ export interface DiagramLink {
     route: Route | null;
     /** Drawn straight from lead to lead instead of at right angles. */
     straight: boolean;
+    /** What the line is (cable, overhead line, busduct) and its electrical data (see properties.ts). */
+    props: Properties;
 }
 
 /** A remark on the drawing: a text, or an area (a dashed box with a title) around part of the plant. */
@@ -149,8 +152,7 @@ export function addNode(diagram: Diagram, kind: NodeKind, x: number, y: number):
         ...freeSpot(diagram, kind, width, x, y),
         label: "",
         designation: "",
-        voltageKv: null,
-        ratingKva: null,
+        props: {},
         width,
         rotation: 0,
         flip: false,
@@ -184,7 +186,7 @@ export function moveNodes(diagram: Diagram, ids: ReadonlySet<string>, dx: number
     return { ...diagram, nodes, links, notes };
 }
 
-export function updateLink(diagram: Diagram, id: string, patch: Partial<Pick<DiagramLink, "route" | "straight">>): Diagram {
+export function updateLink(diagram: Diagram, id: string, patch: Partial<Pick<DiagramLink, "route" | "straight" | "props">>): Diagram {
     return { ...diagram, links: diagram.links.map((link) => (link.id === id ? { ...link, ...patch } : link)) };
 }
 
@@ -202,7 +204,7 @@ export function removeItems(diagram: Diagram, ids: ReadonlySet<string>, linkIds:
 export function connect(diagram: Diagram, from: string, to: string): Diagram | null {
     const linked = diagram.links.some((link) => (link.from === from && link.to === to) || (link.from === to && link.to === from));
     if (from === to || linked) return null;
-    return { ...diagram, links: [...diagram.links, { id: newId("l"), from, to, route: null, straight: false }] };
+    return { ...diagram, links: [...diagram.links, { id: newId("l"), from, to, route: null, straight: false, props: {} }] };
 }
 
 /** Moves one end of a line to another element; null when that changes nothing, joins an element to itself or repeats a line. */

@@ -27,8 +27,8 @@ plantline is a web tool for the people who design, build and run power plants. D
 - **Annotate** with texts and dashed areas around bays and stations.
 - **Navigate** with the zoom level, 100 %, zoom to selection and an overview map; every shortcut is on one sheet (press `?`).
 - **Arrange automatically.** One click lays the diagram out top-down from the grid connection, with busbars long enough for their feeders.
-- **Describe** each element: label, reference designation (IEC 81346), voltage, rating.
-- **Check** before you share: a missing grid connection, unconnected elements, different voltages on one line, a designation used twice.
+- **Describe** each element with the data of its kind: a transformer's HV and LV voltage, rated power, vector group and impedance; an inverter's AC and DC power; a PV array's modules and strings; ratings, currents, status (existing, planned, out of service), manufacturer, model and notes. Lines have their kind, length, conductor and cross-section. Planned equipment is drawn dashed.
+- **Check** before you share: a missing grid connection, unconnected elements, different voltages where a line meets an element (each side of a transformer on its own), an inverter with its DC and AC sides mixed up, PV modules that do not add up, a designation used twice.
 - **Undo and redo** everything; the diagram is kept in your browser between visits.
 - **Save and open** diagram files (`.plantline.json`), **export** SVG and PNG, or **print** and save as PDF.
 

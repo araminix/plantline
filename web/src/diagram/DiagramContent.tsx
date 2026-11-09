@@ -1,6 +1,7 @@
 import type { NodeKind } from "../plants";
 import { busbarHalf, connectionPoints, isUpright, linkShape, pathOf } from "./geometry";
 import { NODE_SIZE, noteBox, type Diagram, type DiagramNode, type DiagramNote, type Point } from "./model";
+import { summary, type Properties } from "./properties";
 import { NodeSymbol } from "./symbols";
 
 const HALF = NODE_SIZE / 2;
@@ -43,7 +44,7 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                     if (!from || !to) return null;
                     const { points } = linkShape(link, from, to);
                     return (
-                        <g key={link.id} data-link={link.id} className={classes(link.id === selectedLink && "selected", link.id === movingLink && "moving", link.straight && "straight")}>
+                        <g key={link.id} data-link={link.id} className={classes(link.id === selectedLink && "selected", link.id === movingLink && "moving", link.straight && "straight")} {...statusLook(link.props, "8 5")}>
                             <path d={pathOf(points)} />
                             {/* One hit area per segment, so a segment can be dragged or double-clicked */}
                             {interactive &&
@@ -57,17 +58,19 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
             </g>
             {diagram.nodes.map((node) => (
                 <g key={node.id} data-node={node.id} transform={`translate(${node.x} ${node.y})`} className={classes("sld-node", selectedNodes?.has(node.id) && "selected", node.id === targetNode && "target")}>
-                    {node.kind === "busbar" ? (
-                        isUpright(node) ? (
-                            <rect x={-3} y={-busbarHalf(node)} width={6} height={busbarHalf(node) * 2} fill="currentColor" />
+                    <g {...statusLook(node.props, "4 3")}>
+                        {node.kind === "busbar" ? (
+                            <rect
+                                {...(isUpright(node) ? { x: -3, y: -busbarHalf(node), width: 6, height: busbarHalf(node) * 2 } : { x: -busbarHalf(node), y: -3, width: busbarHalf(node) * 2, height: 6 })}
+                                // A planned bar is drawn as a dashed outline
+                                {...(node.props.status === "planned" ? { fill: "none", stroke: "currentColor", strokeWidth: 1.5 } : { fill: "currentColor" })}
+                            />
                         ) : (
-                            <rect x={-busbarHalf(node)} y={-3} width={busbarHalf(node) * 2} height={6} fill="currentColor" />
-                        )
-                    ) : (
-                        <g transform={node.rotation || node.flip ? `rotate(${node.rotation}) scale(${node.flip ? -1 : 1} 1)` : undefined}>
-                            <NodeSymbol kind={node.kind} />
-                        </g>
-                    )}
+                            <g transform={node.rotation || node.flip ? `rotate(${node.rotation}) scale(${node.flip ? -1 : 1} 1)` : undefined}>
+                                <NodeSymbol kind={node.kind} />
+                            </g>
+                        )}
+                    </g>
                     {interactive && <rect className="hit" {...hitBox(node)} fill="transparent" />}
                     <NodeLabel node={node} kindName={kindName} />
                     {interactive && <Ports node={node} />}
@@ -96,6 +99,10 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
 }
 
 const classes = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(" ") || undefined;
+
+/** As on paper: planned equipment dashed, equipment out of service faded. Attributes, so exports keep the look. */
+const statusLook = (props: Properties, dashes: string) =>
+    props.status === "planned" ? { strokeDasharray: dashes } : props.status === "outOfService" ? { opacity: 0.45 } : {};
 
 /** A text, line by line, or an area: a dashed box with its title; an area is picked by its border or title only. */
 function Note({ note, selected, interactive }: { note: DiagramNote; selected: boolean; interactive: boolean }) {
@@ -153,8 +160,11 @@ export function labelStart(node: DiagramNode): Point {
 
 function NodeLabel({ node, kindName }: { node: DiagramNode; kindName: (kind: NodeKind) => string }) {
     const title = node.label || kindName(node.kind);
-    const details = [node.designation, node.voltageKv !== null ? `${node.voltageKv} kV` : "", node.ratingKva !== null ? `${node.ratingKva} kVA` : ""].filter(Boolean).join(" · ");
-    const { x, y } = labelStart(node);
+    const details = [node.designation, ...summary(node.kind, node.props)].filter(Boolean).join(" · ");
+    const start = labelStart(node);
+    // Above a bar lying across, a second line would run into the bar: both lines go up one
+    const lift = details && node.kind === "busbar" && !isUpright(node) && !node.labelAt ? 14 : 0;
+    const [x, y] = [start.x, start.y - lift];
     return (
         <text data-label="" x={x} y={y} fontSize={11} fill="currentColor" stroke="none">
             <tspan fontWeight={600}>{title}</tspan>

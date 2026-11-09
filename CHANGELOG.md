@@ -2,6 +2,30 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 0.4.0 (unreleased)
+
+Complete properties.
+
+### Added
+
+- Properties for each kind of element, grouped in General, Electrical and Notes, with units and checks of what is
+  typed: status (existing, planned, out of service), manufacturer, model and notes for all; for example a
+  transformer's HV, LV and tertiary voltage, rated power, vector group and impedance, an inverter's AC and DC power,
+  AC voltage, maximum DC voltage and MPPTs, a PV array's peak power, modules, module power, strings and modules per
+  string, currents and breaking current for switchgear, ratio and accuracy class for instrument transformers.
+- Properties for lines: kind (cable, overhead line, busduct), status, voltage, length, conductor or cable type,
+  cross-section, circuits, rated current, notes.
+- The drawing shows each element's voltages and main ratings under its name; planned equipment is dashed and
+  equipment out of service faded, in exports too.
+- Checks: voltages compared on each side of a transformer; an inverter with its DC and AC sides mixed up; PV modules
+  that are not strings × modules per string.
+
+### Changed
+
+- File format version 3: each element's `voltageKv` and `ratingKva` become `props` with its kind's fields, and lines
+  have `props`. Version 1 and 2 files open, their voltage and rating moved to the kind's fields (a rating the kind has
+  no field for goes into its notes), and save as version 3.
+
 ## 0.3.0 (unreleased)
 
 A real diagram editor.

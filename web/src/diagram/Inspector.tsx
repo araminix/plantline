@@ -16,12 +16,13 @@ import {
     TrianglesCenterlineDashedVertical,
     Type,
 } from "lucide-react";
-import { useI18n } from "../i18n/i18n";
-import { IconButton, NumberField, TextField } from "../ui/controls";
+import { useI18n, type MessageKey } from "../i18n/i18n";
+import { IconButton, NumberField, SelectField, TextField } from "../ui/controls";
 import type { Selection } from "./Canvas";
 import type { Issue } from "./checks";
 import type { Alignment } from "./edit";
 import { updateLink, updateNode, updateNote, type Diagram, type DiagramNode } from "./model";
+import { COMMON, ELECTRICAL, FIELDS, LINE_ELECTRICAL, LINE_GENERAL, withField, type FieldId, type Properties, type Spec } from "./properties";
 import { SymbolIcon } from "./symbols";
 
 interface Props {
@@ -84,6 +85,12 @@ export function Inspector(props: Props) {
                     )}
                     {deleteButton}
                 </div>
+                <h3>{t("group.general")}</h3>
+                <Fields fields={LINE_GENERAL} props={link.props} onChange={(props) => onChange(updateLink(diagram, link.id, { props }))} />
+                <h3>{t("group.electrical")}</h3>
+                <Fields fields={LINE_ELECTRICAL} props={link.props} onChange={(props) => onChange(updateLink(diagram, link.id, { props }))} />
+                <h3>{t("prop.notes")}</h3>
+                <PropertyField id="notes" props={link.props} onChange={(props) => onChange(updateLink(diagram, link.id, { props }))} />
             </div>
         );
     }
@@ -155,19 +162,22 @@ export function Inspector(props: Props) {
                     <SymbolIcon kind={node.kind} size={28} />
                     {t(`kind.${node.kind}`)}
                 </h2>
-                <TextField label={t("field.label")} value={node.label} onCommit={(label) => set({ label })} />
-                <TextField label={t("field.designation")} value={node.designation} onCommit={(designation) => set({ designation })} />
-                <NumberField label={t("field.voltage")} unit="kV" value={node.voltageKv} onCommit={(voltageKv) => set({ voltageKv })} />
-                <NumberField label={t("field.rating")} unit="kVA" value={node.ratingKva} onCommit={(ratingKva) => set({ ratingKva })} />
-                {node.kind === "busbar" && <NumberField label={t("field.length")} value={node.width} onCommit={(width) => set({ width: width === null ? null : Math.max(40, Math.min(4000, width)) })} />}
-                <div className="row">{shapeButtons}</div>
                 <div className="row">
-                    <button type="button" className="button" onClick={() => onConnectFrom(node.id)}>
-                        <Cable size={16} aria-hidden="true" />
-                        {t("action.connectFrom")}
-                    </button>
+                    {shapeButtons}
+                    <IconButton label={t("action.connectFrom")} onClick={() => onConnectFrom(node.id)}>
+                        <Cable size={18} />
+                    </IconButton>
                     {deleteButton}
                 </div>
+                <h3>{t("group.general")}</h3>
+                <TextField label={t("field.label")} value={node.label} onCommit={(label) => set({ label })} />
+                <TextField label={t("field.designation")} value={node.designation} onCommit={(designation) => set({ designation })} />
+                <Fields fields={COMMON} props={node.props} onChange={(props) => set({ props })} />
+                {node.kind === "busbar" && <NumberField label={t("field.length")} value={node.width} onCommit={(width) => set({ width: width === null ? null : Math.max(40, Math.min(4000, width)) })} />}
+                <h3>{t("group.electrical")}</h3>
+                <Fields fields={ELECTRICAL[node.kind]} props={node.props} onChange={(props) => set({ props })} />
+                <h3>{t("prop.notes")}</h3>
+                <PropertyField id="notes" props={node.props} onChange={(props) => set({ props })} />
             </div>
         );
     }
@@ -195,4 +205,27 @@ export function Inspector(props: Props) {
             )}
         </div>
     );
+}
+
+/** A field per property; each saves on its own. */
+function Fields({ fields, props, onChange }: { fields: readonly FieldId[]; props: Properties; onChange: (props: Properties) => void }) {
+    return (
+        <>
+            {fields.map((id) => (
+                <PropertyField key={id} id={id} props={props} onChange={onChange} />
+            ))}
+        </>
+    );
+}
+
+/** One property: a number with its unit, a text, or a choice; notes take several lines, under their own heading. */
+function PropertyField({ id, props, onChange }: { id: FieldId; props: Properties; onChange: (props: Properties) => void }) {
+    const { t } = useI18n();
+    const spec: Spec = FIELDS[id];
+    const value = props[id];
+    const set = (next: string | number | null) => onChange(withField(props, id, next));
+    if (spec.type === "number") return <NumberField label={t(spec.label)} unit={spec.unit} integer={spec.integer} max={spec.max} value={typeof value === "number" ? value : null} onCommit={set} />;
+    if (spec.type === "text") return <TextField label={t(spec.label)} value={typeof value === "string" ? value : ""} maxLength={spec.max} multiline={id === "notes"} hideLabel={id === "notes"} onCommit={set} />;
+    const options = spec.choices.map((choice) => ({ value: choice, label: t(`${id === "status" ? "status" : "lineKind"}.${choice}` as MessageKey) }));
+    return <SelectField label={t(spec.label)} value={typeof value === "string" ? value : ""} options={[{ value: "", label: "—" }, ...options]} onChange={set} />;
 }
