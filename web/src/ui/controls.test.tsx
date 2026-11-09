@@ -64,7 +64,7 @@ describe("menu", () => {
         fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowDown" });
         buttonAt(100);
         fireEvent.scroll(window);
-        expect(screen.getByRole("menu").style.top).toBe("134px");
+        expect(screen.getByRole("menu").style.top).toBe("136px");
         expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Open" }));
         buttonAt(-100);
         fireEvent.scroll(window);

@@ -46,6 +46,17 @@ export const PALETTES: Record<PlantType, readonly NodeKind[]> = {
     transmission: ["overheadLine", "cableLine", ...SWITCHGEAR, "earthSwitch", "reactor", "capacitorBank"],
 };
 
+/** The palette's groups: a plant type's own equipment first (named after the plant type), then the rest by what it does. */
+export const PALETTE_GROUPS: readonly { id: "plant" | "switchgear" | "transformers" | "measuring" | "lines" | "compensation" | "loads"; kinds: readonly NodeKind[] }[] = [
+    { id: "plant", kinds: ["pvArray", "combinerBox", "inverter", "windTurbine", "battery", "generator"] },
+    { id: "switchgear", kinds: ["gridConnection", "busbar", "breaker", "disconnector", "earthSwitch", "fuse"] },
+    { id: "transformers", kinds: ["transformer", "transformer3w", "currentTransformer", "voltageTransformer"] },
+    { id: "measuring", kinds: ["meter", "surgeArrester"] },
+    { id: "lines", kinds: ["overheadLine", "cableLine"] },
+    { id: "compensation", kinds: ["capacitorBank", "reactor"] },
+    { id: "loads", kinds: ["load"] },
+];
+
 /** Elements that join two voltage levels (or DC and AC), so their links may differ in voltage. */
 export const CONVERTERS: ReadonlySet<NodeKind> = new Set<NodeKind>(["transformer", "transformer3w", "inverter"]);
 

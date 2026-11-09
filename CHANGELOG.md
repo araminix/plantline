@@ -6,6 +6,12 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 
 ### Changed
 
+- A refreshed interface. The header shows the two views as one control and the plant type and language as pills;
+  on a phone it is one row, with plant type, language and theme (now also System) in a menu. The toolbar has words
+  beside its icons on wide screens, a More menu on narrower ones, and the diagram's problems at a glance; on a phone
+  the rest of the tools are in the bottom bar's menu. The palette has a search and groups that fold, one row per
+  element.
+
 - The sample drawings are drawn as real plant drawings are: on a sheet with a title block, legend, notes, details and
   coordinate grid, with the layers, blocks and attributes design teams use, and (for the solar, wind, hydropower and
   transmission samples) on real ground: contours, streams and the river from SRTM elevations, in UTM coordinates

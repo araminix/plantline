@@ -26,6 +26,27 @@ async function start(page: Page, plant: string) {
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 1024;
 
+/** A toolbar action: its button, or on a phone (whose toolbar keeps the most used ones) an item of the bottom bar's More menu. */
+async function act(page: Page, name: string) {
+    if (!isPhone(page)) return page.getByRole("button", { name, exact: true }).click();
+    await page.getByRole("navigation").getByRole("button", { name: "More" }).click();
+    await page.getByRole("menuitem", { name, exact: true }).click();
+}
+
+/** Opens the file actions: the File menu, or on a phone the bottom bar's More menu that holds them (a sheet closed first). */
+async function openFileMenu(page: Page) {
+    if (!isPhone(page)) return page.getByRole("button", { name: "File" }).click();
+    const sheet = page.locator(".panel.open .sheet-close");
+    if (await sheet.count()) await sheet.click();
+    await page.getByRole("navigation").getByRole("button", { name: "More" }).click();
+}
+
+/** Chooses the language in the header, or on a phone in the settings menu. */
+async function chooseLanguage(page: Page, code: string) {
+    if (isPhone(page)) await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByRole("combobox", { name: "Language" }).selectOption(code);
+}
+
 async function add(page: Page, element: string) {
     if (isPhone(page)) await page.getByRole("navigation").getByRole("button", { name: "Add" }).click();
     await page.getByRole("complementary", { name: "Elements" }).getByRole("button", { name: element, exact: true }).click();
@@ -99,7 +120,7 @@ test("builds, connects, checks and saves a single-line diagram", async ({ page }
     await page.getByRole("button", { name: "Redo" }).click();
     await expect(page.locator("[data-link]")).toHaveCount(2);
 
-    await page.getByRole("button", { name: "File" }).click();
+    await openFileMenu(page);
     for (const item of ["New diagram", "Open…", "Save", "Export SVG", "Export PNG", "Print or save as PDF"]) await expectOnTop(page, item);
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Save", exact: true }).click()]);
     expect(download.suggestedFilename()).toBe("diagram.plantline.json");
@@ -283,7 +304,7 @@ test("shows and resets the zoom, zooms to the selection, moves by the overview; 
     await expect(level).toHaveText("125%");
     await level.click();
     await expect(level).toHaveText("100%");
-    await page.getByRole("button", { name: "Zoom to selection" }).click();
+    await act(page, "Zoom to selection");
     await expect(level).toHaveText("200%");
 
     const view = () => page.locator(".canvas > g").getAttribute("transform");
@@ -297,7 +318,7 @@ test("shows and resets the zoom, zooms to the selection, moves by the overview; 
         await expect(page.getByRole("img", { name: /Overview/ })).toBeHidden();
     }
 
-    await page.getByRole("button", { name: "Add a text" }).click();
+    await act(page, "Add a text");
     await openProperties(page);
     const text = page.getByRole("textbox", { name: "Text" });
     await text.fill("Feeder 1\nto be built");
@@ -305,17 +326,17 @@ test("shows and resets the zoom, zooms to the selection, moves by the overview; 
     await expect(page.locator("[data-note] text")).toContainText("to be built");
     await closeSheet(page);
 
-    await page.getByRole("button", { name: "Add an area" }).click();
+    await act(page, "Add an area");
     await expect(page.locator("[data-note]")).toHaveCount(2);
     // The new area, selected, wholly in view
-    await page.getByRole("button", { name: "Zoom to selection" }).click();
+    await act(page, "Zoom to selection");
     const area = page.locator(".note-area");
     const width = Number(await area.getAttribute("width"));
     const grip = await centreOf(page.locator(".resize.corner"));
     await (isPhone(page) ? touchDrag(page, grip, { x: grip.x + 60, y: grip.y + 40 }) : mouseDrag(page, grip, { x: grip.x + 60, y: grip.y + 40 }));
     await expect.poll(async () => Number(await area.getAttribute("width"))).toBeGreaterThan(width);
 
-    if (isPhone(page)) await page.getByRole("button", { name: "Shortcuts" }).click();
+    if (isPhone(page)) await act(page, "Shortcuts");
     else await page.keyboard.press("?");
     const sheet = page.getByRole("dialog", { name: "Shortcuts" });
     await expect(sheet.getByRole("row")).toHaveCount(19);
@@ -344,7 +365,7 @@ test("describes a transformer with its own fields, shows them on the drawing, an
 
     const fields = await panel.locator(".field").count();
     expect(fields).toBe(2 + 3 + 5 + 1);
-    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    await chooseLanguage(page, "fa");
     const persian = page.getByRole("complementary", { name: "ویژگی‌ها" });
     await expect(persian.locator(".field")).toHaveCount(fields);
     await expect(persian.getByRole("textbox", { name: /^ولتاژ فشار قوی/ })).toHaveValue("33");
@@ -353,7 +374,7 @@ test("describes a transformer with its own fields, shows them on the drawing, an
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {
     await start(page, "Substation");
-    await page.getByRole("button", { name: "File" }).click();
+    await openFileMenu(page);
     const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("menuitem", { name: "Open…" }).click()]);
     await chooser.setFiles({ name: "evil.plantline.json", mimeType: "application/json", buffer: Buffer.from('{"format":"plantline","version":1,"diagram":{"nodes":"<script>"}}') });
     await expect(page.getByRole("alert")).toHaveText("This file is not a plantline diagram.");
@@ -565,7 +586,7 @@ test("remembers a drawing's place and choices, and brings them back when the fil
 
 test("keeps the map tools clear of the zoom buttons in Persian", async ({ page }) => {
     await start(page, "Wind farm");
-    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    await chooseLanguage(page, "fa");
     await page.getByRole("tab", { name: "جانمایی نیروگاه" }).click();
     await page.locator(".layout-empty .button").nth(1).click();
     const [tools, zoom] = [page.locator(".map-tools"), page.locator(".leaflet-control-zoom")];
@@ -598,7 +619,7 @@ test("shows its own fonts, Estedad for Persian, and has app icons and a link pre
     await start(page, "Solar PV");
     await expect(page.getByRole("link", { name: "plantline" })).toBeVisible();
     await expect.poll(loadedFonts).toContain("Inter Variable");
-    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    await chooseLanguage(page, "fa");
     await expect.poll(loadedFonts).toContain("Estedad Variable");
 
     const href = (selector: string, name: string) => page.locator(selector).getAttribute(name).then((value) => new URL(value!, page.url()));
@@ -612,7 +633,7 @@ test("shows its own fonts, Estedad for Persian, and has app icons and a link pre
 
 test("mirrors the layout in Persian and keeps it usable", async ({ page }) => {
     await start(page, "Wind farm");
-    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    await chooseLanguage(page, "fa");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("tab", { name: "دیاگرام تک‌خطی" })).toBeVisible();
     if (!isPhone(page)) {

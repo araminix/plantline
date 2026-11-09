@@ -1,9 +1,9 @@
-import { Cable, ChevronDown, FilePlus, FileText, FolderOpen, Image, Keyboard, Maximize, Plus, Printer, Redo2, Save, ScanSearch, SlidersHorizontal, SquareDashed, Trash2, Type, Undo2, Workflow, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Cable, ChevronDown, CircleCheck, Ellipsis, FilePlus, FileText, FolderOpen, Image, Keyboard, Maximize, Plus, Printer, Redo2, Save, ScanSearch, SlidersHorizontal, SquareDashed, Trash2, TriangleAlert, Type, Undo2, Workflow, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { useI18n } from "../i18n/i18n";
 import type { NodeKind, PlantType } from "../plants";
 import { readStored, writeStored } from "../settings";
-import { IconButton, Menu } from "../ui/controls";
+import { IconButton, Menu, type MenuItem } from "../ui/controls";
 import { isTyping } from "../ui/keys";
 import { arrange } from "./arrange";
 import { Canvas, type CanvasHandle, type Selection } from "./Canvas";
@@ -30,7 +30,7 @@ function restore(plant: PlantType): Diagram {
 
 /** The single-line diagram editor: toolbar, palette, canvas and inspector; the diagram is kept in this browser. */
 export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantType; onPlantChange: (plant: PlantType) => void; hidden: boolean }) {
-    const { t, lang } = useI18n();
+    const { t, lang, number } = useI18n();
     const history = useHistory(() => restore(plant));
     const { preview } = history;
     const diagram = history.state;
@@ -177,6 +177,36 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         return () => window.removeEventListener("keydown", onKey);
     });
 
+    const anything = selection.nodes.length > 0 || selection.link !== null;
+    const drawn = diagram.nodes.length > 0 || diagram.notes.length > 0;
+    const problems = issues.length === 0 ? t("checks.ok") : issues.length === 1 ? t("checks.problem") : t("checks.problems", { count: number(issues.length) });
+    const arrangeAll = () => {
+        history.commit(arrange(diagram));
+        requestAnimationFrame(() => canvas.current?.fit());
+    };
+    // The checks are shown when nothing is selected; on a phone, in the properties sheet
+    const showChecks = () => {
+        setSelection(NONE);
+        setSheet("inspector");
+    };
+    const fileItems: MenuItem[] = [
+        { label: t("file.new"), icon: <FilePlus size={16} />, onSelect: newDiagram },
+        { label: t("file.open"), icon: <FolderOpen size={16} />, onSelect: () => fileInput.current?.click() },
+        { label: t("file.save"), icon: <Save size={16} />, onSelect: () => download(baseName + FILE_EXTENSION, serializeDiagram(diagram), "application/json") },
+        { label: t("file.exportSvg"), icon: <Image size={16} />, onSelect: () => download(`${baseName}.svg`, diagramSvg(diagram, kindName), "image/svg+xml") },
+        { label: t("file.exportPng"), icon: <Image size={16} />, onSelect: () => void svgToPng(diagramSvg(diagram, kindName)).then((png) => download(`${baseName}.png`, png)) },
+        { label: t("file.print"), icon: <Printer size={16} />, onSelect: () => setPrinting(true) },
+    ];
+    // What a narrower toolbar keeps in its More menu (and a phone in the bottom bar's)
+    const moreItems: (MenuItem | null)[] = [
+        { label: t("action.delete"), icon: <Trash2 size={16} />, keys: "Del", disabled: !anything, onSelect: remove },
+        { label: t("action.addText"), icon: <Type size={16} />, onSelect: () => addAnnotation("text") },
+        { label: t("action.addArea"), icon: <SquareDashed size={16} />, onSelect: () => addAnnotation("area") },
+        null,
+        { label: t("action.zoomSelection"), icon: <ScanSearch size={16} />, keys: "⇧ 2", disabled: selection.nodes.length === 0, onSelect: () => canvas.current?.zoomToItems(selection.nodes) },
+        { label: t("shortcuts.title"), icon: <Keyboard size={16} />, keys: "?", onSelect: () => setShortcuts(true) },
+    ];
+
     const panel = (name: "palette" | "inspector", title: string, content: ReactNode) => (
         <aside className={`panel ${name}${sheet === name ? " open" : ""}${dragging && name === "palette" ? " dragging" : ""}`} aria-label={title}>
             <header className="panel-header">
@@ -192,19 +222,10 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     return (
         <section className="editor" id="view-diagram" role="tabpanel" aria-labelledby="tab-diagram" hidden={hidden}>
             <div className="toolbar" role="toolbar" aria-label={t("toolbar.label")}>
-                <Menu
-                    label={t("file.menu")}
-                    icon={<FileText size={18} aria-hidden="true" />}
-                    items={[
-                        { label: t("file.new"), icon: <FilePlus size={16} />, onSelect: newDiagram },
-                        { label: t("file.open"), icon: <FolderOpen size={16} />, onSelect: () => fileInput.current?.click() },
-                        { label: t("file.save"), icon: <Save size={16} />, onSelect: () => download(baseName + FILE_EXTENSION, serializeDiagram(diagram), "application/json") },
-                        { label: t("file.exportSvg"), icon: <Image size={16} />, onSelect: () => download(`${baseName}.svg`, diagramSvg(diagram, kindName), "image/svg+xml") },
-                        { label: t("file.exportPng"), icon: <Image size={16} />, onSelect: () => void svgToPng(diagramSvg(diagram, kindName)).then((png) => download(`${baseName}.png`, png)) },
-                        { label: t("file.print"), icon: <Printer size={16} />, onSelect: () => setPrinting(true) },
-                    ]}
-                />
-                <span className="separator" />
+                <span className="tool-group phone-hide">
+                    <Menu label={t("file.menu")} icon={<FileText size={18} aria-hidden="true" />} items={fileItems} />
+                </span>
+                <span className="separator phone-hide" />
                 <IconButton label={t("action.undo")} onClick={history.undo} disabled={!history.canUndo}>
                     <Undo2 size={18} />
                 </IconButton>
@@ -212,47 +233,51 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                     <Redo2 size={18} />
                 </IconButton>
                 <span className="separator" />
-                <IconButton label={t("action.connect")} pressed={connectFrom !== undefined} onClick={() => (connectFrom === undefined ? startConnect(selection.nodes.length === 1 ? selection.nodes[0]! : null) : setConnectFrom(undefined))}>
+                <IconButton label={t("action.connect")} text={t("toolbar.connect")} pressed={connectFrom !== undefined} onClick={() => (connectFrom === undefined ? startConnect(selection.nodes.length === 1 ? selection.nodes[0]! : null) : setConnectFrom(undefined))}>
                     <Cable size={18} />
                 </IconButton>
-                <IconButton label={t("action.delete")} onClick={remove} disabled={selection.nodes.length === 0 && !selection.link}>
-                    <Trash2 size={18} />
-                </IconButton>
-                <IconButton
-                    label={t("action.arrange")}
-                    onClick={() => {
-                        history.commit(arrange(diagram));
-                        requestAnimationFrame(() => canvas.current?.fit());
-                    }}
-                    disabled={diagram.nodes.length === 0}
-                >
+                <IconButton label={t("action.arrange")} text={t("toolbar.arrange")} onClick={arrangeAll} disabled={diagram.nodes.length === 0}>
                     <Workflow size={18} />
                 </IconButton>
-                <span className="separator" />
-                <IconButton label={t("action.addText")} onClick={() => addAnnotation("text")}>
+                <IconButton label={t("action.delete")} className="extra" onClick={remove} disabled={!anything}>
+                    <Trash2 size={18} />
+                </IconButton>
+                <span className="separator extra" />
+                <IconButton label={t("action.addText")} text={t("note.text")} className="extra" onClick={() => addAnnotation("text")}>
                     <Type size={18} />
                 </IconButton>
-                <IconButton label={t("action.addArea")} onClick={() => addAnnotation("area")}>
+                <IconButton label={t("action.addArea")} text={t("note.area")} className="extra" onClick={() => addAnnotation("area")}>
                     <SquareDashed size={18} />
                 </IconButton>
                 <span className="separator" />
-                <IconButton label={t("action.zoomOut")} onClick={() => canvas.current?.zoom(1 / 1.25)}>
-                    <ZoomOut size={18} />
-                </IconButton>
-                <button type="button" className="zoom-level" title={t("zoom.reset")} aria-label={t("zoom.reset")} onClick={() => canvas.current?.zoomTo(1)}>
-                    {new Intl.NumberFormat(lang, { style: "percent" }).format(zoom)}
-                </button>
-                <IconButton label={t("action.zoomIn")} onClick={() => canvas.current?.zoom(1.25)}>
-                    <ZoomIn size={18} />
-                </IconButton>
-                <IconButton label={t("action.fit")} onClick={() => canvas.current?.fit()} disabled={diagram.nodes.length === 0 && diagram.notes.length === 0}>
+                <span className="zoom-group">
+                    <IconButton label={t("action.zoomOut")} onClick={() => canvas.current?.zoom(1 / 1.25)}>
+                        <ZoomOut size={18} />
+                    </IconButton>
+                    <button type="button" className="zoom-level" title={t("zoom.reset")} aria-label={t("zoom.reset")} onClick={() => canvas.current?.zoomTo(1)}>
+                        {new Intl.NumberFormat(lang, { style: "percent" }).format(zoom)}
+                    </button>
+                    <IconButton label={t("action.zoomIn")} onClick={() => canvas.current?.zoom(1.25)}>
+                        <ZoomIn size={18} />
+                    </IconButton>
+                </span>
+                <IconButton label={t("action.fit")} text={t("toolbar.fit")} onClick={() => canvas.current?.fit()} disabled={!drawn}>
                     <Maximize size={18} />
                 </IconButton>
-                <IconButton label={t("action.zoomSelection")} onClick={() => canvas.current?.zoomToItems(selection.nodes)} disabled={selection.nodes.length === 0}>
+                <IconButton label={t("action.zoomSelection")} className="extra" onClick={() => canvas.current?.zoomToItems(selection.nodes)} disabled={selection.nodes.length === 0}>
                     <ScanSearch size={18} />
                 </IconButton>
-                <span className="separator" />
-                <IconButton label={t("shortcuts.title")} onClick={() => setShortcuts(true)} buttonRef={shortcutsButton}>
+                <span className="tool-group more">
+                    <Menu label={t("action.more")} icon={<Ellipsis size={18} aria-hidden="true" />} items={moreItems} />
+                </span>
+                <span className="spacer" />
+                {diagram.nodes.length > 0 && (
+                    <button type="button" className={issues.length > 0 ? "status-chip warn" : "status-chip"} title={t("checks.show")} aria-label={problems} onClick={showChecks}>
+                        {issues.length > 0 ? <TriangleAlert size={16} aria-hidden="true" /> : <CircleCheck size={16} aria-hidden="true" />}
+                        <span className="chip-text">{problems}</span>
+                    </button>
+                )}
+                <IconButton label={t("shortcuts.title")} className="extra" onClick={() => setShortcuts(true)} buttonRef={shortcutsButton}>
                     <Keyboard size={18} />
                 </IconButton>
             </div>
@@ -296,7 +321,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                 )}
             </div>
             <nav className="mobile-bar" aria-label={t("toolbar.label")}>
-                <button type="button" className="button" onClick={() => setSheet("palette")}>
+                <button type="button" className="button primary" onClick={() => setSheet("palette")}>
                     <Plus size={18} aria-hidden="true" />
                     {t("action.add")}
                 </button>
@@ -305,6 +330,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                     {t("inspector.title")}
                     {issues.length > 0 && <span className="badge">{issues.length}</span>}
                 </button>
+                <Menu label={t("action.more")} icon={<Ellipsis size={20} />} iconOnly alignEnd items={[...fileItems, null, ...moreItems]} />
             </nav>
             <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={(event) => void openFile(event)} />
             {shortcuts && (
