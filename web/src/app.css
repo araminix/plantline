@@ -2312,6 +2312,15 @@ kbd {
     font-variant-numeric: tabular-nums;
 }
 
+@media (max-width: 720px) {
+    .map-legend {
+        min-width: 0;
+        max-height: 32%;
+        padding: 7px 9px;
+        font-size: 0.72rem;
+    }
+}
+
 /* What a counted object is, over the map: a dark tooltip, and a popup in the app's colours */
 .object-tooltip,
 .object-popup .leaflet-popup-content {

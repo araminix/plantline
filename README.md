@@ -34,7 +34,7 @@ plantline is a web tool for the people who design, build and run power plants. D
 
 ### Plant layouts from AutoCAD drawings
 
-![A wind farm drawing on the map with its turbines, cables and roads counted](docs/images/layout-wind.png)
+![A wind farm drawing on the map with its turbines, cables and roads counted](docs/images/layout-wind.jpg)
 
 - **Open DWG or DXF** drawings from AutoCAD, PVcase or any CAD tool, up to 100 MB. The drawing is read in your browser.
 - **Recognise the plant:** block and layer names are matched to tables, strings, inverters, turbines, batteries, transformers, breakers, towers, cables, roads and fences. Each plant type has its own rules, and you can edit them.
@@ -50,7 +50,7 @@ plantline is a web tool for the people who design, build and run power plants. D
 
 | Phone, plant layout | Arabic, right to left |
 | --- | --- |
-| ![The solar sample on a phone](docs/images/phone-layout.png) | ![The substation palette in Arabic](docs/images/arabic.png) |
+| ![The solar sample on a phone](docs/images/phone-layout.jpg) | ![A substation diagram in Persian, right to left](docs/images/persian.png) |
 
 ## Your files stay yours
 

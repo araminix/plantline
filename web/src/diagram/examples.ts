@@ -13,8 +13,12 @@ interface Element {
     width?: number;
 }
 
-/** Elements by key and the lines between them, the upper element first; laid out by Arrange. */
-type Example = { elements: Record<string, Element>; lines: [string, string][] };
+/**
+ * Elements by key and the lines between them, the upper element first; laid out by Arrange. `upward` draws the plant
+ * upside down, its sources on top feeding down to the grid at the bottom (as wind farms are drawn: a turbine's one
+ * lead is at the foot of its tower).
+ */
+type Example = { elements: Record<string, Element>; lines: [string, string][]; upward?: boolean };
 
 const grid = (kv: number, mva: number): Element => ({ kind: "gridConnection", designation: "=E01", props: { voltageKv: kv, shortCircuitMva: mva } });
 const bus = (kv: number, designation: string, width = 520): Element => ({ kind: "busbar", label: `${kv} kV`, designation, props: { voltageKv: kv, ratedCurrentA: 1250 }, width });
@@ -43,7 +47,7 @@ const EXAMPLES: Record<PlantType, () => Example> = {
         return example;
     },
     wind: () => {
-        const example: Example = { elements: { grid: grid(33, 800), bus: bus(33, "=E01-W1", 640) }, lines: [["grid", "bus"]] };
+        const example: Example = { elements: { grid: grid(33, 800), bus: bus(33, "=E01-W1", 640) }, lines: [["grid", "bus"]], upward: true };
         for (const n of [1, 2, 3]) feeder(n, 33, [transformer(`T${n}`, 33, 0.69, 4800), { kind: "windTurbine", label: `WTG-0${n}`, props: { ratedPowerKw: 4500, voltageKv: 0.69, powerFactor: 0.95 } }], example);
         return example;
     },
@@ -113,7 +117,7 @@ const EXAMPLES: Record<PlantType, () => Example> = {
 
 /** A ready-made single-line diagram of the plant type, connected and laid out, with no problems to check. */
 export function exampleDiagram(plant: PlantType, name: string): Diagram {
-    const { elements, lines } = EXAMPLES[plant]();
+    const { elements, lines, upward } = EXAMPLES[plant]();
     let diagram = emptyDiagram(plant, name);
     const ids = new Map<string, string>();
     Object.entries(elements).forEach(([key, element], index) => {
@@ -122,7 +126,18 @@ export function exampleDiagram(plant: PlantType, name: string): Diagram {
         ids.set(key, added.id);
     });
     for (const [from, to] of lines) diagram = connect(diagram, ids.get(from)!, ids.get(to)!) ?? diagram;
-    return straighten(arrange(diagram), lines.map(([from, to]) => [ids.get(from)!, ids.get(to)!]));
+    const laid = straighten(arrange(diagram), lines.map(([from, to]) => [ids.get(from)!, ids.get(to)!]));
+    return upward ? upsideDown(laid) : laid;
+}
+
+/** The diagram turned upside down: rows mirrored and every element turned over, but turbines kept upright. */
+function upsideDown(diagram: Diagram): Diagram {
+    const ys = diagram.nodes.map((node) => node.y);
+    const [top, bottom] = [Math.min(...ys), Math.max(...ys)];
+    return {
+        ...diagram,
+        nodes: diagram.nodes.map((node) => ({ ...node, y: top + bottom - node.y, rotation: node.kind === "windTurbine" || node.kind === "busbar" ? node.rotation : (((node.rotation + 180) % 360) as Rotation) })),
+    };
 }
 
 /** An element that is its upper element's only one hangs straight below it, top-down (Arrange centres whole rows). */

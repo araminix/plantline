@@ -25,6 +25,7 @@ The work behind each [user story](user-stories.md), in the order it was done, an
 | T-17 | CI: tests on every push and pull request; GitHub Pages on `main`; actions pinned to commits. | US-41 | `.github/workflows/ci.yml` |
 | T-18 | Supply chain: packages at least 7 days old (pnpm and Dependabot), versions at least two weeks old at release. | US-42 | `web/pnpm-workspace.yaml`, `.github/dependabot.yml` |
 | T-19 | Documents: README, user stories, tasks, test cases, architecture, contributing, security, changelog. | all | `README.md`, `docs/`, root files |
+| T-20 | Interface refresh: one set of components (buttons, segmented controls, pills, cards, menus with keys, status chips); header, toolbar, palette, properties, map and first use; examples per plant type; drawings dropped onto the layout. | US-04, US-05, US-06, US-30a, US-31 | `web/src/app.css`, `web/src/ui/controls.tsx`, `web/src/diagram/examples.ts` |
 
 ## Backlog
 

@@ -16,6 +16,7 @@ request ([CI](../.github/workflows/ci.yml)).
 | --- | --- | --- | --- |
 | TC-01 | US-01 | The first visit asks for the plant type; the palette then starts with that plant's equipment. | `App.test.tsx` › asks for the plant type on the first visit…; e2e › every test starts this way |
 | TC-02 | US-01 | Every plant type has a palette of known elements, without repeats, with a grid connection. | `plants.test.ts` › give every plant type a palette… |
+| TC-02a | US-10 | Every element is in exactly one palette group; the palette's search and groups show the plant type's elements in its own order. | `plants.test.ts` › put every element in exactly one palette group; `App.test.tsx` › changes the palette with the plant type… |
 | TC-03 | US-02 | Changing the plant type changes the palette and keeps the diagram. | `App.test.tsx` › changes the palette with the plant type and keeps the diagram |
 | TC-04 | US-03 | Every language has exactly the English messages, none empty, with the same placeholders. | `i18n.test.ts` › have a file for every language… |
 | TC-05 | US-03 | Every plant type and every element and object kind has a name. | `i18n.test.ts` › name every plant type… |
@@ -28,6 +29,10 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-76 | US-03 | English shows Inter and Persian Estedad, both served with the site. | e2e › shows its own fonts, Estedad for Persian… |
 | TC-77 | US-05, US-41 | The app icons in the manifest, the home screen icon and the link preview image exist. | e2e › shows its own fonts… and has app icons and a link preview |
 | TC-78 | US-04 | The header's logo is the favicon's mark, drawn in the theme's colours. | `Logo.test.tsx` › draws the same mark as the favicon |
+| TC-96 | US-05 | On a phone, the plant type, language and theme are in the header's menu, and choosing a language closes it. | e2e › every phone test that changes the language |
+| TC-97 | US-05, US-18a | A narrower window keeps Delete, texts, areas, Zoom to selection and Shortcuts in a More menu; a phone keeps them, with the file actions, in the bottom bar's menu. | e2e › shows and resets the zoom…, builds, connects, checks and saves… |
+| TC-98 | US-06 | Every plant type's example is connected, of its own elements, without problems, laid out without overlaps, and saves and opens unchanged. | `examples.test.ts` |
+| TC-99 | US-06 | The empty diagram opens this or another plant type's example (switching the plant type), with No problems; Undo takes it back; File offers the example too. | e2e › opens a ready-made example from the empty diagram… |
 
 ## Single-line diagram
 
@@ -129,6 +134,8 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-73 | US-31, US-39 | A large plant's own shapes are projected point by point while its small blocks are still placed through transforms, within 2 cm. | `scene.test.ts` › projects a large plant's own shapes… |
 | TC-74 | US-39 | A generated plant the size of a real one (17,920 modules nested four deep, about 700,000 points) reads three times in the WebAssembly reader within the limits: 6 s and 650 MB. | CI › Read a large drawing… (`scripts/check-reader.mjs`) |
 | TC-75 | US-05, US-39 | The compressed download stays within its limits: the app's scripts and styles 300 KB, the drawing reader 7 MB. | CI › Download sizes… (`scripts/check-size.mjs`) |
+| TC-100 | US-30a | A DXF dropped onto the plant layout is read and counted. | e2e › opens a drawing dropped onto the plant layout |
+| TC-101 | US-31 | Another plant type's sample card switches the plant type and reads its sample. | e2e › opens the sample of another plant type… |
 
 ## Checked by hand before each release
 

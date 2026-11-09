@@ -33,16 +33,22 @@ battery storage, hydropower, substation or transmission line), so the tool shows
 - Latin, Greek and Cyrillic letters use Inter and Arabic and Persian use Estedad on every device, served with the site.
 - Every message exists in every language.
 
-**US-04 Light or dark.** As a user, I choose a light or dark theme; the first one follows my system. The map stays
-readable in both, and satellite imagery keeps its real colours.
+**US-04 Light or dark.** As a user, I choose a light or dark theme, or follow my system (the first choice). The map
+stays readable in both, and satellite imagery keeps its real colours.
 
 **US-05 Phones and tablets.** As a field engineer, I use plantline on a phone or tablet.
 - The page never scrolls sideways; the toolbar scrolls within the screen.
+- The header is one row: the two views and a menu with the plant type, the language and the theme.
+- The toolbar keeps the most used tools; the others (and the file actions) are in the bottom bar's menu.
 - The palette, properties and drawing details open as sheets from a bar at the bottom.
 - The diagram pans with a finger and zooms with two.
 - Added to the home screen, it has its own icon.
 
 ## Epic B: Single-line diagram
+
+**US-06 Start from an example.** As a new user, I open a ready-made single-line diagram of any plant type (connected,
+with no problems to check) from the empty diagram, or the current plant type's from the File menu, and change it.
+Another plant type's example switches the plant type. The empty diagram also says, in three steps, how to start.
 
 **US-10 Add equipment.** As a design engineer, I drag an element from the palette onto the drawing, where it lands on
 the grid point under the pointer, or I tap it and it appears in the middle of the view; either way it is selected.
@@ -159,7 +165,11 @@ browser and never uploaded. While it is read I see the time so far and can cance
 or a reader that cannot be loaded each give a clear message at once, with "Try again" where it may help; a file likely
 too large for my device's memory is read only if I agree.
 
-**US-31 Try a sample.** Without a drawing of my own, I open a made-up sample of the current plant type.
+**US-30a Drop a drawing.** I drop a DWG or DXF onto the plant layout to read it, also over a drawing already open.
+
+**US-31 Try a sample.** Without a drawing of my own, I open a made-up sample of any plant type, each card saying what
+it holds; another plant type's sample switches the plant type. The samples are drawn as real plant drawings are, on
+real ground.
 
 **US-32 Recognise and count.** The objects of the drawing are recognised by their block and layer names, with rules
 for the plant type: counted (tables, strings, inverters, turbines, batteries, generators, transformers, breakers,
