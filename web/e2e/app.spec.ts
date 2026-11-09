@@ -31,6 +31,15 @@ async function add(page: Page, element: string) {
     await page.getByRole("complementary", { name: "Elements" }).getByRole("button", { name: element, exact: true }).click();
 }
 
+/** The element is what a person would click at its centre: not hidden behind a panel or clipped by a container. */
+async function expectOnTop(page: Page, name: string) {
+    const item = page.getByRole("menuitem", { name, exact: true });
+    await expect(item).toBeVisible();
+    const box = (await item.boundingBox())!;
+    const onTop = await item.evaluate((element, [x, y]) => element.contains(document.elementFromPoint(x!, y!)), [box.x + box.width / 2, box.y + box.height / 2]);
+    expect(onTop, `${name} is covered or clipped`).toBe(true);
+}
+
 async function expectNoSidewaysScroll(page: Page) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -63,6 +72,7 @@ test("builds, connects, checks and saves a single-line diagram", async ({ page }
     await expect(page.locator("[data-link]")).toHaveCount(2);
 
     await page.getByRole("button", { name: "File" }).click();
+    for (const item of ["New diagram", "Open…", "Save", "Export SVG", "Export PNG", "Print or save as PDF"]) await expectOnTop(page, item);
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Save", exact: true }).click()]);
     expect(download.suggestedFilename()).toBe("diagram.plantline.json");
     const file = JSON.parse(await readFile((await download.path())!, "utf8"));

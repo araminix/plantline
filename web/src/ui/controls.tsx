@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 /** A button showing only an icon; the label is its tooltip and accessible name. */
 export function IconButton(props: { label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; className?: string; children: ReactNode }) {
@@ -16,50 +17,88 @@ export interface MenuItem {
     onSelect: () => void;
 }
 
-/** A button opening a list of actions; Escape or a click elsewhere closes it. */
+/**
+ * A button opening a list of actions. The list is drawn over the page (a portal), placed under the button and
+ * mirrored in right-to-left languages, so no scrolling toolbar or panel can clip or cover it. Arrow keys, Home and End
+ * move between items; Escape, Tab or a click elsewhere closes it and focus returns to the button.
+ */
 export function Menu({ label, icon, items }: { label: string; icon: ReactNode; items: MenuItem[] }) {
-    const [open, setOpen] = useState(false);
-    const root = useRef<HTMLDivElement>(null);
+    const [place, setPlace] = useState<CSSProperties | null>(null);
+    const button = useRef<HTMLButtonElement>(null);
+    const list = useRef<HTMLDivElement>(null);
     const id = useId();
 
+    const close = (refocus: boolean) => {
+        setPlace(null);
+        if (refocus) button.current?.focus();
+    };
+
+    const toggle = () => {
+        if (place) return close(false);
+        const box = button.current!.getBoundingClientRect();
+        const rtl = getComputedStyle(button.current!).direction === "rtl";
+        setPlace({ top: box.bottom + 4, ...(rtl ? { right: document.documentElement.clientWidth - box.right } : { left: box.left }) });
+    };
+
     useEffect(() => {
-        if (!open) return;
-        const close = (event: Event) => {
-            if (event instanceof KeyboardEvent ? event.key === "Escape" : !root.current?.contains(event.target as Node)) setOpen(false);
+        if (!place) return;
+        list.current?.querySelector<HTMLButtonElement>("[role=menuitem]")?.focus();
+        const outside = (event: Event) => {
+            const target = event.target as Node;
+            if (!list.current?.contains(target) && !button.current?.contains(target)) close(false);
         };
-        document.addEventListener("pointerdown", close);
-        document.addEventListener("keydown", close);
+        const away = () => close(false);
+        document.addEventListener("pointerdown", outside);
+        window.addEventListener("resize", away);
+        window.addEventListener("scroll", away, true);
         return () => {
-            document.removeEventListener("pointerdown", close);
-            document.removeEventListener("keydown", close);
+            document.removeEventListener("pointerdown", outside);
+            window.removeEventListener("resize", away);
+            window.removeEventListener("scroll", away, true);
         };
-    }, [open]);
+    }, [place]);
+
+    const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        const entries = [...list.current!.querySelectorAll<HTMLButtonElement>("[role=menuitem]")];
+        const at = entries.indexOf(document.activeElement as HTMLButtonElement);
+        const go = (index: number) => entries[(index + entries.length) % entries.length]?.focus();
+        if (event.key === "ArrowDown") go(at + 1);
+        else if (event.key === "ArrowUp") go(at - 1);
+        else if (event.key === "Home") go(0);
+        else if (event.key === "End") go(entries.length - 1);
+        else if (event.key === "Escape") close(true);
+        else if (event.key === "Tab") close(false);
+        else return;
+        event.preventDefault();
+    };
 
     return (
-        <div className="menu" ref={root}>
-            <button type="button" className="button" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+        <>
+            <button ref={button} type="button" className="button" aria-haspopup="menu" aria-expanded={!!place} aria-controls={id} onClick={toggle}>
                 {icon}
                 <span>{label}</span>
             </button>
-            {open && (
-                <div className="menu-list" role="menu" id={id}>
-                    {items.map((item) => (
-                        <button
-                            key={item.label}
-                            type="button"
-                            role="menuitem"
-                            onClick={() => {
-                                setOpen(false);
-                                item.onSelect();
-                            }}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
+            {place &&
+                createPortal(
+                    <div ref={list} className="menu-list" role="menu" id={id} aria-label={label} style={place} onKeyDown={onKeyDown}>
+                        {items.map((item) => (
+                            <button
+                                key={item.label}
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                    close(true);
+                                    item.onSelect();
+                                }}
+                            >
+                                {item.icon}
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>,
+                    document.body,
+                )}
+        </>
     );
 }
 

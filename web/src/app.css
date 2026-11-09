@@ -209,15 +209,10 @@ select {
     border-color: var(--danger);
 }
 
-.menu {
-    position: relative;
-}
-
+/* Drawn over the page (see Menu): above the panels, sheets and the map */
 .menu-list {
-    position: absolute;
-    inset-block-start: calc(100% + 4px);
-    inset-inline-start: 0;
-    z-index: 30;
+    position: fixed;
+    z-index: 1300;
     display: grid;
     min-width: 220px;
     padding: 4px;
