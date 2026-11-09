@@ -192,7 +192,7 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
     };
     const facts = (of: PlantType) => {
         const { figure, count } = SAMPLES[of].facts;
-        return count ? `${figure} · ${t(count.key, { count: number(count.value) })}` : figure;
+        return count ? `${figure} · ${t(count.key, { count: count.value })}` : figure;
     };
 
     // While reading: the time so far and Cancel; after a failure: what happened and, where it may help, Try again
@@ -402,7 +402,7 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
                             </p>
                             {modules > 0 && (
                                 <p className="muted small">
-                                    {t("layout.fromModules", { count: number(modules) })} × {number(wp)} Wp
+                                    {t("layout.fromModules", { count: modules })} × {number(wp)} Wp
                                 </p>
                             )}
                             <div className="fields">
@@ -453,7 +453,7 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
                                 </li>
                             ))}
                         </ul>
-                        {matches.length === 0 ? <p className="muted small">{t("layout.noneFound")}</p> : matches.length > SHOWN && <p className="muted small">{t("layout.more", { count: number(matches.length - SHOWN) })}</p>}
+                        {matches.length === 0 ? <p className="muted small">{t("layout.noneFound")}</p> : matches.length > SHOWN && <p className="muted small">{t("layout.more", { count: matches.length - SHOWN })}</p>}
                     </section>
 
                     <details className="card" open={placementOpen} onToggle={(event) => setPlacementOpen(event.currentTarget.open)}>

@@ -50,8 +50,10 @@
     "toolbar.fit": "Einpassen",
     "action.more": "Mehr",
     "checks.ok": "Keine Probleme",
-    "checks.problem": "1 Problem",
-    "checks.problems": "{{count}} Probleme",
+    "checks.problems": {
+        "one": "{{count}} Problem",
+        "other": "{{count}} Probleme"
+    },
     "checks.show": "Prüfungen zeigen",
     "note.text": "Text",
     "note.area": "Bereich",
@@ -125,9 +127,20 @@
     "link.straight": "Gerade Linie",
     "link.autoRoute": "Automatisch führen",
     "link.hint": "Ziehen Sie ein Segment, um es zu verschieben, oder ein Endsegment, um einen Knick hinzuzufügen. Doppelklicken Sie auf ein Segment, um es zu entfernen.",
-    "inspector.selected": "{{count}} Elemente ausgewählt",
+    "inspector.selected": {
+        "one": "{{count}} Element ausgewählt",
+        "other": "{{count}} Elemente ausgewählt"
+    },
     "inspector.diagram": "Schaltbild",
-    "inspector.stats": "{{elements}} Elemente, {{links}} Leitungen",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} Element",
+        "other": "{{count}} Elemente"
+    },
+    "count.lines": {
+        "one": "{{count}} Leitung",
+        "other": "{{count}} Leitungen"
+    },
     "field.name": "Name",
     "field.label": "Beschriftung",
     "field.designation": "Referenzkennzeichen",
@@ -194,11 +207,26 @@
     "layout.drop": "DWG oder DXF hier ablegen",
     "layout.or": "oder",
     "layout.orSample": "Oder ein Beispiel ausprobieren",
-    "layout.sampleTables": "{{count}} Tische",
-    "layout.sampleTurbines": "{{count}} Anlagen",
-    "layout.sampleContainers": "{{count}} Container",
-    "layout.sampleUnits": "{{count}} Maschinensätze",
-    "layout.sampleTowers": "{{count}} Masten",
+    "layout.sampleTables": {
+        "one": "{{count}} Tisch",
+        "other": "{{count}} Tische"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} Anlage",
+        "other": "{{count}} Anlagen"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} Container",
+        "other": "{{count}} Container"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} Maschinensatz",
+        "other": "{{count}} Maschinensätze"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} Mast",
+        "other": "{{count}} Masten"
+    },
     "layout.tryAgain": "Erneut versuchen",
     "layout.largeConfirm": "Diese Zeichnung ist für dieses Gerät groß ({{size}} MB): Das Lesen kann mehrere Minuten dauern und die Seite schließen. Trotzdem lesen?",
     "layout.error.tooLarge": "Die Zeichnung ist größer als 100 MB.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "Modulleistung",
     "layout.capacity": "Installierte Leistung",
     "layout.find": "Objekt suchen",
-    "layout.more": "{{count}} weitere: Suche eingrenzen",
+    "layout.more": {
+        "one": "{{count}} weiterer Treffer: Suche eingrenzen",
+        "other": "{{count}} weitere Treffer: Suche eingrenzen"
+    },
     "layout.noneFound": "Nichts gefunden.",
     "layout.block": "Block",
     "layout.layer": "Layer",
     "layout.legend": "Legende",
-    "layout.fromModules": "aus {{count}} gezählten Modulen",
+    "layout.fromModules": {
+        "one": "aus {{count}} gezähltem Modul",
+        "other": "aus {{count}} gezählten Modulen"
+    },
     "layout.placement": "Platzierung",
     "layout.units": "Zeichnungseinheit",
     "layout.modePoint": "An einem Punkt",
@@ -253,7 +287,15 @@
     "layout.advanced": "Erweitert: Namensmuster",
     "layout.export": "Exportieren",
     "layout.satelliteShort": "Satellit",
-    "layout.inventorySummary": "{{layers}} Layer · {{blocks}} Blöcke",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} Layer",
+        "other": "{{count}} Layer"
+    },
+    "count.blocks": {
+        "one": "{{count}} Block",
+        "other": "{{count}} Blöcke"
+    },
     "layout.notPlaced": "Noch nicht platziert",
     "layout.utmSummary": "UTM-Zone {{zone}}",
     "kind.gridConnection": "Netzanschluss",

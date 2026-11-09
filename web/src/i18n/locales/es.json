@@ -50,8 +50,10 @@
     "toolbar.fit": "Ajustar",
     "action.more": "Más",
     "checks.ok": "Sin problemas",
-    "checks.problem": "1 problema",
-    "checks.problems": "{{count}} problemas",
+    "checks.problems": {
+        "one": "{{count}} problema",
+        "other": "{{count}} problemas"
+    },
     "checks.show": "Ver las comprobaciones",
     "note.text": "Texto",
     "note.area": "Zona",
@@ -125,9 +127,20 @@
     "link.straight": "Línea recta",
     "link.autoRoute": "Trazado automático",
     "link.hint": "Arrastre un tramo para moverlo, o un tramo de un extremo para añadir un codo. Haga doble clic en un tramo para quitarlo.",
-    "inspector.selected": "{{count}} elementos seleccionados",
+    "inspector.selected": {
+        "one": "{{count}} elemento seleccionado",
+        "other": "{{count}} elementos seleccionados"
+    },
     "inspector.diagram": "Esquema",
-    "inspector.stats": "{{elements}} elementos, {{links}} líneas",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} elemento",
+        "other": "{{count}} elementos"
+    },
+    "count.lines": {
+        "one": "{{count}} línea",
+        "other": "{{count}} líneas"
+    },
     "field.name": "Nombre",
     "field.label": "Etiqueta",
     "field.designation": "Designación de referencia",
@@ -194,11 +207,26 @@
     "layout.drop": "Suelte aquí un DWG o DXF",
     "layout.or": "o",
     "layout.orSample": "O pruebe un ejemplo",
-    "layout.sampleTables": "{{count}} mesas",
-    "layout.sampleTurbines": "{{count}} aerogeneradores",
-    "layout.sampleContainers": "{{count}} contenedores",
-    "layout.sampleUnits": "{{count}} grupos",
-    "layout.sampleTowers": "{{count}} torres",
+    "layout.sampleTables": {
+        "one": "{{count}} mesa",
+        "other": "{{count}} mesas"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} aerogenerador",
+        "other": "{{count}} aerogeneradores"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} contenedor",
+        "other": "{{count}} contenedores"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} grupo",
+        "other": "{{count}} grupos"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} torre",
+        "other": "{{count}} torres"
+    },
     "layout.tryAgain": "Reintentar",
     "layout.largeConfirm": "Este plano es grande para este dispositivo ({{size}} MB): leerlo puede tardar varios minutos y cerrar la página. ¿Leerlo de todos modos?",
     "layout.error.tooLarge": "El plano supera los 100 MB.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "Potencia del módulo",
     "layout.capacity": "Potencia instalada",
     "layout.find": "Buscar un objeto",
-    "layout.more": "{{count}} más: acote la búsqueda",
+    "layout.more": {
+        "one": "{{count}} más: acote la búsqueda",
+        "other": "{{count}} más: acote la búsqueda"
+    },
     "layout.noneFound": "No se encontró nada.",
     "layout.block": "Bloque",
     "layout.layer": "Capa",
     "layout.legend": "Leyenda",
-    "layout.fromModules": "a partir de {{count}} módulos contados",
+    "layout.fromModules": {
+        "one": "a partir de {{count}} módulo contado",
+        "other": "a partir de {{count}} módulos contados"
+    },
     "layout.placement": "Ubicación",
     "layout.units": "Unidad del plano",
     "layout.modePoint": "En un punto",
@@ -253,7 +287,15 @@
     "layout.advanced": "Avanzado: patrones de nombre",
     "layout.export": "Exportar",
     "layout.satelliteShort": "Satélite",
-    "layout.inventorySummary": "{{layers}} capas · {{blocks}} bloques",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} capa",
+        "other": "{{count}} capas"
+    },
+    "count.blocks": {
+        "one": "{{count}} bloque",
+        "other": "{{count}} bloques"
+    },
     "layout.notPlaced": "Aún sin situar",
     "layout.utmSummary": "Huso UTM {{zone}}",
     "kind.gridConnection": "Conexión a la red",

@@ -50,8 +50,10 @@
     "toolbar.fit": "Adatta",
     "action.more": "Altro",
     "checks.ok": "Nessun problema",
-    "checks.problem": "1 problema",
-    "checks.problems": "{{count}} problemi",
+    "checks.problems": {
+        "one": "{{count}} problema",
+        "other": "{{count}} problemi"
+    },
     "checks.show": "Mostra i controlli",
     "note.text": "Testo",
     "note.area": "Area",
@@ -125,9 +127,20 @@
     "link.straight": "Linea retta",
     "link.autoRoute": "Percorso automatico",
     "link.hint": "Trascina un tratto per spostarlo, o un tratto all’estremità per aggiungere una piega. Fai doppio clic su un tratto per rimuoverlo.",
-    "inspector.selected": "{{count}} elementi selezionati",
+    "inspector.selected": {
+        "one": "{{count}} elemento selezionato",
+        "other": "{{count}} elementi selezionati"
+    },
     "inspector.diagram": "Schema",
-    "inspector.stats": "{{elements}} elementi, {{links}} linee",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} elemento",
+        "other": "{{count}} elementi"
+    },
+    "count.lines": {
+        "one": "{{count}} linea",
+        "other": "{{count}} linee"
+    },
     "field.name": "Nome",
     "field.label": "Etichetta",
     "field.designation": "Designazione di riferimento",
@@ -194,11 +207,26 @@
     "layout.drop": "Trascina qui un DWG o DXF",
     "layout.or": "oppure",
     "layout.orSample": "Oppure prova un esempio",
-    "layout.sampleTables": "{{count}} tavole",
-    "layout.sampleTurbines": "{{count}} turbine",
-    "layout.sampleContainers": "{{count}} container",
-    "layout.sampleUnits": "{{count}} gruppi",
-    "layout.sampleTowers": "{{count}} sostegni",
+    "layout.sampleTables": {
+        "one": "{{count}} tavola",
+        "other": "{{count}} tavole"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} turbina",
+        "other": "{{count}} turbine"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} container",
+        "other": "{{count}} container"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} gruppo",
+        "other": "{{count}} gruppi"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} sostegno",
+        "other": "{{count}} sostegni"
+    },
     "layout.tryAgain": "Riprova",
     "layout.largeConfirm": "Questo disegno è grande per questo dispositivo ({{size}} MB): la lettura può richiedere diversi minuti e chiudere la pagina. Leggerlo comunque?",
     "layout.error.tooLarge": "Il disegno supera i 100 MB.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "Potenza del modulo",
     "layout.capacity": "Potenza installata",
     "layout.find": "Cerca un oggetto",
-    "layout.more": "Altri {{count}}: restringi la ricerca",
+    "layout.more": {
+        "one": "Ancora {{count}}: restringi la ricerca",
+        "other": "Altri {{count}}: restringi la ricerca"
+    },
     "layout.noneFound": "Nessun risultato.",
     "layout.block": "Blocco",
     "layout.layer": "Layer",
     "layout.legend": "Legenda",
-    "layout.fromModules": "da {{count}} moduli contati",
+    "layout.fromModules": {
+        "one": "da {{count}} modulo contato",
+        "other": "da {{count}} moduli contati"
+    },
     "layout.placement": "Posizionamento",
     "layout.units": "Unità del disegno",
     "layout.modePoint": "Su un punto",
@@ -253,7 +287,15 @@
     "layout.advanced": "Avanzate: schemi di nome",
     "layout.export": "Esporta",
     "layout.satelliteShort": "Satellite",
-    "layout.inventorySummary": "{{layers}} layer · {{blocks}} blocchi",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} layer",
+        "other": "{{count}} layer"
+    },
+    "count.blocks": {
+        "one": "{{count}} blocco",
+        "other": "{{count}} blocchi"
+    },
     "layout.notPlaced": "Non ancora posizionato",
     "layout.utmSummary": "Fuso UTM {{zone}}",
     "kind.gridConnection": "Connessione alla rete",

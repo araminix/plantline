@@ -6,9 +6,15 @@ import { NodeSymbol } from "./symbols";
 
 const HALF = NODE_SIZE / 2;
 
+/** How the drawing words things in the reader's language: the kinds of elements, and numbers in its digits. */
+export interface Wording {
+    kind: (kind: NodeKind) => string;
+    number: (value: number) => string;
+}
+
 interface Props {
     diagram: Diagram;
-    kindName: (kind: NodeKind) => string;
+    wording: Wording;
     selectedNodes?: ReadonlySet<string>;
     selectedLink?: string | null;
     /** The element a line being drawn would connect to. */
@@ -20,7 +26,7 @@ interface Props {
 }
 
 /** The elements and links of a diagram, in diagram coordinates. Used by the canvas and by every export. */
-export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink, targetNode, movingLink, interactive = false }: Props) {
+export function DiagramContent({ diagram, wording, selectedNodes, selectedLink, targetNode, movingLink, interactive = false }: Props) {
     const byId = new Map(diagram.nodes.map((node) => [node.id, node]));
     const ends = (() => {
         const link = interactive ? diagram.links.find((candidate) => candidate.id === selectedLink) : undefined;
@@ -63,7 +69,7 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                     transform={`translate(${node.x} ${node.y})`}
                     className={classes("sld-node", selectedNodes?.has(node.id) && "selected", node.id === targetNode && "target")}
                     // On the canvas, Tab reaches every element; its name is its kind and the label as drawn
-                    {...(interactive && { tabIndex: 0, role: "button", "aria-label": spokenName(node, kindName), "aria-pressed": selectedNodes?.has(node.id) ?? false })}
+                    {...(interactive && { tabIndex: 0, role: "button", "aria-label": spokenName(node, wording), "aria-pressed": selectedNodes?.has(node.id) ?? false })}
                 >
                     <g {...statusLook(node.props, "4 3")}>
                         {node.kind === "busbar" ? (
@@ -79,7 +85,7 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                         )}
                     </g>
                     {interactive && <rect className="hit" {...hitBox(node)} fill="transparent" />}
-                    <NodeLabel node={node} kindName={kindName} />
+                    <NodeLabel node={node} wording={wording} />
                     {interactive && <Ports node={node} />}
                 </g>
             ))}
@@ -166,18 +172,18 @@ export function labelStart(node: DiagramNode): Point {
 }
 
 /** The label drawn beside an element: its name (or kind) in bold, then its designation and main ratings. */
-function labelText(node: DiagramNode, kindName: (kind: NodeKind) => string) {
-    return { title: node.label || kindName(node.kind), details: [node.designation, ...summary(node.kind, node.props)].filter(Boolean).join(" · ") };
+function labelText(node: DiagramNode, wording: Wording) {
+    return { title: node.label || wording.kind(node.kind), details: [node.designation, ...summary(node.kind, node.props, wording.number)].filter(Boolean).join(" · ") };
 }
 
 /** What a screen reader says for an element: its kind, then the label exactly as drawn (so voice control finds it). */
-function spokenName(node: DiagramNode, kindName: (kind: NodeKind) => string) {
-    const { title, details } = labelText(node, kindName);
-    return [node.label && kindName(node.kind), title, details].filter(Boolean).join(" ");
+function spokenName(node: DiagramNode, wording: Wording) {
+    const { title, details } = labelText(node, wording);
+    return [node.label && wording.kind(node.kind), title, details].filter(Boolean).join(" ");
 }
 
-function NodeLabel({ node, kindName }: { node: DiagramNode; kindName: (kind: NodeKind) => string }) {
-    const { title, details } = labelText(node, kindName);
+function NodeLabel({ node, wording }: { node: DiagramNode; wording: Wording }) {
+    const { title, details } = labelText(node, wording);
     const start = labelStart(node);
     // Above a bar lying across, a second line would run into the bar: both lines go up one
     const lift = details && node.kind === "busbar" && !isUpright(node) && !node.labelAt ? 14 : 0;

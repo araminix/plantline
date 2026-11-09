@@ -50,8 +50,10 @@
     "toolbar.fit": "Ajuster",
     "action.more": "Plus",
     "checks.ok": "Aucun problème",
-    "checks.problem": "1 problème",
-    "checks.problems": "{{count}} problèmes",
+    "checks.problems": {
+        "one": "{{count}} problème",
+        "other": "{{count}} problèmes"
+    },
     "checks.show": "Afficher les vérifications",
     "note.text": "Texte",
     "note.area": "Zone",
@@ -125,9 +127,20 @@
     "link.straight": "Ligne droite",
     "link.autoRoute": "Tracé automatique",
     "link.hint": "Faites glisser un segment pour le déplacer, ou un segment d’extrémité pour ajouter un coude. Double-cliquez sur un segment pour le supprimer.",
-    "inspector.selected": "{{count}} éléments sélectionnés",
+    "inspector.selected": {
+        "one": "{{count}} élément sélectionné",
+        "other": "{{count}} éléments sélectionnés"
+    },
     "inspector.diagram": "Schéma",
-    "inspector.stats": "{{elements}} éléments, {{links}} lignes",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} élément",
+        "other": "{{count}} éléments"
+    },
+    "count.lines": {
+        "one": "{{count}} ligne",
+        "other": "{{count}} lignes"
+    },
     "field.name": "Nom",
     "field.label": "Libellé",
     "field.designation": "Désignation de référence",
@@ -194,11 +207,26 @@
     "layout.drop": "Déposez un DWG ou un DXF ici",
     "layout.or": "ou",
     "layout.orSample": "Ou essayez un exemple",
-    "layout.sampleTables": "{{count}} tables",
-    "layout.sampleTurbines": "{{count}} éoliennes",
-    "layout.sampleContainers": "{{count}} conteneurs",
-    "layout.sampleUnits": "{{count}} groupes",
-    "layout.sampleTowers": "{{count}} pylônes",
+    "layout.sampleTables": {
+        "one": "{{count}} table",
+        "other": "{{count}} tables"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} éolienne",
+        "other": "{{count}} éoliennes"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} conteneur",
+        "other": "{{count}} conteneurs"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} groupe",
+        "other": "{{count}} groupes"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} pylône",
+        "other": "{{count}} pylônes"
+    },
     "layout.tryAgain": "Réessayer",
     "layout.largeConfirm": "Ce plan est volumineux pour cet appareil ({{size}} Mo) : sa lecture peut prendre plusieurs minutes et fermer la page. Le lire quand même ?",
     "layout.error.tooLarge": "Le plan dépasse 100 Mo.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "Puissance du module",
     "layout.capacity": "Puissance installée",
     "layout.find": "Chercher un objet",
-    "layout.more": "{{count}} de plus : affinez la recherche",
+    "layout.more": {
+        "one": "{{count}} de plus : affinez la recherche",
+        "other": "{{count}} de plus : affinez la recherche"
+    },
     "layout.noneFound": "Rien trouvé.",
     "layout.block": "Bloc",
     "layout.layer": "Calque",
     "layout.legend": "Légende",
-    "layout.fromModules": "d’après {{count}} modules comptés",
+    "layout.fromModules": {
+        "one": "d’après {{count}} module compté",
+        "other": "d’après {{count}} modules comptés"
+    },
     "layout.placement": "Positionnement",
     "layout.units": "Unité du plan",
     "layout.modePoint": "Sur un point",
@@ -253,7 +287,15 @@
     "layout.advanced": "Avancé : modèles de nom",
     "layout.export": "Exporter",
     "layout.satelliteShort": "Satellite",
-    "layout.inventorySummary": "{{layers}} calques · {{blocks}} blocs",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} calque",
+        "other": "{{count}} calques"
+    },
+    "count.blocks": {
+        "one": "{{count}} bloc",
+        "other": "{{count}} blocs"
+    },
     "layout.notPlaced": "Pas encore placé",
     "layout.utmSummary": "Fuseau UTM {{zone}}",
     "kind.gridConnection": "Raccordement au réseau",

@@ -50,8 +50,10 @@
     "toolbar.fit": "Sığdır",
     "action.more": "Daha fazla",
     "checks.ok": "Sorun yok",
-    "checks.problem": "1 sorun",
-    "checks.problems": "{{count}} sorun",
+    "checks.problems": {
+        "one": "{{count}} sorun",
+        "other": "{{count}} sorun"
+    },
     "checks.show": "Denetimleri göster",
     "note.text": "Metin",
     "note.area": "Alan",
@@ -125,9 +127,20 @@
     "link.straight": "Düz çizgi",
     "link.autoRoute": "Otomatik yönlendir",
     "link.hint": "Taşımak için bir parçayı, kırılma eklemek için uçtaki parçayı sürükleyin. Kaldırmak için bir parçaya çift tıklayın.",
-    "inspector.selected": "{{count}} eleman seçildi",
+    "inspector.selected": {
+        "one": "{{count}} eleman seçildi",
+        "other": "{{count}} eleman seçildi"
+    },
     "inspector.diagram": "Şema",
-    "inspector.stats": "{{elements}} eleman, {{links}} hat",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} eleman",
+        "other": "{{count}} eleman"
+    },
+    "count.lines": {
+        "one": "{{count}} hat",
+        "other": "{{count}} hat"
+    },
     "field.name": "Ad",
     "field.label": "Etiket",
     "field.designation": "Referans tanımı",
@@ -194,11 +207,26 @@
     "layout.drop": "Bir DWG ya da DXF'yi buraya bırakın",
     "layout.or": "ya da",
     "layout.orSample": "Ya da bir örnek deneyin",
-    "layout.sampleTables": "{{count}} masa",
-    "layout.sampleTurbines": "{{count}} türbin",
-    "layout.sampleContainers": "{{count}} konteyner",
-    "layout.sampleUnits": "{{count}} ünite",
-    "layout.sampleTowers": "{{count}} direk",
+    "layout.sampleTables": {
+        "one": "{{count}} masa",
+        "other": "{{count}} masa"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} türbin",
+        "other": "{{count}} türbin"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} konteyner",
+        "other": "{{count}} konteyner"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} ünite",
+        "other": "{{count}} ünite"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} direk",
+        "other": "{{count}} direk"
+    },
     "layout.tryAgain": "Yeniden dene",
     "layout.largeConfirm": "Bu çizim bu cihaz için büyük ({{size}} MB): okunması birkaç dakika sürebilir ve sayfayı kapatabilir. Yine de okunsun mu?",
     "layout.error.tooLarge": "Çizim 100 MB'tan büyük.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "Modül gücü",
     "layout.capacity": "Kurulu güç",
     "layout.find": "Nesne bul",
-    "layout.more": "{{count}} tane daha: aramayı daraltın",
+    "layout.more": {
+        "one": "{{count}} tane daha: aramayı daraltın",
+        "other": "{{count}} tane daha: aramayı daraltın"
+    },
     "layout.noneFound": "Hiçbir şey bulunamadı.",
     "layout.block": "Blok",
     "layout.layer": "Katman",
     "layout.legend": "Gösterge",
-    "layout.fromModules": "sayılan {{count}} modülden",
+    "layout.fromModules": {
+        "one": "sayılan {{count}} modülden",
+        "other": "sayılan {{count}} modülden"
+    },
     "layout.placement": "Konumlandırma",
     "layout.units": "Çizim birimi",
     "layout.modePoint": "Bir noktada",
@@ -253,7 +287,15 @@
     "layout.advanced": "Gelişmiş: ad kalıpları",
     "layout.export": "Dışa aktar",
     "layout.satelliteShort": "Uydu",
-    "layout.inventorySummary": "{{layers}} katman · {{blocks}} blok",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} katman",
+        "other": "{{count}} katman"
+    },
+    "count.blocks": {
+        "one": "{{count}} blok",
+        "other": "{{count}} blok"
+    },
     "layout.notPlaced": "Henüz yerleştirilmedi",
     "layout.utmSummary": "UTM dilimi {{zone}}",
     "kind.gridConnection": "Şebeke bağlantısı",

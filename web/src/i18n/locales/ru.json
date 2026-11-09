@@ -50,8 +50,12 @@
     "toolbar.fit": "Вписать",
     "action.more": "Ещё",
     "checks.ok": "Нет проблем",
-    "checks.problem": "1 проблема",
-    "checks.problems": "Проблем: {{count}}",
+    "checks.problems": {
+        "one": "{{count}} проблема",
+        "few": "{{count}} проблемы",
+        "many": "{{count}} проблем",
+        "other": "{{count}} проблемы"
+    },
     "checks.show": "Показать проверки",
     "note.text": "Текст",
     "note.area": "Область",
@@ -125,9 +129,26 @@
     "link.straight": "Прямая линия",
     "link.autoRoute": "Автоматическая трассировка",
     "link.hint": "Перетащите участок, чтобы сдвинуть его, или крайний участок, чтобы добавить излом. Дважды щёлкните участок, чтобы удалить его.",
-    "inspector.selected": "Выбрано элементов: {{count}}",
+    "inspector.selected": {
+        "one": "Выбран {{count}} элемент",
+        "few": "Выбрано {{count}} элемента",
+        "many": "Выбрано {{count}} элементов",
+        "other": "Выбрано {{count}} элемента"
+    },
     "inspector.diagram": "Схема",
-    "inspector.stats": "Элементов: {{elements}}, линий: {{links}}",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} элемент",
+        "few": "{{count}} элемента",
+        "many": "{{count}} элементов",
+        "other": "{{count}} элемента"
+    },
+    "count.lines": {
+        "one": "{{count}} линия",
+        "few": "{{count}} линии",
+        "many": "{{count}} линий",
+        "other": "{{count}} линии"
+    },
     "field.name": "Название",
     "field.label": "Подпись",
     "field.designation": "Позиционное обозначение",
@@ -194,11 +215,36 @@
     "layout.drop": "Перетащите сюда DWG или DXF",
     "layout.or": "или",
     "layout.orSample": "Или откройте пример",
-    "layout.sampleTables": "столов: {{count}}",
-    "layout.sampleTurbines": "турбин: {{count}}",
-    "layout.sampleContainers": "контейнеров: {{count}}",
-    "layout.sampleUnits": "агрегатов: {{count}}",
-    "layout.sampleTowers": "опор: {{count}}",
+    "layout.sampleTables": {
+        "one": "{{count}} стол",
+        "few": "{{count}} стола",
+        "many": "{{count}} столов",
+        "other": "{{count}} стола"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} турбина",
+        "few": "{{count}} турбины",
+        "many": "{{count}} турбин",
+        "other": "{{count}} турбины"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} контейнер",
+        "few": "{{count}} контейнера",
+        "many": "{{count}} контейнеров",
+        "other": "{{count}} контейнера"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} агрегат",
+        "few": "{{count}} агрегата",
+        "many": "{{count}} агрегатов",
+        "other": "{{count}} агрегата"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} опора",
+        "few": "{{count}} опоры",
+        "many": "{{count}} опор",
+        "other": "{{count}} опоры"
+    },
     "layout.tryAgain": "Повторить",
     "layout.largeConfirm": "Этот чертёж велик для данного устройства ({{size}} МБ): чтение может занять несколько минут и закрыть страницу. Всё равно прочитать?",
     "layout.error.tooLarge": "Чертёж больше 100 МБ.",
@@ -215,12 +261,22 @@
     "layout.moduleWp": "Мощность модуля",
     "layout.capacity": "Установленная мощность",
     "layout.find": "Найти объект",
-    "layout.more": "Ещё {{count}}: уточните поиск",
+    "layout.more": {
+        "one": "Ещё {{count}}: уточните поиск",
+        "few": "Ещё {{count}}: уточните поиск",
+        "many": "Ещё {{count}}: уточните поиск",
+        "other": "Ещё {{count}}: уточните поиск"
+    },
     "layout.noneFound": "Ничего не найдено.",
     "layout.block": "Блок",
     "layout.layer": "Слой",
     "layout.legend": "Легенда",
-    "layout.fromModules": "по {{count}} подсчитанным модулям",
+    "layout.fromModules": {
+        "one": "по {{count}} подсчитанному модулю",
+        "few": "по {{count}} подсчитанным модулям",
+        "many": "по {{count}} подсчитанным модулям",
+        "other": "по {{count}} подсчитанным модулям"
+    },
     "layout.placement": "Размещение",
     "layout.units": "Единица чертежа",
     "layout.modePoint": "В точке",
@@ -253,7 +309,19 @@
     "layout.advanced": "Дополнительно: шаблоны имён",
     "layout.export": "Экспорт",
     "layout.satelliteShort": "Спутник",
-    "layout.inventorySummary": "слоёв: {{layers}} · блоков: {{blocks}}",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} слой",
+        "few": "{{count}} слоя",
+        "many": "{{count}} слоёв",
+        "other": "{{count}} слоя"
+    },
+    "count.blocks": {
+        "one": "{{count}} блок",
+        "few": "{{count}} блока",
+        "many": "{{count}} блоков",
+        "other": "{{count}} блока"
+    },
     "layout.notPlaced": "Ещё не размещён",
     "layout.utmSummary": "Зона UTM {{zone}}",
     "kind.gridConnection": "Присоединение к сети",

@@ -142,17 +142,21 @@ export function upgradeProperties(kind: NodeKind, voltageKv: number | null, rati
     return props;
 }
 
-const number = (value: string | number | undefined) => (typeof value === "number" ? String(value) : null);
-
-/** What the drawing shows under an element's name: its voltage (or voltages) and its main ratings. */
-export function summary(kind: NodeKind, props: Properties): string[] {
-    const voltages = ["hvKv", "lvKv", "tvKv"].map((id) => number(props[id as FieldId])).filter((value) => value !== null);
+/**
+ * What the drawing shows under an element's name: its voltage (or voltages) and its main ratings, the numbers written
+ * by `format` (the reader's digits).
+ */
+export function summary(kind: NodeKind, props: Properties, format: (value: number) => string = String): string[] {
+    const numeric = (id: FieldId) => (typeof props[id] === "number" ? props[id] : null);
+    const amount = (id: FieldId) => {
+        const value = numeric(id);
+        return value === null ? null : `${format(value)} ${(FIELDS[id] as { unit: string }).unit}`;
+    };
+    const voltages = (["hvKv", "lvKv", "tvKv"] as const).map(numeric).filter((value) => value !== null);
     const parts = [
-        voltages.length > 0 ? `${voltages.join("/")} kV` : null,
-        ...(["voltageKv", "acVoltageKv", "dcVoltageV"] as const).map((id) => number(props[id]) && `${props[id]} ${FIELDS[id].unit}`),
-        ...ELECTRICAL[kind]
-            .filter((id) => ["ratedPowerKva", "ratedPowerKw", "acPowerKva", "powerKw", "peakPowerKwp", "energyKwh", "reactiveMvar", "shortCircuitMva"].includes(id))
-            .map((id) => number(props[id]) && `${props[id]} ${(FIELDS[id] as { unit: string }).unit}`),
+        voltages.length > 0 ? `${voltages.map(format).join("/")} kV` : null,
+        ...(["voltageKv", "acVoltageKv", "dcVoltageV"] as const).map(amount),
+        ...ELECTRICAL[kind].filter((id) => ["ratedPowerKva", "ratedPowerKw", "acPowerKva", "powerKw", "peakPowerKwp", "energyKwh", "reactiveMvar", "shortCircuitMva"].includes(id)).map(amount),
     ];
     return parts.filter((part): part is string => !!part);
 }

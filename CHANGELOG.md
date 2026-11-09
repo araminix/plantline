@@ -9,6 +9,8 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 - Keyboard and screen readers: Tab reaches every element of the diagram (selecting it and bringing it into view);
   arrows move it, R turns it, Delete removes it, and Enter on one element and then another connects them. Dialogs
   keep the focus inside. The shortcuts sheet lists Tab and Enter.
+- Counts in every language's plural forms ("1 element", "5 элементов", Arabic's six forms), and the ratings in the
+  drawing and its exports in the language's digits and decimal mark (Persian ۳۳/۰٫۴ kV).
 
 ### Fixed
 

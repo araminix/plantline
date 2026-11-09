@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
-import type { NodeKind } from "../plants";
 import { isTyping } from "../ui/keys";
-import { contentBounds, DiagramContent, labelStart } from "./DiagramContent";
+import { contentBounds, DiagramContent, labelStart, type Wording } from "./DiagramContent";
 import { extent, itemsInBox, resizeBusbar } from "./edit";
 import { connectionPoints, dragSegment, linkShape, removeSegment, tidyRoute } from "./geometry";
 import { connect, GRID, moveNodes, noteBox, reconnect, snap, updateLink, updateNode, updateNote, type Box, type Diagram, type Point } from "./model";
@@ -30,7 +29,7 @@ interface Props {
     selection: Selection;
     /** Connect mode: the first element picked, or null while waiting for it; undefined when not connecting. */
     connectFrom: string | null | undefined;
-    kindName: (kind: NodeKind) => string;
+    wording: Wording;
     label: string;
     onSelect: (selection: Selection) => void;
     onPreview: (diagram: Diagram) => void;
@@ -76,7 +75,7 @@ const clampZoom = (k: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k));
  * segments and line ends; draw lines from connection points; pick elements to connect.
  */
 export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref) {
-    const { diagram, selection, connectFrom, kindName, label, onSelect, onPreview, onCommit, onPick, onActivate, onZoom, overviewLabel } = props;
+    const { diagram, selection, connectFrom, wording, label, onSelect, onPreview, onCommit, onPick, onActivate, onZoom, overviewLabel } = props;
     const svgRef = useRef<SVGSVGElement>(null);
     const [view, setView] = useState<View>({ x: 40, y: 40, k: 1 });
     const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -426,7 +425,7 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             onKeyDown={onKeyDown}
         >
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
-                <DiagramContent diagram={diagram} kindName={kindName} selectedNodes={selectedNodes} selectedLink={selection.link} targetNode={line?.target ?? null} movingLink={line?.moving ?? null} interactive />
+                <DiagramContent diagram={diagram} wording={wording} selectedNodes={selectedNodes} selectedLink={selection.link} targetNode={line?.target ?? null} movingLink={line?.moving ?? null} interactive />
                 {line && <line className={line.target ? "drawn-line ready" : "drawn-line"} x1={line.start.x} y1={line.start.y} x2={line.end.x} y2={line.end.y} />}
                 {box && (
                     // Left to right selects what is wholly inside (solid), right to left what it touches (dashed)

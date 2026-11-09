@@ -50,8 +50,10 @@
     "toolbar.fit": "फ़िट",
     "action.more": "और",
     "checks.ok": "कोई समस्या नहीं",
-    "checks.problem": "1 समस्या",
-    "checks.problems": "{{count}} समस्याएँ",
+    "checks.problems": {
+        "one": "{{count}} समस्या",
+        "other": "{{count}} समस्याएँ"
+    },
     "checks.show": "जाँच दिखाएँ",
     "note.text": "टेक्स्ट",
     "note.area": "क्षेत्र",
@@ -125,9 +127,20 @@
     "link.straight": "सीधी रेखा",
     "link.autoRoute": "स्वचालित मार्ग",
     "link.hint": "किसी खंड को खिसकाने के लिए उसे खींचें, या मोड़ जोड़ने के लिए सिरे वाला खंड खींचें। किसी खंड को हटाने के लिए उस पर डबल-क्लिक करें।",
-    "inspector.selected": "{{count}} तत्व चुने गए",
+    "inspector.selected": {
+        "one": "{{count}} तत्व चुना गया",
+        "other": "{{count}} तत्व चुने गए"
+    },
     "inspector.diagram": "आरेख",
-    "inspector.stats": "{{elements}} तत्व, {{links}} लाइनें",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} तत्व",
+        "other": "{{count}} तत्व"
+    },
+    "count.lines": {
+        "one": "{{count}} लाइन",
+        "other": "{{count}} लाइनें"
+    },
     "field.name": "नाम",
     "field.label": "लेबल",
     "field.designation": "संदर्भ पदनाम",
@@ -194,11 +207,26 @@
     "layout.drop": "यहाँ DWG या DXF छोड़ें",
     "layout.or": "या",
     "layout.orSample": "या एक नमूना आज़माएँ",
-    "layout.sampleTables": "{{count}} टेबल",
-    "layout.sampleTurbines": "{{count}} टर्बाइन",
-    "layout.sampleContainers": "{{count}} कंटेनर",
-    "layout.sampleUnits": "{{count}} यूनिट",
-    "layout.sampleTowers": "{{count}} टावर",
+    "layout.sampleTables": {
+        "one": "{{count}} टेबल",
+        "other": "{{count}} टेबल"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} टर्बाइन",
+        "other": "{{count}} टर्बाइन"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} कंटेनर",
+        "other": "{{count}} कंटेनर"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} यूनिट",
+        "other": "{{count}} यूनिट"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} टावर",
+        "other": "{{count}} टावर"
+    },
     "layout.tryAgain": "फिर से कोशिश करें",
     "layout.largeConfirm": "यह ड्रॉइंग इस डिवाइस के लिए बड़ी है ({{size}} MB): इसे पढ़ने में कई मिनट लग सकते हैं और पेज बंद हो सकता है। फिर भी पढ़ें?",
     "layout.error.tooLarge": "ड्रॉइंग 100 MB से बड़ी है।",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "मॉड्यूल क्षमता",
     "layout.capacity": "स्थापित क्षमता",
     "layout.find": "कोई वस्तु खोजें",
-    "layout.more": "{{count}} और: खोज को सीमित करें",
+    "layout.more": {
+        "one": "{{count}} और: खोज को सीमित करें",
+        "other": "{{count}} और: खोज को सीमित करें"
+    },
     "layout.noneFound": "कुछ नहीं मिला।",
     "layout.block": "ब्लॉक",
     "layout.layer": "लेयर",
     "layout.legend": "संकेत सूची",
-    "layout.fromModules": "{{count}} गिने गए मॉड्यूल से",
+    "layout.fromModules": {
+        "one": "{{count}} गिने गए मॉड्यूल से",
+        "other": "{{count}} गिने गए मॉड्यूल से"
+    },
     "layout.placement": "स्थिति",
     "layout.units": "ड्रॉइंग इकाई",
     "layout.modePoint": "एक बिंदु पर",
@@ -253,7 +287,15 @@
     "layout.advanced": "उन्नत: नाम पैटर्न",
     "layout.export": "निर्यात",
     "layout.satelliteShort": "उपग्रह",
-    "layout.inventorySummary": "{{layers}} लेयर · {{blocks}} ब्लॉक",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} लेयर",
+        "other": "{{count}} लेयर"
+    },
+    "count.blocks": {
+        "one": "{{count}} ब्लॉक",
+        "other": "{{count}} ब्लॉक"
+    },
     "layout.notPlaced": "अभी रखा नहीं गया",
     "layout.utmSummary": "UTM ज़ोन {{zone}}",
     "kind.gridConnection": "ग्रिड कनेक्शन",

@@ -50,8 +50,10 @@
     "toolbar.fit": "گنجاندن",
     "action.more": "بیشتر",
     "checks.ok": "بدون مشکل",
-    "checks.problem": "۱ مشکل",
-    "checks.problems": "{{count}} مشکل",
+    "checks.problems": {
+        "one": "{{count}} مشکل",
+        "other": "{{count}} مشکل"
+    },
     "checks.show": "نمایش بررسی‌ها",
     "note.text": "متن",
     "note.area": "ناحیه",
@@ -125,9 +127,20 @@
     "link.straight": "خط مستقیم",
     "link.autoRoute": "مسیر خودکار",
     "link.hint": "یک قطعه را بکشید تا جابه‌جا شود، یا قطعهٔ انتهایی را بکشید تا یک خم اضافه شود. برای حذف یک قطعه روی آن دوبار کلیک کنید.",
-    "inspector.selected": "{{count}} جزء انتخاب شده است",
+    "inspector.selected": {
+        "one": "{{count}} جزء انتخاب شده است",
+        "other": "{{count}} جزء انتخاب شده است"
+    },
     "inspector.diagram": "دیاگرام",
-    "inspector.stats": "{{elements}} جزء، {{links}} خط",
+    "inspector.stats": "{{elements}}، {{links}}",
+    "count.elements": {
+        "one": "{{count}} جزء",
+        "other": "{{count}} جزء"
+    },
+    "count.lines": {
+        "one": "{{count}} خط",
+        "other": "{{count}} خط"
+    },
     "field.name": "نام",
     "field.label": "برچسب",
     "field.designation": "شناسه مرجع",
@@ -194,11 +207,26 @@
     "layout.drop": "یک DWG یا DXF را اینجا رها کنید",
     "layout.or": "یا",
     "layout.orSample": "یا یک نمونه را امتحان کنید",
-    "layout.sampleTables": "{{count}} میز",
-    "layout.sampleTurbines": "{{count}} توربین",
-    "layout.sampleContainers": "{{count}} کانتینر",
-    "layout.sampleUnits": "{{count}} واحد",
-    "layout.sampleTowers": "{{count}} دکل",
+    "layout.sampleTables": {
+        "one": "{{count}} میز",
+        "other": "{{count}} میز"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} توربین",
+        "other": "{{count}} توربین"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} کانتینر",
+        "other": "{{count}} کانتینر"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} واحد",
+        "other": "{{count}} واحد"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} دکل",
+        "other": "{{count}} دکل"
+    },
     "layout.tryAgain": "تلاش دوباره",
     "layout.largeConfirm": "این نقشه برای این دستگاه بزرگ است ({{size}} مگابایت): خواندن آن ممکن است چند دقیقه طول بکشد و صفحه را ببندد. با این حال خوانده شود؟",
     "layout.error.tooLarge": "حجم نقشه بیش از ۱۰۰ مگابایت است.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "توان ماژول",
     "layout.capacity": "ظرفیت نصب‌شده",
     "layout.find": "جست‌وجوی یک شیء",
-    "layout.more": "{{count}} مورد دیگر: جست‌وجو را دقیق‌تر کنید",
+    "layout.more": {
+        "one": "{{count}} مورد دیگر: جست‌وجو را دقیق‌تر کنید",
+        "other": "{{count}} مورد دیگر: جست‌وجو را دقیق‌تر کنید"
+    },
     "layout.noneFound": "چیزی پیدا نشد.",
     "layout.block": "بلوک",
     "layout.layer": "لایه",
     "layout.legend": "راهنما",
-    "layout.fromModules": "از روی {{count}} ماژول شمرده‌شده",
+    "layout.fromModules": {
+        "one": "از روی {{count}} ماژول شمرده‌شده",
+        "other": "از روی {{count}} ماژول شمرده‌شده"
+    },
     "layout.placement": "جانمایی",
     "layout.units": "واحد نقشه",
     "layout.modePoint": "روی یک نقطه",
@@ -253,7 +287,15 @@
     "layout.advanced": "پیشرفته: الگوهای نام",
     "layout.export": "خروجی",
     "layout.satelliteShort": "ماهواره",
-    "layout.inventorySummary": "{{layers}} لایه · {{blocks}} بلوک",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} لایه",
+        "other": "{{count}} لایه"
+    },
+    "count.blocks": {
+        "one": "{{count}} بلوک",
+        "other": "{{count}} بلوک"
+    },
     "layout.notPlaced": "هنوز جانمایی نشده",
     "layout.utmSummary": "ناحیه UTM {{zone}}",
     "kind.gridConnection": "اتصال به شبکه",

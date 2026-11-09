@@ -50,8 +50,14 @@
     "toolbar.fit": "ملاءمة",
     "action.more": "المزيد",
     "checks.ok": "لا مشكلات",
-    "checks.problem": "مشكلة واحدة",
-    "checks.problems": "{{count}} مشكلات",
+    "checks.problems": {
+        "zero": "لا مشكلات",
+        "one": "مشكلة واحدة",
+        "two": "مشكلتان",
+        "few": "{{count}} مشكلات",
+        "many": "{{count}} مشكلة",
+        "other": "{{count}} مشكلة"
+    },
     "checks.show": "عرض الفحوص",
     "note.text": "نص",
     "note.area": "منطقة",
@@ -125,9 +131,32 @@
     "link.straight": "خط مستقيم",
     "link.autoRoute": "توجيه تلقائي",
     "link.hint": "اسحب مقطعًا لتحريكه، أو مقطعًا عند أحد الطرفين لإضافة انحناءة. انقر نقرًا مزدوجًا على مقطع لإزالته.",
-    "inspector.selected": "العناصر المحددة: {{count}}",
+    "inspector.selected": {
+        "zero": "لم يُحدَّد أي عنصر",
+        "one": "عنصر واحد محدد",
+        "two": "عنصران محددان",
+        "few": "{{count}} عناصر محددة",
+        "many": "{{count}} عنصرًا محددًا",
+        "other": "{{count}} عنصر محدد"
+    },
     "inspector.diagram": "المخطط",
-    "inspector.stats": "العناصر: {{elements}}، الخطوط: {{links}}",
+    "inspector.stats": "{{elements}}، {{links}}",
+    "count.elements": {
+        "zero": "لا عناصر",
+        "one": "عنصر واحد",
+        "two": "عنصران",
+        "few": "{{count}} عناصر",
+        "many": "{{count}} عنصرًا",
+        "other": "{{count}} عنصر"
+    },
+    "count.lines": {
+        "zero": "لا خطوط",
+        "one": "خط واحد",
+        "two": "خطان",
+        "few": "{{count}} خطوط",
+        "many": "{{count}} خطًا",
+        "other": "{{count}} خط"
+    },
     "field.name": "الاسم",
     "field.label": "التسمية",
     "field.designation": "التعيين المرجعي",
@@ -194,11 +223,46 @@
     "layout.drop": "أفلت ملف DWG أو DXF هنا",
     "layout.or": "أو",
     "layout.orSample": "أو جرّب نموذجًا",
-    "layout.sampleTables": "{{count}} طاولة",
-    "layout.sampleTurbines": "{{count}} توربينات",
-    "layout.sampleContainers": "{{count}} حاويات",
-    "layout.sampleUnits": "{{count}} وحدات",
-    "layout.sampleTowers": "{{count}} برجًا",
+    "layout.sampleTables": {
+        "zero": "لا طاولات",
+        "one": "طاولة واحدة",
+        "two": "طاولتان",
+        "few": "{{count}} طاولات",
+        "many": "{{count}} طاولة",
+        "other": "{{count}} طاولة"
+    },
+    "layout.sampleTurbines": {
+        "zero": "لا توربينات",
+        "one": "توربين واحد",
+        "two": "توربينان",
+        "few": "{{count}} توربينات",
+        "many": "{{count}} توربينًا",
+        "other": "{{count}} توربين"
+    },
+    "layout.sampleContainers": {
+        "zero": "لا حاويات",
+        "one": "حاوية واحدة",
+        "two": "حاويتان",
+        "few": "{{count}} حاويات",
+        "many": "{{count}} حاوية",
+        "other": "{{count}} حاوية"
+    },
+    "layout.sampleUnits": {
+        "zero": "لا وحدات",
+        "one": "وحدة واحدة",
+        "two": "وحدتان",
+        "few": "{{count}} وحدات",
+        "many": "{{count}} وحدة",
+        "other": "{{count}} وحدة"
+    },
+    "layout.sampleTowers": {
+        "zero": "لا أبراج",
+        "one": "برج واحد",
+        "two": "برجان",
+        "few": "{{count}} أبراج",
+        "many": "{{count}} برجًا",
+        "other": "{{count}} برج"
+    },
     "layout.tryAgain": "إعادة المحاولة",
     "layout.largeConfirm": "هذا الرسم كبير بالنسبة إلى هذا الجهاز ({{size}} ميغابايت): قد تستغرق قراءته عدة دقائق وقد تُغلق الصفحة. هل تريد قراءته على أي حال؟",
     "layout.error.tooLarge": "حجم الرسم أكبر من 100 ميغابايت.",
@@ -215,12 +279,26 @@
     "layout.moduleWp": "قدرة اللوح",
     "layout.capacity": "القدرة المركّبة",
     "layout.find": "البحث عن عنصر",
-    "layout.more": "{{count}} أخرى: ضيّق البحث",
+    "layout.more": {
+        "zero": "لا نتائج أخرى",
+        "one": "نتيجة أخرى: ضيّق البحث",
+        "two": "نتيجتان أخريان: ضيّق البحث",
+        "few": "{{count}} نتائج أخرى: ضيّق البحث",
+        "many": "{{count}} نتيجة أخرى: ضيّق البحث",
+        "other": "{{count}} نتيجة أخرى: ضيّق البحث"
+    },
     "layout.noneFound": "لم يُعثر على شيء.",
     "layout.block": "الكتلة",
     "layout.layer": "الطبقة",
     "layout.legend": "وسيلة الإيضاح",
-    "layout.fromModules": "من {{count}} لوحًا محسوبًا",
+    "layout.fromModules": {
+        "zero": "من دون ألواح محسوبة",
+        "one": "من لوح واحد محسوب",
+        "two": "من لوحين محسوبين",
+        "few": "من {{count}} ألواح محسوبة",
+        "many": "من {{count}} لوحًا محسوبًا",
+        "other": "من {{count}} لوح محسوب"
+    },
     "layout.placement": "التموضع",
     "layout.units": "وحدة الرسم",
     "layout.modePoint": "عند نقطة",
@@ -253,7 +331,23 @@
     "layout.advanced": "متقدم: أنماط الأسماء",
     "layout.export": "تصدير",
     "layout.satelliteShort": "صور فضائية",
-    "layout.inventorySummary": "{{layers}} طبقات · {{blocks}} كتل",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "zero": "لا طبقات",
+        "one": "طبقة واحدة",
+        "two": "طبقتان",
+        "few": "{{count}} طبقات",
+        "many": "{{count}} طبقة",
+        "other": "{{count}} طبقة"
+    },
+    "count.blocks": {
+        "zero": "لا كتل",
+        "one": "كتلة واحدة",
+        "two": "كتلتان",
+        "few": "{{count}} كتل",
+        "many": "{{count}} كتلة",
+        "other": "{{count}} كتلة"
+    },
     "layout.notPlaced": "لم توضع بعد",
     "layout.utmSummary": "نطاق UTM {{zone}}",
     "kind.gridConnection": "نقطة الربط بالشبكة",

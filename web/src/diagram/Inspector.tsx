@@ -231,7 +231,7 @@ export function Inspector(props: Props) {
 
     return (
         <div className="inspector">
-            <Head icon={<FileText size={24} />} title={t("inspector.diagram")} subtitle={t("inspector.stats", { elements: number(diagram.nodes.length), links: number(diagram.links.length) })} />
+            <Head icon={<FileText size={24} />} title={t("inspector.diagram")} subtitle={t("inspector.stats", { elements: t("count.elements", { count: diagram.nodes.length }), links: t("count.lines", { count: diagram.links.length }) })} />
             <Card title={t("group.general")}>
                 <TextField label={t("field.name")} value={diagram.name} onCommit={(name) => onChange({ ...diagram, name })} />
             </Card>

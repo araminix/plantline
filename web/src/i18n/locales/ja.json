@@ -50,8 +50,9 @@
     "toolbar.fit": "全体表示",
     "action.more": "その他",
     "checks.ok": "問題なし",
-    "checks.problem": "問題 1 件",
-    "checks.problems": "問題 {{count}} 件",
+    "checks.problems": {
+        "other": "問題 {{count}} 件"
+    },
     "checks.show": "チェックを表示",
     "note.text": "テキスト",
     "note.area": "エリア",
@@ -125,9 +126,17 @@
     "link.straight": "直線",
     "link.autoRoute": "自動配線",
     "link.hint": "線分をドラッグすると移動し、端の線分をドラッグすると折れ点が追加されます。線分をダブルクリックすると削除されます。",
-    "inspector.selected": "{{count}} 個の要素を選択中",
+    "inspector.selected": {
+        "other": "{{count}} 個の要素を選択中"
+    },
     "inspector.diagram": "結線図",
-    "inspector.stats": "要素 {{elements}} 個、接続線 {{links}} 本",
+    "inspector.stats": "{{elements}}、{{links}}",
+    "count.elements": {
+        "other": "要素 {{count}} 個"
+    },
+    "count.lines": {
+        "other": "接続線 {{count}} 本"
+    },
     "field.name": "名前",
     "field.label": "ラベル",
     "field.designation": "参照指定",
@@ -194,11 +203,21 @@
     "layout.drop": "DWG または DXF をここにドロップ",
     "layout.or": "または",
     "layout.orSample": "またはサンプルを試す",
-    "layout.sampleTables": "架台 {{count}}",
-    "layout.sampleTurbines": "風車 {{count}} 基",
-    "layout.sampleContainers": "コンテナ {{count}}",
-    "layout.sampleUnits": "{{count}} 号機",
-    "layout.sampleTowers": "鉄塔 {{count}} 基",
+    "layout.sampleTables": {
+        "other": "架台 {{count}}"
+    },
+    "layout.sampleTurbines": {
+        "other": "風車 {{count}} 基"
+    },
+    "layout.sampleContainers": {
+        "other": "コンテナ {{count}}"
+    },
+    "layout.sampleUnits": {
+        "other": "発電機 {{count}} 台"
+    },
+    "layout.sampleTowers": {
+        "other": "鉄塔 {{count}} 基"
+    },
     "layout.tryAgain": "再試行",
     "layout.largeConfirm": "この図面はこの端末には大きすぎます（{{size}} MB）。読み込みに数分かかり、ページが閉じる場合があります。それでも読み込みますか？",
     "layout.error.tooLarge": "図面が 100 MB を超えています。",
@@ -215,12 +234,16 @@
     "layout.moduleWp": "モジュール出力",
     "layout.capacity": "設備容量",
     "layout.find": "オブジェクトを検索",
-    "layout.more": "ほかに {{count}} 件：検索を絞り込んでください",
+    "layout.more": {
+        "other": "ほかに {{count}} 件：検索を絞り込んでください"
+    },
     "layout.noneFound": "見つかりません。",
     "layout.block": "ブロック",
     "layout.layer": "画層",
     "layout.legend": "凡例",
-    "layout.fromModules": "数えた {{count}} 枚のモジュールから",
+    "layout.fromModules": {
+        "other": "数えた {{count}} 枚のモジュールから"
+    },
     "layout.placement": "配置",
     "layout.units": "図面の単位",
     "layout.modePoint": "点で指定",
@@ -253,7 +276,13 @@
     "layout.advanced": "詳細：名前パターン",
     "layout.export": "書き出し",
     "layout.satelliteShort": "衛星写真",
-    "layout.inventorySummary": "レイヤー {{layers}} · ブロック {{blocks}}",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "other": "レイヤー {{count}}"
+    },
+    "count.blocks": {
+        "other": "ブロック {{count}}"
+    },
     "layout.notPlaced": "未配置",
     "layout.utmSummary": "UTM {{zone}} 帯",
     "kind.gridConnection": "系統連系点",

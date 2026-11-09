@@ -50,8 +50,10 @@
     "toolbar.fit": "Fit",
     "action.more": "More",
     "checks.ok": "No problems",
-    "checks.problem": "1 problem",
-    "checks.problems": "{{count}} problems",
+    "checks.problems": {
+        "one": "{{count}} problem",
+        "other": "{{count}} problems"
+    },
     "checks.show": "Show the checks",
     "note.text": "Text",
     "note.area": "Area",
@@ -125,9 +127,20 @@
     "link.straight": "Straight line",
     "link.autoRoute": "Route automatically",
     "link.hint": "Drag a segment to move it, or an end segment to add a bend. Double-click a segment to remove it.",
-    "inspector.selected": "{{count}} elements selected",
+    "inspector.selected": {
+        "one": "{{count}} element selected",
+        "other": "{{count}} elements selected"
+    },
     "inspector.diagram": "Diagram",
-    "inspector.stats": "{{elements}} elements, {{links}} lines",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "one": "{{count}} element",
+        "other": "{{count}} elements"
+    },
+    "count.lines": {
+        "one": "{{count}} line",
+        "other": "{{count}} lines"
+    },
     "field.name": "Name",
     "field.label": "Label",
     "field.designation": "Reference designation",
@@ -194,11 +207,26 @@
     "layout.drop": "Drop a DWG or DXF here",
     "layout.or": "or",
     "layout.orSample": "Or try a sample",
-    "layout.sampleTables": "{{count}} tables",
-    "layout.sampleTurbines": "{{count}} turbines",
-    "layout.sampleContainers": "{{count}} containers",
-    "layout.sampleUnits": "{{count}} units",
-    "layout.sampleTowers": "{{count}} towers",
+    "layout.sampleTables": {
+        "one": "{{count}} table",
+        "other": "{{count}} tables"
+    },
+    "layout.sampleTurbines": {
+        "one": "{{count}} turbine",
+        "other": "{{count}} turbines"
+    },
+    "layout.sampleContainers": {
+        "one": "{{count}} container",
+        "other": "{{count}} containers"
+    },
+    "layout.sampleUnits": {
+        "one": "{{count}} unit",
+        "other": "{{count}} units"
+    },
+    "layout.sampleTowers": {
+        "one": "{{count}} tower",
+        "other": "{{count}} towers"
+    },
     "layout.tryAgain": "Try again",
     "layout.largeConfirm": "This drawing is large for this device ({{size}} MB): reading it can take several minutes and may close the page. Read it anyway?",
     "layout.error.tooLarge": "The drawing is larger than 100 MB.",
@@ -215,12 +243,18 @@
     "layout.moduleWp": "Module power",
     "layout.capacity": "Installed capacity",
     "layout.find": "Find an object",
-    "layout.more": "{{count}} more: narrow the search",
+    "layout.more": {
+        "one": "{{count}} more: narrow the search",
+        "other": "{{count}} more: narrow the search"
+    },
     "layout.noneFound": "Nothing found.",
     "layout.block": "Block",
     "layout.layer": "Layer",
     "layout.legend": "Legend",
-    "layout.fromModules": "from {{count}} counted modules",
+    "layout.fromModules": {
+        "one": "from {{count}} counted module",
+        "other": "from {{count}} counted modules"
+    },
     "layout.placement": "Placement",
     "layout.units": "Drawing unit",
     "layout.modePoint": "On a point",
@@ -253,7 +287,15 @@
     "layout.advanced": "Advanced: name patterns",
     "layout.export": "Export",
     "layout.satelliteShort": "Satellite",
-    "layout.inventorySummary": "{{layers}} layers · {{blocks}} blocks",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "one": "{{count}} layer",
+        "other": "{{count}} layers"
+    },
+    "count.blocks": {
+        "one": "{{count}} block",
+        "other": "{{count}} blocks"
+    },
     "layout.notPlaced": "Not placed yet",
     "layout.utmSummary": "UTM zone {{zone}}",
     "kind.gridConnection": "Grid connection",

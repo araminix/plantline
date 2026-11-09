@@ -10,6 +10,7 @@ import { arrange } from "./arrange";
 import { Canvas, type CanvasHandle, type Selection } from "./Canvas";
 import { checkDiagram } from "./checks";
 import { exampleDiagram } from "./examples";
+import type { Wording } from "./DiagramContent";
 import { DiagramSheet, diagramSvg, download, fileNameOf, svgToPng } from "./export";
 import { FILE_EXTENSION, MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
 import { useHistory } from "./history";
@@ -51,7 +52,11 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const shortcutsButton = useRef<HTMLButtonElement>(null);
     const fileInput = useRef<HTMLInputElement>(null);
     const issues = useMemo(() => checkDiagram(diagram), [diagram]);
-    const kindName = (kind: NodeKind) => t(`kind.${kind}`);
+    // The drawing (and its exports) in the reader's words and digits; no thousands separators, as drawings write them
+    const wording = useMemo<Wording>(() => {
+        const digits = new Intl.NumberFormat(lang, { maximumFractionDigits: 6, useGrouping: false });
+        return { kind: (kind) => t(`kind.${kind}`), number: (value) => digits.format(value) };
+    }, [t, lang]);
     const baseName = fileNameOf(diagram.name, "diagram");
 
     // Saved once per change: a drag's frames are previews and are not saved, its end is. A full or blocked storage is reported.
@@ -198,7 +203,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
 
     const anything = selection.nodes.length > 0 || selection.link !== null;
     const drawn = diagram.nodes.length > 0 || diagram.notes.length > 0;
-    const problems = issues.length === 0 ? t("checks.ok") : issues.length === 1 ? t("checks.problem") : t("checks.problems", { count: number(issues.length) });
+    const problems = issues.length === 0 ? t("checks.ok") : t("checks.problems", { count: issues.length });
     const arrangeAll = () => {
         history.commit(arrange(diagram));
         requestAnimationFrame(() => canvas.current?.fit());
@@ -213,8 +218,8 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         { label: t("file.open"), icon: <FolderOpen size={16} />, onSelect: () => fileInput.current?.click() },
         { label: t("file.example"), icon: <Sparkles size={16} />, onSelect: () => openExample() },
         { label: t("file.save"), icon: <Save size={16} />, onSelect: () => download(baseName + FILE_EXTENSION, serializeDiagram(diagram), "application/json") },
-        { label: t("file.exportSvg"), icon: <Image size={16} />, onSelect: () => download(`${baseName}.svg`, diagramSvg(diagram, kindName), "image/svg+xml") },
-        { label: t("file.exportPng"), icon: <Image size={16} />, onSelect: () => void svgToPng(diagramSvg(diagram, kindName)).then((png) => download(`${baseName}.png`, png)) },
+        { label: t("file.exportSvg"), icon: <Image size={16} />, onSelect: () => download(`${baseName}.svg`, diagramSvg(diagram, wording), "image/svg+xml") },
+        { label: t("file.exportPng"), icon: <Image size={16} />, onSelect: () => void svgToPng(diagramSvg(diagram, wording)).then((png) => download(`${baseName}.png`, png)) },
         { label: t("file.print"), icon: <Printer size={16} />, onSelect: () => setPrinting(true) },
     ];
     // What a narrower toolbar keeps in its More menu (and a phone in the bottom bar's)
@@ -323,7 +328,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                         diagram={diagram}
                         selection={selection}
                         connectFrom={connectFrom}
-                        kindName={kindName}
+                        wording={wording}
                         label={t("canvas.label")}
                         onSelect={setSelection}
                         onPreview={history.preview}
@@ -400,7 +405,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
             )}
             {printing && (
                 <div className="print-sheet">
-                    <DiagramSheet diagram={diagram} kindName={kindName} />
+                    <DiagramSheet diagram={diagram} wording={wording} />
                 </div>
             )}
         </section>

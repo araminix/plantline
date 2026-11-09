@@ -48,7 +48,7 @@ export function Inventory({ contents, assignments, onAssign, hidden, onToggle, a
         <details className="card inventory">
             <summary>
                 <h3>{t("layout.inventory")}</h3>
-                <span className="summary-text">{t("layout.inventorySummary", { layers: number(contents.layers.length), blocks: number(contents.blocks.length) })}</span>
+                <span className="summary-text">{t("layout.inventorySummary", { layers: t("count.layers", { count: contents.layers.length }), blocks: t("count.blocks", { count: contents.blocks.length }) })}</span>
             </summary>
             <p className="hint">{t("layout.inventoryHint")}</p>
             <label className="search-field">

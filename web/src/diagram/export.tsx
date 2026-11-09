@@ -1,20 +1,19 @@
 import type { ReactElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import type { NodeKind } from "../plants";
-import { contentBounds, DiagramContent } from "./DiagramContent";
+import { contentBounds, DiagramContent, type Wording } from "./DiagramContent";
 import type { Diagram } from "./model";
 
 const PADDING = 32;
 
 /** The whole diagram as a standalone drawing: black on white, sized to its content. */
-export function DiagramSheet({ diagram, kindName }: { diagram: Diagram; kindName: (kind: NodeKind) => string }) {
+export function DiagramSheet({ diagram, wording }: { diagram: Diagram; wording: Wording }) {
     const [minX, minY, maxX, maxY] = contentBounds(diagram) ?? [0, 0, 320, 160];
     const [x, y, width, height] = [minX - PADDING, minY - PADDING, maxX - minX + 2 * PADDING, maxY - minY + 2 * PADDING];
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox={`${x} ${y} ${width} ${height}`} width={width} height={height} color="#111827" fontFamily="system-ui, sans-serif">
             <rect x={x} y={y} width={width} height={height} fill="#ffffff" />
-            <DiagramContent diagram={diagram} kindName={kindName} />
+            <DiagramContent diagram={diagram} wording={wording} />
         </svg>
     );
 }
@@ -29,8 +28,7 @@ export function renderMarkup(element: ReactElement): string {
     return markup;
 }
 
-export const diagramSvg = (diagram: Diagram, kindName: (kind: NodeKind) => string) =>
-    `<?xml version="1.0" encoding="UTF-8"?>\n${renderMarkup(<DiagramSheet diagram={diagram} kindName={kindName} />)}\n`;
+export const diagramSvg = (diagram: Diagram, wording: Wording) => `<?xml version="1.0" encoding="UTF-8"?>\n${renderMarkup(<DiagramSheet diagram={diagram} wording={wording} />)}\n`;
 
 /** The SVG drawn on a canvas at twice its size, as a PNG. */
 export async function svgToPng(svg: string): Promise<Blob> {

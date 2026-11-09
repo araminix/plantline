@@ -50,8 +50,9 @@
     "toolbar.fit": "맞춤",
     "action.more": "더 보기",
     "checks.ok": "문제 없음",
-    "checks.problem": "문제 1개",
-    "checks.problems": "문제 {{count}}개",
+    "checks.problems": {
+        "other": "문제 {{count}}개"
+    },
     "checks.show": "검사 보기",
     "note.text": "텍스트",
     "note.area": "영역",
@@ -125,9 +126,17 @@
     "link.straight": "직선",
     "link.autoRoute": "자동 경로",
     "link.hint": "선분을 끌어 이동하거나 끝 선분을 끌어 꺾임을 추가하세요. 선분을 두 번 클릭하면 삭제됩니다.",
-    "inspector.selected": "요소 {{count}}개 선택됨",
+    "inspector.selected": {
+        "other": "요소 {{count}}개 선택됨"
+    },
     "inspector.diagram": "결선도",
-    "inspector.stats": "요소 {{elements}}개, 연결선 {{links}}개",
+    "inspector.stats": "{{elements}}, {{links}}",
+    "count.elements": {
+        "other": "요소 {{count}}개"
+    },
+    "count.lines": {
+        "other": "연결선 {{count}}개"
+    },
     "field.name": "이름",
     "field.label": "레이블",
     "field.designation": "참조 지정",
@@ -194,11 +203,21 @@
     "layout.drop": "DWG 또는 DXF를 여기에 놓으세요",
     "layout.or": "또는",
     "layout.orSample": "또는 샘플 사용해 보기",
-    "layout.sampleTables": "테이블 {{count}}개",
-    "layout.sampleTurbines": "터빈 {{count}}기",
-    "layout.sampleContainers": "컨테이너 {{count}}개",
-    "layout.sampleUnits": "발전기 {{count}}대",
-    "layout.sampleTowers": "철탑 {{count}}기",
+    "layout.sampleTables": {
+        "other": "테이블 {{count}}개"
+    },
+    "layout.sampleTurbines": {
+        "other": "터빈 {{count}}기"
+    },
+    "layout.sampleContainers": {
+        "other": "컨테이너 {{count}}개"
+    },
+    "layout.sampleUnits": {
+        "other": "발전기 {{count}}대"
+    },
+    "layout.sampleTowers": {
+        "other": "철탑 {{count}}기"
+    },
     "layout.tryAgain": "다시 시도",
     "layout.largeConfirm": "이 도면은 이 기기에서 처리하기에 큽니다({{size}} MB). 읽는 데 몇 분이 걸리고 페이지가 닫힐 수 있습니다. 그래도 읽을까요?",
     "layout.error.tooLarge": "도면이 100MB보다 큽니다.",
@@ -215,12 +234,16 @@
     "layout.moduleWp": "모듈 출력",
     "layout.capacity": "설비 용량",
     "layout.find": "객체 찾기",
-    "layout.more": "{{count}}개 더 있음: 검색 범위를 좁히세요",
+    "layout.more": {
+        "other": "{{count}}개 더 있음: 검색 범위를 좁히세요"
+    },
     "layout.noneFound": "찾은 항목이 없습니다.",
     "layout.block": "블록",
     "layout.layer": "레이어",
     "layout.legend": "범례",
-    "layout.fromModules": "집계된 모듈 {{count}}개 기준",
+    "layout.fromModules": {
+        "other": "집계된 모듈 {{count}}개 기준"
+    },
     "layout.placement": "배치",
     "layout.units": "도면 단위",
     "layout.modePoint": "한 점에 배치",
@@ -253,7 +276,13 @@
     "layout.advanced": "고급: 이름 패턴",
     "layout.export": "내보내기",
     "layout.satelliteShort": "위성",
-    "layout.inventorySummary": "레이어 {{layers}}개 · 블록 {{blocks}}개",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "other": "레이어 {{count}}개"
+    },
+    "count.blocks": {
+        "other": "블록 {{count}}개"
+    },
     "layout.notPlaced": "아직 배치 안 됨",
     "layout.utmSummary": "UTM {{zone}} 구역",
     "kind.gridConnection": "계통 연계점",

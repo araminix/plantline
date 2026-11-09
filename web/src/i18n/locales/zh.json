@@ -50,8 +50,9 @@
     "toolbar.fit": "适应",
     "action.more": "更多",
     "checks.ok": "没有问题",
-    "checks.problem": "1 个问题",
-    "checks.problems": "{{count}} 个问题",
+    "checks.problems": {
+        "other": "{{count}} 个问题"
+    },
     "checks.show": "显示检查",
     "note.text": "文字",
     "note.area": "区域",
@@ -125,9 +126,17 @@
     "link.straight": "直线",
     "link.autoRoute": "自动布线",
     "link.hint": "拖动线段可移动它，拖动端部线段可添加折点。双击线段可将其删除。",
-    "inspector.selected": "已选择 {{count}} 个元件",
+    "inspector.selected": {
+        "other": "已选择 {{count}} 个元件"
+    },
     "inspector.diagram": "单线图",
-    "inspector.stats": "{{elements}} 个元件，{{links}} 条线路",
+    "inspector.stats": "{{elements}}，{{links}}",
+    "count.elements": {
+        "other": "{{count}} 个元件"
+    },
+    "count.lines": {
+        "other": "{{count}} 条线路"
+    },
     "field.name": "名称",
     "field.label": "标签",
     "field.designation": "参照代号",
@@ -194,11 +203,21 @@
     "layout.drop": "将 DWG 或 DXF 拖放到此处",
     "layout.or": "或",
     "layout.orSample": "或试试示例",
-    "layout.sampleTables": "{{count}} 个支架",
-    "layout.sampleTurbines": "{{count}} 台风机",
-    "layout.sampleContainers": "{{count}} 个集装箱",
-    "layout.sampleUnits": "{{count}} 台机组",
-    "layout.sampleTowers": "{{count}} 基铁塔",
+    "layout.sampleTables": {
+        "other": "{{count}} 个支架"
+    },
+    "layout.sampleTurbines": {
+        "other": "{{count}} 台风机"
+    },
+    "layout.sampleContainers": {
+        "other": "{{count}} 个集装箱"
+    },
+    "layout.sampleUnits": {
+        "other": "{{count}} 台机组"
+    },
+    "layout.sampleTowers": {
+        "other": "{{count}} 基铁塔"
+    },
     "layout.tryAgain": "重试",
     "layout.largeConfirm": "此图纸对本设备而言较大（{{size}} MB）：读取可能需要几分钟，并可能导致页面关闭。仍要读取吗？",
     "layout.error.tooLarge": "图纸超过 100 MB。",
@@ -215,12 +234,16 @@
     "layout.moduleWp": "组件功率",
     "layout.capacity": "装机容量",
     "layout.find": "查找对象",
-    "layout.more": "还有 {{count}} 个：请缩小搜索范围",
+    "layout.more": {
+        "other": "还有 {{count}} 个：请缩小搜索范围"
+    },
     "layout.noneFound": "未找到。",
     "layout.block": "图块",
     "layout.layer": "图层",
     "layout.legend": "图例",
-    "layout.fromModules": "基于计数的 {{count}} 块组件",
+    "layout.fromModules": {
+        "other": "基于计数的 {{count}} 块组件"
+    },
     "layout.placement": "定位",
     "layout.units": "图纸单位",
     "layout.modePoint": "按点定位",
@@ -253,7 +276,13 @@
     "layout.advanced": "高级：名称规则",
     "layout.export": "导出",
     "layout.satelliteShort": "卫星",
-    "layout.inventorySummary": "{{layers}} 个图层 · {{blocks}} 个块",
+    "layout.inventorySummary": "{{layers}} · {{blocks}}",
+    "count.layers": {
+        "other": "{{count}} 个图层"
+    },
+    "count.blocks": {
+        "other": "{{count}} 个块"
+    },
     "layout.notPlaced": "尚未放置",
     "layout.utmSummary": "UTM {{zone}} 带",
     "kind.gridConnection": "并网点",

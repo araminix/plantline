@@ -18,11 +18,13 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-02 | US-01 | Every plant type has a palette of known elements, without repeats, with a grid connection. | `plants.test.ts` › give every plant type a palette… |
 | TC-02a | US-10 | Every element is in exactly one palette group; the palette's search and groups show the plant type's elements in its own order. | `plants.test.ts` › put every element in exactly one palette group; `App.test.tsx` › changes the palette with the plant type… |
 | TC-03 | US-02 | Changing the plant type changes the palette and keeps the diagram. | `App.test.tsx` › changes the palette with the plant type and keeps the diagram |
-| TC-04 | US-03 | Every language has exactly the English messages, none empty, with the same placeholders. | `i18n.test.ts` › have a file for every language… |
+| TC-04 | US-03 | Every language has exactly the English messages, none empty, with the same placeholders; a count has exactly the plural forms the language uses for whole numbers. | `i18n.test.ts` › have a file for every language… |
 | TC-05 | US-03 | Every plant type and every element and object kind has a name. | `i18n.test.ts` › name every plant type… |
 | TC-06 | US-03 | Arabic and Persian are right to left, the others left to right. | `i18n.test.ts` › write Arabic and Persian right to left…; `App.test.tsx` › turns the page right to left in Arabic |
 | TC-07 | US-03 | The first browser language the app speaks is chosen (pt-BR is Portuguese), else English. | `i18n.test.ts` › pick the first browser language… |
 | TC-08 | US-03 | A missing message falls back to English; placeholders are filled. | `i18n.test.ts` › fill placeholders and fall back… |
+| TC-08a | US-03 | Counts take the language's plural form, in its digits: English 1 problem / 1,234 problems; Russian 1, 3, 5, 11, 21, 22; Arabic 0, 1, 2, 3, 11, 100; Persian ۱۲; two counts in one message. | `i18n.test.ts` › choose the plural form of the language… |
+| TC-08b | US-03, US-21 | The drawing's ratings are written in the reader's digits, without thousands separators (Persian: ۳۳/۰٫۶۹ kV · ۴۸۰۰ kVA), also in exports. | `export.test.tsx` › write the ratings in the reader's digits… |
 | TC-09 | US-03, US-05 | In Persian the layout mirrors (palette on the right) and nothing scrolls sideways, on desktop and phone. | e2e › mirrors the layout in Persian… |
 | TC-10 | US-04 | The theme switches between light and dark. | `App.test.tsx` › switches between the light and dark themes |
 | TC-11 | US-05 | No view scrolls sideways on a phone or a desktop. | e2e › every test ends with this check |

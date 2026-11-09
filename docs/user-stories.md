@@ -32,6 +32,8 @@ battery storage, hydropower, substation or transmission line), so the tool shows
 - Arabic and Persian lay the whole page out right to left; drawings stay left to right.
 - Latin, Greek and Cyrillic letters use Inter and Arabic and Persian use Estedad on every device, served with the site.
 - Every message exists in every language.
+- Counts read naturally, in each language's plural forms ("1 problem", "5 проблем"), and numbers, also those in the
+  drawing and its exports, are written as the language writes them (Persian digits, decimal commas).
 
 **US-04 Light or dark.** As a user, I choose a light or dark theme, or follow my system (the first choice). The map
 stays readable in both, and satellite imagery keeps its real colours.
