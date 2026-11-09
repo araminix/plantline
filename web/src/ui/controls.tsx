@@ -19,8 +19,9 @@ export interface MenuItem {
 
 /**
  * A button opening a list of actions. The list is drawn over the page (a portal), placed under the button and
- * mirrored in right-to-left languages, so no scrolling toolbar or panel can clip or cover it. Arrow keys, Home and End
- * move between items; Escape, Tab or a click elsewhere closes it and focus returns to the button.
+ * mirrored in right-to-left languages, so no scrolling toolbar or panel can clip or cover it; it follows the button
+ * while the page or a toolbar scrolls, and closes once the button is out of view. Arrow keys, Home and End move between
+ * items; Escape, Tab or a click elsewhere closes it and focus returns to the button.
  */
 export function Menu({ label, icon, items }: { label: string; icon: ReactNode; items: MenuItem[] }) {
     const [place, setPlace] = useState<CSSProperties | null>(null);
@@ -33,30 +34,34 @@ export function Menu({ label, icon, items }: { label: string; icon: ReactNode; i
         if (refocus) button.current?.focus();
     };
 
-    const toggle = () => {
-        if (place) return close(false);
+    // Under the button, or null when the button is out of view
+    const placeUnder = (): CSSProperties | null => {
         const box = button.current!.getBoundingClientRect();
+        if (box.bottom < 0 || box.top > window.innerHeight || box.right < 0 || box.left > window.innerWidth) return null;
         const rtl = getComputedStyle(button.current!).direction === "rtl";
-        setPlace({ top: box.bottom + 4, ...(rtl ? { right: document.documentElement.clientWidth - box.right } : { left: box.left }) });
+        return { top: box.bottom + 4, ...(rtl ? { right: document.documentElement.clientWidth - box.right } : { left: box.left }) };
     };
 
+    const toggle = () => (place ? close(false) : setPlace(placeUnder()));
+
+    const open = place !== null;
     useEffect(() => {
-        if (!place) return;
+        if (!open) return;
         list.current?.querySelector<HTMLButtonElement>("[role=menuitem]")?.focus();
         const outside = (event: Event) => {
             const target = event.target as Node;
             if (!list.current?.contains(target) && !button.current?.contains(target)) close(false);
         };
-        const away = () => close(false);
+        const follow = () => setPlace(placeUnder());
         document.addEventListener("pointerdown", outside);
-        window.addEventListener("resize", away);
-        window.addEventListener("scroll", away, true);
+        window.addEventListener("resize", follow);
+        window.addEventListener("scroll", follow, true);
         return () => {
             document.removeEventListener("pointerdown", outside);
-            window.removeEventListener("resize", away);
-            window.removeEventListener("scroll", away, true);
+            window.removeEventListener("resize", follow);
+            window.removeEventListener("scroll", follow, true);
         };
-    }, [place]);
+    }, [open]); // only opening and closing: a new position must not move the focus back to the first item
 
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         const entries = [...list.current!.querySelectorAll<HTMLButtonElement>("[role=menuitem]")];

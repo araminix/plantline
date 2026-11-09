@@ -56,4 +56,18 @@ describe("menu", () => {
         fireEvent.pointerDown(document.body);
         expect(screen.queryByRole("menu")).toBeNull();
     });
+
+    it("follows its button while the page or a toolbar scrolls, keeping the focus, and closes once the button is out of view", () => {
+        open();
+        const button = screen.getByRole("button", { name: "File" });
+        const buttonAt = (top: number) => vi.spyOn(button, "getBoundingClientRect").mockReturnValue({ top, bottom: top + 30, left: 10, right: 70, x: 10, y: top, width: 60, height: 30, toJSON: () => ({}) });
+        fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowDown" });
+        buttonAt(100);
+        fireEvent.scroll(window);
+        expect(screen.getByRole("menu").style.top).toBe("134px");
+        expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: "Open" }));
+        buttonAt(-100);
+        fireEvent.scroll(window);
+        expect(screen.queryByRole("menu")).toBeNull();
+    });
 });
