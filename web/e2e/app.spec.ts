@@ -134,6 +134,41 @@ test("drags an element from the palette onto the drawing; tapped elements never 
     boxes.forEach((a, i) => boxes.slice(i + 1).forEach((b) => expect(a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom, "two elements overlap").toBe(false)));
 });
 
+test("draws a line from a connection point and moves its end to another element", async ({ page }) => {
+    await start(page, "Solar PV");
+    for (const element of ["Busbar", "Grid connection", "Inverter"]) await add(page, element);
+    const [busbar, grid, inverter] = [0, 1, 2].map((index) => page.locator("[data-node]").nth(index));
+    const drag = (from: Point, to: Point) => (isPhone(page) ? touchDrag(page, from, to) : mouseDrag(page, from, to));
+    const links = page.locator("[data-link]");
+
+    // From the grid connection's only connection point (its bottom) to the busbar
+    await grid!.click();
+    await drag(await centreOf(grid!.locator('[data-port="down"] .port-dot')), await centreOf(busbar!.locator(".hit")));
+    await expect(links).toHaveCount(1);
+    // Dropped on the empty drawing: no line
+    await inverter!.click();
+    const canvas = (await page.locator(".canvas").boundingBox())!;
+    await drag(await centreOf(inverter!.locator('[data-port="up"] .port-dot')), { x: canvas.x + 20, y: canvas.y + 20 });
+    await expect(links).toHaveCount(1);
+
+    // Select the line halfway along it, then drag its busbar end onto the inverter
+    await page.getByRole("button", { name: "Arrange automatically" }).click();
+    // Again until the view has settled on the arranged diagram
+    await expect(async () => {
+        const middle = await links.locator("path").first().evaluate((path: SVGPathElement) => {
+            const point = path.getPointAtLength(path.getTotalLength() / 2);
+            const matrix = path.getScreenCTM()!;
+            return { x: point.x * matrix.a + matrix.e, y: point.y * matrix.d + matrix.f };
+        });
+        await page.mouse.click(middle.x, middle.y);
+        await expect(page.locator('[data-end="to"]')).toBeVisible({ timeout: 500 });
+    }).toPass();
+    await drag(await centreOf(page.locator('[data-end="to"]')), await centreOf(inverter!.locator(".hit")));
+    await expect(links).toHaveCount(1);
+    if (isPhone(page)) await page.getByRole("navigation").getByRole("button", { name: /Properties/ }).click();
+    await expect(page.getByText("Grid connection — Inverter")).toBeVisible();
+});
+
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {
     await start(page, "Substation");
     await page.getByRole("button", { name: "File" }).click();

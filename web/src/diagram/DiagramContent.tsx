@@ -1,4 +1,5 @@
 import type { NodeKind } from "../plants";
+import { busbarHalf, linkPoints, pathOf, sidesOf } from "./geometry";
 import { NODE_SIZE, type Diagram, type DiagramNode } from "./model";
 import { NodeSymbol } from "./symbols";
 
@@ -9,13 +10,22 @@ interface Props {
     kindName: (kind: NodeKind) => string;
     selectedNodes?: ReadonlySet<string>;
     selectedLink?: string | null;
-    /** The canvas adds invisible hit areas for the pointer; an export leaves them out. */
+    /** The element a line being drawn would connect to. */
+    targetNode?: string | null;
+    /** The line whose end is being moved, drawn faintly meanwhile. */
+    movingLink?: string | null;
+    /** The canvas adds hit areas, connection points and line ends for the pointer; an export leaves them out. */
     interactive?: boolean;
 }
 
 /** The elements and links of a diagram, in diagram coordinates. Used by the canvas and by every export. */
-export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink, interactive = false }: Props) {
+export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink, targetNode, movingLink, interactive = false }: Props) {
     const byId = new Map(diagram.nodes.map((node) => [node.id, node]));
+    const ends = (() => {
+        const link = interactive ? diagram.links.find((candidate) => candidate.id === selectedLink) : undefined;
+        const [from, to] = [byId.get(link?.from ?? ""), byId.get(link?.to ?? "")];
+        return link && from && to ? { link, points: linkPoints(from, to) } : null;
+    })();
     return (
         <>
             <g className="sld-links" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -23,9 +33,9 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                     const from = byId.get(link.from);
                     const to = byId.get(link.to);
                     if (!from || !to) return null;
-                    const path = linkPath(from, to);
+                    const path = pathOf(linkPoints(from, to));
                     return (
-                        <g key={link.id} data-link={link.id} className={link.id === selectedLink ? "selected" : undefined}>
+                        <g key={link.id} data-link={link.id} className={classes(link.id === selectedLink && "selected", link.id === movingLink && "moving")}>
                             <path d={path} />
                             {interactive && <path d={path} className="hit" stroke="transparent" strokeWidth={14} />}
                         </g>
@@ -33,10 +43,38 @@ export function DiagramContent({ diagram, kindName, selectedNodes, selectedLink,
                 })}
             </g>
             {diagram.nodes.map((node) => (
-                <g key={node.id} data-node={node.id} transform={`translate(${node.x} ${node.y})`} className={selectedNodes?.has(node.id) ? "sld-node selected" : "sld-node"}>
+                <g key={node.id} data-node={node.id} transform={`translate(${node.x} ${node.y})`} className={classes("sld-node", selectedNodes?.has(node.id) && "selected", node.id === targetNode && "target")}>
                     {node.kind === "busbar" ? <rect x={-busbarHalf(node)} y={-3} width={busbarHalf(node) * 2} height={6} fill="currentColor" /> : <NodeSymbol kind={node.kind} />}
                     {interactive && <rect className="hit" {...hitBox(node)} fill="transparent" />}
                     <NodeLabel node={node} kindName={kindName} />
+                    {interactive && <Ports node={node} />}
+                </g>
+            ))}
+            {/* The selected line's ends, over the elements: drag one to another element */}
+            {ends && (
+                <g data-link-ends={ends.link.id}>
+                    <circle className="link-end" data-end="from" cx={ends.points[0]!.x} cy={ends.points[0]!.y} r={6} />
+                    <circle className="link-end" data-end="to" cx={ends.points.at(-1)!.x} cy={ends.points.at(-1)!.y} r={6} />
+                </g>
+            )}
+        </>
+    );
+}
+
+const classes = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(" ") || undefined;
+
+/** The connection points a line can be dragged from: each lead's end, or along a busbar. Shown on hover and selection. */
+function Ports({ node }: { node: DiagramNode }) {
+    const points =
+        node.kind === "busbar"
+            ? [-1, 0, 1].map((at) => ({ key: at, x: at * Math.max(0, busbarHalf(node) - 8), y: 0 }))
+            : sidesOf(node).map((side) => ({ key: side, x: 0, y: side === "up" ? -HALF : HALF }));
+    return (
+        <>
+            {points.map(({ key, x, y }) => (
+                <g key={key} className="port" data-port={key}>
+                    <circle cx={x} cy={y} r={9} fill="transparent" stroke="none" />
+                    <circle cx={x} cy={y} r={4.5} className="port-dot" />
                 </g>
             ))}
         </>
@@ -59,36 +97,12 @@ function NodeLabel({ node, kindName }: { node: DiagramNode; kindName: (kind: Nod
     );
 }
 
-const busbarHalf = (node: DiagramNode) => (node.width ?? 240) / 2;
-
 /** Where the pointer selects an element: the symbol and its label (easier to hit with a finger), or the whole busbar. */
 const LABEL_WIDTH = 110;
 const hitBox = (node: DiagramNode) =>
     node.kind === "busbar"
         ? { x: -busbarHalf(node), y: -12, width: busbarHalf(node) * 2, height: 24 }
         : { x: -HALF, y: -HALF, width: NODE_SIZE + LABEL_WIDTH, height: NODE_SIZE };
-
-/** Where a link meets an element: the top or bottom connection point, anywhere along a busbar. */
-function port(node: DiagramNode, side: "top" | "bottom", towardsX: number): [number, number] {
-    if (node.kind === "busbar") {
-        const half = busbarHalf(node) - 8;
-        return [Math.min(Math.max(towardsX, node.x - half), node.x + half), node.y];
-    }
-    return [node.x, node.y + (side === "top" ? -HALF : HALF)];
-}
-
-/** An orthogonal path from the upper element down to the lower one; side by side when they are on one row. */
-export function linkPath(a: DiagramNode, b: DiagramNode): string {
-    const [upper, lower] = a.y <= b.y ? [a, b] : [b, a];
-    if (Math.abs(upper.y - lower.y) < HALF && upper.kind !== "busbar" && lower.kind !== "busbar") {
-        const [left, right] = upper.x <= lower.x ? [upper, lower] : [lower, upper];
-        return `M${left.x + HALF} ${left.y} H${right.x - HALF}`;
-    }
-    const [x1, y1] = port(upper, "bottom", lower.x);
-    const [x2, y2] = port(lower, "top", upper.x);
-    const middle = (y1 + y2) / 2;
-    return `M${x1} ${y1} V${middle} H${x2} V${y2}`;
-}
 
 /** The extent of the drawn diagram (minX, minY, maxX, maxY), labels included roughly; null when empty. */
 export function contentBounds(diagram: Diagram): [number, number, number, number] | null {

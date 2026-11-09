@@ -1,7 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { NodeKind } from "../plants";
 import { contentBounds, DiagramContent } from "./DiagramContent";
-import { GRID, moveNodes, type Diagram, type Point } from "./model";
+import { busbarHalf, linkPoints, portAt, type Side } from "./geometry";
+import { connect, GRID, moveNodes, reconnect, type Diagram, type Point } from "./model";
 
 export interface Selection {
     nodes: string[];
@@ -39,6 +40,8 @@ interface View {
 type Gesture =
     | { type: "pan"; start: { x: number; y: number }; view: View }
     | { type: "drag"; start: { x: number; y: number }; base: Diagram; ids: Set<string>; moved: boolean }
+    /** A line drawn from a connection point (or, `end` set, an existing line's end being moved) */
+    | { type: "line"; from: string; end: { link: string; end: "from" | "to" } | null }
     | { type: "pinch"; distance: number; view: View; middle: { x: number; y: number } };
 
 const MIN_ZOOM = 0.2;
@@ -53,6 +56,8 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
     const [view, setView] = useState<View>({ x: 40, y: 40, k: 1 });
     const pointers = useRef(new Map<number, { x: number; y: number }>());
     const gesture = useRef<Gesture | null>(null);
+    // The line being drawn, in diagram coordinates, and the element it would connect to
+    const [line, setLine] = useState<{ start: Point; end: Point; target: string | null; moving: string | null } | null>(null);
     // A diagram opened with content is fitted once; an empty one is not, so adding the first element does not zoom
     const fitted = useRef(diagram.nodes.length === 0);
 
@@ -112,6 +117,12 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         return () => svg.removeEventListener("wheel", onWheel);
     }, []);
 
+    const byId = new Map(diagram.nodes.map((node) => [node.id, node]));
+    const toDiagram = (point: Point): Point => ({ x: (point.x - view.x) / view.k, y: (point.y - view.y) / view.k });
+    /** The diagram with the line drawn to `target`, or null when it cannot go there. */
+    const lineResult = (current: Extract<Gesture, { type: "line" }>, target: string) =>
+        current.end ? reconnect(diagram, current.end.link, current.end.end, target) : connect(diagram, current.from, target);
+
     const local = (event: { clientX: number; clientY: number }) => {
         const { left, top } = size();
         return { x: event.clientX - left, y: event.clientY - top };
@@ -134,10 +145,25 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
 
         const target = event.target as Element;
         const nodeId = target.closest("[data-node]")?.getAttribute("data-node");
-        const linkId = target.closest("[data-link]")?.getAttribute("data-link");
+        const linkId = target.closest("[data-link]")?.getAttribute("data-link") ?? target.closest("[data-link-ends]")?.getAttribute("data-link-ends");
+        const port = target.closest("[data-port]")?.getAttribute("data-port");
+        const end = target.closest("[data-end]")?.getAttribute("data-end");
         const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+        const at = toDiagram(point);
 
-        if (nodeId && connectFrom !== undefined) {
+        if (linkId && (end === "from" || end === "to")) {
+            // The other end stays; this one follows the pointer to another element
+            const link = diagram.links.find((candidate) => candidate.id === linkId)!;
+            const points = linkPoints(byId.get(link.from)!, byId.get(link.to)!);
+            const fixed = end === "from" ? link.to : link.from;
+            gesture.current = { type: "line", from: fixed, end: { link: linkId, end } };
+            setLine({ start: end === "from" ? points.at(-1)! : points[0]!, end: at, target: null, moving: linkId });
+        } else if (nodeId && port && connectFrom === undefined) {
+            const node = byId.get(nodeId)!;
+            const start = node.kind === "busbar" ? { x: node.x + Number(port) * Math.max(0, busbarHalf(node) - 8), y: node.y } : portAt(node, port as Side, at);
+            gesture.current = { type: "line", from: nodeId, end: null };
+            setLine({ start, end: at, target: null, moving: null });
+        } else if (nodeId && connectFrom !== undefined) {
             onPick(nodeId);
         } else if (nodeId) {
             const selected = selection.nodes.includes(nodeId);
@@ -164,6 +190,10 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             setView({ k, x: middle.x - ((middle.x - start.x) * k) / start.k, y: middle.y - ((middle.y - start.y) * k) / start.k });
         } else if (current?.type === "pan") {
             setView({ ...current.view, x: current.view.x + point.x - current.start.x, y: current.view.y + point.y - current.start.y });
+        } else if (current?.type === "line") {
+            const id = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-node]")?.getAttribute("data-node") ?? null;
+            const target = id && lineResult(current, id) ? id : null;
+            setLine((drawn) => drawn && { ...drawn, end: toDiagram(point), target });
         } else if (current?.type === "drag") {
             const [dx, dy] = [point.x - current.start.x, point.y - current.start.y];
             if (!current.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
@@ -178,6 +208,10 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         pointers.current.delete(event.pointerId);
         if (current?.type === "drag" && current.moved) {
             onCommit(moveNodes(current.base, current.ids, (point.x - current.start.x) / view.k, (point.y - current.start.y) / view.k, true), current.base);
+        } else if (current?.type === "line") {
+            const result = line?.target && event.type === "pointerup" ? lineResult(current, line.target) : null;
+            if (result) onCommit(result, diagram);
+            setLine(null);
         }
         gesture.current = null;
     };
@@ -186,7 +220,7 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
     return (
         <svg
             ref={svgRef}
-            className={connectFrom !== undefined ? "canvas connecting" : "canvas"}
+            className={connectFrom !== undefined || line ? "canvas connecting" : "canvas"}
             aria-label={label}
             // A drawing reads left to right in every language
             style={{ direction: "ltr", backgroundSize: `${GRID * view.k}px ${GRID * view.k}px`, backgroundPosition: `${view.x}px ${view.y}px` }}
@@ -196,7 +230,8 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
             onPointerCancel={onPointerUp}
         >
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
-                <DiagramContent diagram={diagram} kindName={kindName} selectedNodes={selectedNodes} selectedLink={selection.link} interactive />
+                <DiagramContent diagram={diagram} kindName={kindName} selectedNodes={selectedNodes} selectedLink={selection.link} targetNode={line?.target ?? null} movingLink={line?.moving ?? null} interactive />
+                {line && <line className={line.target ? "drawn-line ready" : "drawn-line"} x1={line.start.x} y1={line.start.y} x2={line.end.x} y2={line.end.y} />}
             </g>
         </svg>
     );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, removeItems, updateNode, type Diagram } from "./model";
+import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, reconnect, removeItems, updateNode, type Diagram } from "./model";
 
 const twoNodes = () => {
     const first = addNode(emptyDiagram("solar"), "inverter", 101, 99);
@@ -31,6 +31,18 @@ describe("diagram model", () => {
         expect(linked?.links).toHaveLength(1);
         expect(connect(linked!, b, a)).toBeNull();
         expect(connect(diagram, a, a)).toBeNull();
+    });
+
+    it("moves a line's end to another element, never onto the element at its other end or into a repeated line", () => {
+        const { diagram, a, b } = twoNodes();
+        const third = addNode(diagram, "fuse", 600, 100);
+        const linked = connect(third.diagram, a, b)!;
+        const link = linked.links[0]!.id;
+        expect(reconnect(linked, link, "to", third.id)?.links[0]).toMatchObject({ id: link, from: a, to: third.id });
+        expect(reconnect(linked, link, "to", a)).toBeNull();
+        expect(reconnect(linked, link, "to", b)).toBeNull();
+        const twoLinks = connect(linked, a, third.id)!;
+        expect(reconnect(twoLinks, link, "to", third.id)).toBeNull();
     });
 
     it("moves elements freely during a drag and back onto the grid at its end", () => {

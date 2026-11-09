@@ -41,6 +41,9 @@ request ([CI](../.github/workflows/ci.yml)).
 | TC-23 | US-11, US-15 | A drag is one undo step; previews are not steps. | `history.test.ts` › makes a drag one step…, counts the changes worth saving… |
 | TC-24 | US-12 | Two elements connect once; never an element to itself. | `model.test.ts` › connects two elements once… |
 | TC-25 | US-12 | Connecting by picking elements on the canvas, with a mouse and with touch. | e2e › builds, connects, checks and saves… |
+| TC-25a | US-12 | A line dragged from a connection point onto an element connects them, with a mouse and a finger; dropped on the empty drawing, nothing is added. | e2e › draws a line from a connection point… |
+| TC-25b | US-12 | A selected line's end dragged onto another element reconnects it; never onto the element at its other end or into a repeated line. | `model.test.ts` › moves a line's end…; e2e › draws a line from a connection point… |
+| TC-25c | US-12 | Connection points are where symbols have leads; lines leave the upper element at the bottom, meet a busbar within its length, and join two symbols on one row from side to side. | `geometry.test.ts` (4 tests) |
 | TC-26 | US-13, US-14 | Fields are edited; removing an element removes its lines. | `model.test.ts` › removes an element together with its links… |
 | TC-26a | US-13 | Text typed for one element is saved onto it, not onto the element clicked next. | `App.test.tsx` › saves typed text onto the element it was typed for… |
 | TC-27 | US-15 | Undo and redo; a new step clears redo; nothing to undo changes nothing. | `history.test.ts` › undoes and redoes…; `App.test.tsx` › adds an element… and undoes it; e2e › builds… |

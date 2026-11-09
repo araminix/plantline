@@ -55,9 +55,16 @@ the grid point under the pointer, or I tap it and it appears in the middle of th
 **US-11 Place it on the grid.** I drag elements, one or several (Shift or Ctrl adds to the selection); they land on a
 20-unit grid. A drag is one undo step.
 
-**US-12 Connect equipment.** I connect two elements: with Connect, I pick the first and then the second element (or
-start from the selected one); lines run straight down and across, and reach anywhere along a busbar. An element
-cannot be connected to itself or twice to the same element.
+**US-12 Connect equipment.** I connect two elements by dragging from a connection point of one onto the other, or
+with Connect, picking the first and then the second element (or starting from the selected one). Lines run straight
+down and across, and reach anywhere along a busbar. An element cannot be connected to itself or twice to the same
+element.
+- Connection points are where a symbol has a lead (a grid connection and a wind turbine only at the bottom; a load, an
+  earthing switch, a voltage transformer and a surge arrester only at the top), and along a busbar. They show when I
+  point at or select an element, and on every element while I draw a line.
+- While I drag, a dashed line follows the pointer; it turns to the accent colour and the element under it is outlined
+  when the line can connect there. Dropped anywhere else, nothing changes.
+- A selected line shows its two ends; I drag one onto another element to reconnect it.
 
 **US-13 Describe equipment.** I give a selected element a label, a reference designation (IEC 81346), a voltage
 (kV) and a rating (kVA); a busbar also has a length. A field is saved when I leave it or press Enter, as one undo step,

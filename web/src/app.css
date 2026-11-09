@@ -543,6 +543,64 @@ select {
     fill: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
+/* Connection points: on hover and selection, and on every element while a line is drawn */
+.canvas .port {
+    opacity: 0;
+    pointer-events: none;
+    cursor: crosshair;
+}
+
+.canvas .sld-node:hover .port,
+.canvas .sld-node.selected .port,
+.canvas.connecting .port {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.canvas .port-dot {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+}
+
+.canvas .port:hover .port-dot {
+    fill: var(--accent);
+}
+
+/* The ends of the selected line: drag one to another element */
+.canvas .link-end {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 2;
+    cursor: move;
+}
+
+.canvas [data-link].moving {
+    opacity: 0.35;
+}
+
+/* The line being drawn: dashed grey, accent once it is over an element it can connect to, which is outlined */
+.canvas .drawn-line {
+    stroke: var(--muted);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    pointer-events: none;
+}
+
+.canvas .drawn-line.ready {
+    stroke: var(--accent);
+}
+
+.canvas .sld-node.target {
+    color: var(--accent);
+}
+
+.canvas .sld-node.target .hit {
+    fill: color-mix(in srgb, var(--accent) 18%, transparent);
+    stroke: var(--accent);
+    stroke-dasharray: 4 3;
+}
+
 .canvas-empty {
     position: absolute;
     inset: 40% 16px auto;

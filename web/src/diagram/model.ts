@@ -125,3 +125,13 @@ export function connect(diagram: Diagram, from: string, to: string): Diagram | n
     if (from === to || linked) return null;
     return { ...diagram, links: [...diagram.links, { id: newId("l"), from, to }] };
 }
+
+/** Moves one end of a line to another element; null when that changes nothing, joins an element to itself or repeats a line. */
+export function reconnect(diagram: Diagram, linkId: string, end: "from" | "to", nodeId: string): Diagram | null {
+    const link = diagram.links.find((candidate) => candidate.id === linkId);
+    if (!link || link[end] === nodeId) return null;
+    const moved = { ...link, [end]: nodeId };
+    const repeated = diagram.links.some((other) => other.id !== linkId && ((other.from === moved.from && other.to === moved.to) || (other.from === moved.to && other.to === moved.from)));
+    if (moved.from === moved.to || repeated) return null;
+    return { ...diagram, links: diagram.links.map((candidate) => (candidate.id === linkId ? moved : candidate)) };
+}
