@@ -41,7 +41,7 @@
     "connect.first": "Elija el primer elemento que desea conectar.",
     "connect.second": "Ahora elija el elemento al que conectarlo. Pulse Escape para terminar.",
     "palette.title": "Elementos",
-    "palette.hint": "Toque un elemento para añadirlo al esquema.",
+    "palette.hint": "Arrastre un elemento al esquema o tóquelo para añadirlo. En una pantalla táctil, manténgalo pulsado un momento antes de arrastrar.",
     "canvas.label": "Esquema unifilar",
     "canvas.empty": "Añada elementos de la lista y luego conéctelos.",
     "inspector.title": "Propiedades",

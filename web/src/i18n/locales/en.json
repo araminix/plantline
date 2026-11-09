@@ -41,7 +41,7 @@
     "connect.first": "Choose the first element to connect.",
     "connect.second": "Now choose the element to connect it to. Press Escape to stop.",
     "palette.title": "Elements",
-    "palette.hint": "Tap an element to add it to the diagram.",
+    "palette.hint": "Drag an element onto the diagram, or tap it to add it. On a touch screen, hold it a moment before dragging.",
     "canvas.label": "Single-line diagram",
     "canvas.empty": "Add elements from the list, then connect them.",
     "inspector.title": "Properties",

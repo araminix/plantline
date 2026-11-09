@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { NodeKind } from "../plants";
 import { contentBounds, DiagramContent } from "./DiagramContent";
-import { GRID, moveNodes, type Diagram } from "./model";
+import { GRID, moveNodes, type Diagram, type Point } from "./model";
 
 export interface Selection {
     nodes: string[];
@@ -12,7 +12,9 @@ export interface CanvasHandle {
     fit(): void;
     zoom(factor: number): void;
     /** The middle of the visible area, in diagram coordinates: where a new element goes. */
-    centre(): { x: number; y: number };
+    centre(): Point;
+    /** The point of the diagram under a point of the screen, or null where the drawing is not what shows there. */
+    pointAt(clientX: number, clientY: number): Point | null;
 }
 
 interface Props {
@@ -80,6 +82,12 @@ export const Canvas = forwardRef<CanvasHandle, Props>(function Canvas(props, ref
         centre: () => {
             const { width, height } = size();
             return { x: (width / 2 - view.x) / view.k, y: (height / 2 - view.y) / view.k };
+        },
+        pointAt: (clientX, clientY) => {
+            const svg = svgRef.current;
+            if (!svg?.contains(document.elementFromPoint(clientX, clientY))) return null;
+            const { x, y } = local({ clientX, clientY });
+            return { x: (x - view.x) / view.k, y: (y - view.y) / view.k };
         },
     }));
 

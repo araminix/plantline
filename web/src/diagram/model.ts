@@ -29,9 +29,23 @@ export interface Diagram {
     links: DiagramLink[];
 }
 
+export interface Point {
+    x: number;
+    y: number;
+}
+
+export interface Box {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+}
+
 export const GRID = 20;
 export const NODE_SIZE = 48;
 export const BUSBAR_WIDTH = 240;
+/** The room kept beside a symbol for its label. */
+export const LABEL_ROOM = 120;
 
 export const snap = (value: number) => Math.round(value / GRID) * GRID;
 
@@ -39,17 +53,49 @@ export const newId = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(
 
 export const emptyDiagram = (plantType: PlantType, name = ""): Diagram => ({ plantType, name, nodes: [], links: [] });
 
+/** The room an element takes: its symbol with the label beside it, or a busbar with its label above. */
+export function footprint(node: Pick<DiagramNode, "kind" | "x" | "y" | "width">): Box {
+    if (node.kind === "busbar") {
+        const half = (node.width ?? BUSBAR_WIDTH) / 2;
+        return { minX: node.x - half, minY: node.y - 24, maxX: node.x + half, maxY: node.y + 8 };
+    }
+    const half = NODE_SIZE / 2;
+    return { minX: node.x - half, minY: node.y - half, maxX: node.x + half + LABEL_ROOM, maxY: node.y + half };
+}
+
+const overlaps = (a: Box, b: Box) => a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY;
+const MAX_RING = 100;
+
+/** The grid point nearest to (x, y), ring by ring, where an element of this kind and width overlaps no other. */
+export function freeSpot(diagram: Diagram, kind: NodeKind, width: number | null, x: number, y: number): Point {
+    const taken = diagram.nodes.map(footprint);
+    const [x0, y0] = [snap(x), snap(y)];
+    for (let ring = 0; ring <= MAX_RING; ring++) {
+        const spots: Point[] = [];
+        for (let i = -ring; i <= ring; i++) {
+            for (let j = -ring; j <= ring; j++) {
+                if (Math.max(Math.abs(i), Math.abs(j)) === ring) spots.push({ x: x0 + i * GRID, y: y0 + j * GRID });
+            }
+        }
+        spots.sort((a, b) => Math.hypot(a.x - x0, a.y - y0) - Math.hypot(b.x - x0, b.y - y0));
+        const free = spots.find((spot) => !taken.some((box) => overlaps(footprint({ kind, width, ...spot }), box)));
+        if (free) return free;
+    }
+    return { x: x0, y: y0 };
+}
+
+/** Adds an element at the free grid point nearest to (x, y): never on top of another. */
 export function addNode(diagram: Diagram, kind: NodeKind, x: number, y: number): { diagram: Diagram; id: string } {
+    const width = kind === "busbar" ? BUSBAR_WIDTH : null;
     const node: DiagramNode = {
         id: newId("n"),
         kind,
-        x: snap(x),
-        y: snap(y),
+        ...freeSpot(diagram, kind, width, x, y),
         label: "",
         designation: "",
         voltageKv: null,
         ratingKva: null,
-        width: kind === "busbar" ? BUSBAR_WIDTH : null,
+        width,
     };
     return { diagram: { ...diagram, nodes: [...diagram.nodes, node] }, id: node.id };
 }

@@ -41,7 +41,7 @@
     "connect.first": "Choisissez le premier élément à relier.",
     "connect.second": "Choisissez maintenant l’élément auquel le relier. Appuyez sur Échap pour arrêter.",
     "palette.title": "Éléments",
-    "palette.hint": "Touchez un élément pour l’ajouter au schéma.",
+    "palette.hint": "Faites glisser un élément sur le schéma, ou touchez-le pour l’ajouter. Sur un écran tactile, maintenez-le un instant avant de le faire glisser.",
     "canvas.label": "Schéma unifilaire",
     "canvas.empty": "Ajoutez des éléments depuis la liste, puis reliez-les.",
     "inspector.title": "Propriétés",

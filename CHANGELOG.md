@@ -4,6 +4,11 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 
 ## Unreleased
 
+### Added
+
+- Drag elements from the palette onto the diagram (on a touch screen, hold them a moment first); a tapped element
+  takes the free spot nearest the middle of the view, so new elements never pile up on each other.
+
 ### Changed
 
 - A new logo, a busbar with three feeders, and a green colour in both themes.

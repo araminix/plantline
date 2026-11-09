@@ -11,7 +11,7 @@ import { DiagramSheet, diagramSvg, download, fileNameOf, svgToPng } from "./expo
 import { FILE_EXTENSION, MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
 import { useHistory } from "./history";
 import { Inspector } from "./Inspector";
-import { addNode, connect, emptyDiagram, GRID, removeItems, type Diagram } from "./model";
+import { addNode, connect, emptyDiagram, removeItems, type Diagram, type Point } from "./model";
 import { Palette } from "./Palette";
 
 /** Where the diagram is kept in this browser. */
@@ -35,6 +35,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const [selection, setSelection] = useState<Selection>(NONE);
     const [connectFrom, setConnectFrom] = useState<string | null | undefined>(undefined);
     const [sheet, setSheet] = useState<"palette" | "inspector" | null>(null);
+    const [dragging, setDragging] = useState(false);
     const [notice, setNotice] = useState<string | null>(null);
     const [printing, setPrinting] = useState(false);
     const canvas = useRef<CanvasHandle>(null);
@@ -58,10 +59,9 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         setPrinting(false);
     }, [printing]);
 
-    const add = (kind: NodeKind) => {
-        const centre = canvas.current?.centre() ?? { x: 200, y: 200 };
-        const offset = (diagram.nodes.length % 5) * GRID;
-        const added = addNode(diagram, kind, centre.x + offset, centre.y + offset);
+    const add = (kind: NodeKind, at?: Point) => {
+        const { x, y } = at ?? canvas.current?.centre() ?? { x: 200, y: 200 };
+        const added = addNode(diagram, kind, x, y);
         history.commit(added.diagram);
         setSelection({ nodes: [added.id], link: null });
         setSheet(null);
@@ -124,7 +124,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     });
 
     const panel = (name: "palette" | "inspector", title: string, content: ReactNode) => (
-        <aside className={sheet === name ? `panel ${name} open` : `panel ${name}`} aria-label={title}>
+        <aside className={`panel ${name}${sheet === name ? " open" : ""}${dragging && name === "palette" ? " dragging" : ""}`} aria-label={title}>
             <header className="panel-header">
                 <h2>{title}</h2>
                 <IconButton label={t("action.close")} className="sheet-close" onClick={() => setSheet(null)}>
@@ -200,7 +200,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                 </p>
             )}
             <div className="editor-body">
-                {panel("palette", t("palette.title"), <Palette plant={plant} onAdd={add} />)}
+                {panel("palette", t("palette.title"), <Palette plant={plant} onAdd={add} dropPoint={(x, y) => canvas.current?.pointAt(x, y) ?? null} onDragging={setDragging} />)}
                 <div className="canvas-area">
                     <Canvas
                         ref={canvas}

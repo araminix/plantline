@@ -41,7 +41,7 @@
     "connect.first": "연결할 첫 번째 요소를 선택하세요.",
     "connect.second": "이제 연결할 상대 요소를 선택하세요. 멈추려면 Esc 키를 누르세요.",
     "palette.title": "요소",
-    "palette.hint": "요소를 탭하면 결선도에 추가됩니다.",
+    "palette.hint": "요소를 결선도로 끌어 놓거나 탭하여 추가하세요. 터치스크린에서는 잠시 길게 누른 뒤 끌어 주세요.",
     "canvas.label": "단선 결선도",
     "canvas.empty": "목록에서 요소를 추가한 다음 연결하세요.",
     "inspector.title": "속성",

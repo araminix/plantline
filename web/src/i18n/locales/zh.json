@@ -41,7 +41,7 @@
     "connect.first": "请选择要连接的第一个元件。",
     "connect.second": "现在选择要连接到的元件。按 Esc 键停止。",
     "palette.title": "元件",
-    "palette.hint": "点击元件即可将其添加到单线图。",
+    "palette.hint": "将元件拖到单线图上，或点击添加。在触摸屏上，先按住片刻再拖动。",
     "canvas.label": "单线图",
     "canvas.empty": "从列表中添加元件，然后将它们连接起来。",
     "inspector.title": "属性",

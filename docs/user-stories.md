@@ -44,8 +44,13 @@ readable in both, and satellite imagery keeps its real colours.
 
 ## Epic B: Single-line diagram
 
-**US-10 Add equipment.** As a design engineer, I tap an element in the palette and it appears in the middle of the
-view, selected.
+**US-10 Add equipment.** As a design engineer, I drag an element from the palette onto the drawing, where it lands on
+the grid point under the pointer, or I tap it and it appears in the middle of the view; either way it is selected.
+- With a mouse or pen the element follows the pointer at once; on a touch screen I hold it a moment first, so a swipe
+  still scrolls the palette. On a phone the palette sheet steps aside while I drag.
+- The dragged element shows where it is going: dashed outside the drawing, solid over it. Dropped anywhere else, it
+  is not added.
+- A new element never lands on another one: it takes the free grid point nearest to where it was dropped or tapped.
 
 **US-11 Place it on the grid.** I drag elements, one or several (Shift or Ctrl adds to the selection); they land on a
 20-unit grid. A drag is one undo step.

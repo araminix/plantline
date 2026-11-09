@@ -41,7 +41,7 @@
     "connect.first": "Scegli il primo elemento da collegare.",
     "connect.second": "Ora scegli l'elemento a cui collegarlo. Premi Esc per terminare.",
     "palette.title": "Elementi",
-    "palette.hint": "Tocca un elemento per aggiungerlo allo schema.",
+    "palette.hint": "Trascina un elemento sullo schema oppure toccalo per aggiungerlo. Su uno schermo touch, tienilo premuto un attimo prima di trascinarlo.",
     "canvas.label": "Schema unifilare",
     "canvas.empty": "Aggiungi elementi dall'elenco, poi collegali.",
     "inspector.title": "Proprietà",

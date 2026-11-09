@@ -474,12 +474,38 @@ select {
     background: var(--surface);
     font-size: 0.78rem;
     text-align: center;
-    cursor: pointer;
+    cursor: grab;
+    /* A long press picks an element up: no text selection or callout on phones */
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .palette-grid button:hover {
     border-color: var(--accent);
     background: var(--surface-2);
+}
+
+/* The element being dragged from the palette: dashed until it is over the drawing */
+.palette-ghost {
+    position: fixed;
+    z-index: 3000;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    translate: -50% -50%;
+    border: 2px dashed var(--muted);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 85%, transparent);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    pointer-events: none;
+}
+
+.palette-ghost.over {
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .canvas-area {
@@ -739,6 +765,12 @@ select {
 
     .panel.open {
         display: block;
+    }
+
+    /* While an element is dragged out of the palette sheet, the sheet lets the drawing show and receive it */
+    .panel.dragging {
+        opacity: 0;
+        pointer-events: none;
     }
 
     .sheet-close {

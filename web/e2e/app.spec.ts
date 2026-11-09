@@ -40,6 +40,34 @@ async function expectOnTop(page: Page, name: string) {
     expect(onTop, `${name} is covered or clipped`).toBe(true);
 }
 
+type Point = { x: number; y: number };
+
+/** A real finger: touch, hold a moment, move, lift (Playwright's mouse would be a mouse even on a phone). */
+async function touchDrag(page: Page, from: Point, to: Point) {
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: "touchStart" | "touchMove" | "touchEnd", at?: Point) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: at ? [at] : [] });
+    await touch("touchStart", from);
+    await page.waitForTimeout(400);
+    for (let i = 1; i <= 10; i++) await touch("touchMove", { x: from.x + ((to.x - from.x) * i) / 10, y: from.y + ((to.y - from.y) * i) / 10 });
+    await touch("touchEnd");
+    await cdp.detach();
+}
+
+async function mouseDrag(page: Page, from: Point, to: Point) {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 10 });
+    await page.mouse.up();
+}
+
+const centreOf = async (locator: Locator): Promise<Point> => {
+    const box = (await locator.boundingBox())!;
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+};
+
+/** Each element's symbol and label area on the screen. */
+const elementBoxes = (page: Page) => page.locator("[data-node] .hit").evaluateAll((hits) => hits.map((hit) => hit.getBoundingClientRect().toJSON() as DOMRect));
+
 async function expectNoSidewaysScroll(page: Page) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -82,6 +110,30 @@ test("builds, connects, checks and saves a single-line diagram", async ({ page }
     await expectNoSidewaysScroll(page);
 });
 
+test("drags an element from the palette onto the drawing; tapped elements never land on each other", async ({ page }) => {
+    await start(page, "Solar PV");
+    const canvas = await page.locator(".canvas").boundingBox();
+    const target = { x: canvas!.x + canvas!.width / 2 - 60, y: canvas!.y + 80 };
+    if (isPhone(page)) {
+        await page.getByRole("navigation").getByRole("button", { name: "Add" }).click();
+        await touchDrag(page, await centreOf(page.getByRole("button", { name: "Inverter", exact: true })), target);
+    } else {
+        await mouseDrag(page, await centreOf(page.getByRole("button", { name: "Inverter", exact: true })), target);
+        // Dropped back on the palette: nothing is added
+        await mouseDrag(page, await centreOf(page.getByRole("button", { name: "Busbar", exact: true })), await centreOf(page.getByRole("button", { name: "Fuse", exact: true })));
+    }
+    await expect(page.locator("[data-node]")).toHaveCount(1);
+    const [dropped] = await elementBoxes(page);
+    // The symbol (at the start of its box) is centred on the grid point under the pointer
+    expect(Math.abs(dropped!.x + 24 - target.x)).toBeLessThanOrEqual(15);
+    expect(Math.abs(dropped!.y + 24 - target.y)).toBeLessThanOrEqual(15);
+
+    for (const element of ["Inverter", "Busbar", "Transformer"]) await add(page, element);
+    const boxes = await elementBoxes(page);
+    expect(boxes).toHaveLength(4);
+    boxes.forEach((a, i) => boxes.slice(i + 1).forEach((b) => expect(a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom, "two elements overlap").toBe(false)));
+});
+
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {
     await start(page, "Substation");
     await page.getByRole("button", { name: "File" }).click();
@@ -120,12 +172,8 @@ test("moves and turns a drawing on the map with its handles", async ({ page }) =
     await page.getByRole("button", { name: /Try a sample/ }).click();
     const drag = async (handle: Locator, dx: number, dy: number) => {
         await expect(handle).toBeVisible({ timeout: 60_000 });
-        const box = (await handle.boundingBox())!;
-        const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
-        await page.mouse.move(x, y);
-        await page.mouse.down();
-        await page.mouse.move(x + dx, y + dy, { steps: 8 });
-        await page.mouse.up();
+        const from = await centreOf(handle);
+        await mouseDrag(page, from, { x: from.x + dx, y: from.y + dy });
     };
     await drag(page.locator(".map-handle.move"), 60, -40);
     // From straight above the centre to its right: a quarter turn clockwise

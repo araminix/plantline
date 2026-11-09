@@ -41,7 +41,7 @@
     "connect.first": "Escolha o primeiro elemento a conectar.",
     "connect.second": "Agora escolha o elemento ao qual conectá-lo. Pressione Esc para parar.",
     "palette.title": "Elementos",
-    "palette.hint": "Toque em um elemento para adicioná-lo ao diagrama.",
+    "palette.hint": "Arraste um elemento para o diagrama ou toque nele para adicioná-lo. Em uma tela sensível ao toque, mantenha-o pressionado por um instante antes de arrastar.",
     "canvas.label": "Diagrama unifilar",
     "canvas.empty": "Adicione elementos da lista e depois conecte-os.",
     "inspector.title": "Propriedades",

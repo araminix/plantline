@@ -41,7 +41,7 @@
     "connect.first": "Bağlanacak ilk elemanı seçin.",
     "connect.second": "Şimdi bağlanacağı elemanı seçin. Durdurmak için Escape tuşuna basın.",
     "palette.title": "Elemanlar",
-    "palette.hint": "Şemaya eklemek için bir elemana dokunun.",
+    "palette.hint": "Bir elemanı şemaya sürükleyin ya da eklemek için ona dokunun. Dokunmatik ekranda sürüklemeden önce bir an basılı tutun.",
     "canvas.label": "Tek hat şeması",
     "canvas.empty": "Listeden eleman ekleyin, sonra bunları bağlayın.",
     "inspector.title": "Özellikler",

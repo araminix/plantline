@@ -35,6 +35,8 @@ request ([CI](../.github/workflows/ci.yml)).
 | --- | --- | --- | --- |
 | TC-20 | US-10 | Tapping a palette element adds it, selected, and shows its properties. | `App.test.tsx` › adds an element from the palette…; e2e › builds, connects… |
 | TC-21 | US-10, US-11 | A new element lands on the grid; a busbar gets its length. | `model.test.ts` › adds an element on the grid… |
+| TC-21a | US-10 | A new element takes the free grid point nearest to where it was asked, never on top of another. | `model.test.ts` › adds every element at the free grid point nearest…; e2e › drags an element from the palette… |
+| TC-21b | US-10, US-05 | An element dragged from the palette lands under the pointer, with a mouse on a desktop and a finger on a phone; dropped on the palette, nothing is added. | e2e › drags an element from the palette onto the drawing… |
 | TC-22 | US-11 | A drag moves freely and snaps to the grid at its end. | `model.test.ts` › moves elements freely during a drag… |
 | TC-23 | US-11, US-15 | A drag is one undo step; previews are not steps. | `history.test.ts` › makes a drag one step…, counts the changes worth saving… |
 | TC-24 | US-12 | Two elements connect once; never an element to itself. | `model.test.ts` › connects two elements once… |

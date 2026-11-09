@@ -41,7 +41,7 @@
     "connect.first": "Wählen Sie das erste Element, das verbunden werden soll.",
     "connect.second": "Wählen Sie nun das Element, mit dem es verbunden werden soll. Mit Escape beenden.",
     "palette.title": "Elemente",
-    "palette.hint": "Tippen Sie auf ein Element, um es dem Schaltbild hinzuzufügen.",
+    "palette.hint": "Ziehen Sie ein Element auf das Schaltbild oder tippen Sie darauf, um es hinzuzufügen. Auf einem Touchscreen halten Sie es kurz gedrückt, bevor Sie ziehen.",
     "canvas.label": "Einpoliges Schaltbild",
     "canvas.empty": "Fügen Sie Elemente aus der Liste hinzu und verbinden Sie sie.",
     "inspector.title": "Eigenschaften",

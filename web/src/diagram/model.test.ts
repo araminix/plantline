@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, moveNodes, removeItems, updateNode } from "./model";
+import { addNode, BUSBAR_WIDTH, connect, emptyDiagram, footprint, moveNodes, removeItems, updateNode, type Diagram } from "./model";
 
 const twoNodes = () => {
     const first = addNode(emptyDiagram("solar"), "inverter", 101, 99);
@@ -12,6 +12,17 @@ describe("diagram model", () => {
         const { diagram, a, b } = twoNodes();
         expect(diagram.nodes.find((node) => node.id === a)).toMatchObject({ kind: "inverter", x: 100, y: 100, width: null, label: "" });
         expect(diagram.nodes.find((node) => node.id === b)?.width).toBe(BUSBAR_WIDTH);
+    });
+
+    it("adds every element at the free grid point nearest to where it was asked, never on top of another", () => {
+        let diagram: Diagram = emptyDiagram("solar");
+        for (const kind of ["inverter", "busbar", "inverter", "transformer", "busbar", "breaker"] as const) diagram = addNode(diagram, kind, 200, 200).diagram;
+        const boxes = diagram.nodes.map(footprint);
+        boxes.forEach((a, i) => boxes.slice(i + 1).forEach((b) => expect(a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY).toBe(false)));
+        // The first lands where asked; the next as near as it fits (below or above rather than far to the side)
+        expect(diagram.nodes[0]).toMatchObject({ x: 200, y: 200 });
+        expect(Math.abs(diagram.nodes[1]!.y - 200)).toBeLessThanOrEqual(60);
+        expect(diagram.nodes[1]!.x).toBe(200);
     });
 
     it("connects two elements once and never an element to itself", () => {
