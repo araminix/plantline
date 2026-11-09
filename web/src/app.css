@@ -756,10 +756,11 @@ select {
     filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
 }
 
+/* On the right in every language: Leaflet's own controls stay on the left even right to left */
 .map-tools {
     position: absolute;
     inset-block-start: 12px;
-    inset-inline-end: 12px;
+    right: 12px;
     z-index: 500;
     display: grid;
     gap: 6px;

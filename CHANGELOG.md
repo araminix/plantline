@@ -2,6 +2,12 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- In Arabic and Persian, the map's satellite and fit buttons no longer lie under the zoom buttons.
+
 ## 0.5.0 (unreleased)
 
 Plant layouts that work with real drawings.

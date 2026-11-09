@@ -561,6 +561,17 @@ test("remembers a drawing's place and choices, and brings them back when the fil
     await expect(page.getByRole("button", { name: "Show on the map: ROADS" })).toHaveAttribute("aria-pressed", "false");
 });
 
+test("keeps the map tools clear of the zoom buttons in Persian", async ({ page }) => {
+    await start(page, "Wind farm");
+    await page.getByRole("combobox", { name: "Language" }).selectOption("fa");
+    await page.getByRole("tab", { name: "جانمایی نیروگاه" }).click();
+    await page.locator(".layout-empty .button").nth(1).click();
+    const [tools, zoom] = [page.locator(".map-tools"), page.locator(".leaflet-control-zoom")];
+    await expect(tools).toBeVisible({ timeout: 60_000 });
+    const [a, b] = [(await tools.boundingBox())!, (await zoom.boundingBox())!];
+    expect(a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height, "the map tools cover the zoom buttons").toBe(false);
+});
+
 test("opens a DXF chosen by the user, and reports a file that is not a drawing", async ({ page }) => {
     await start(page, "Solar PV");
     await page.getByRole("tab", { name: "Plant layout" }).click();
