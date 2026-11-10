@@ -29,6 +29,7 @@ The work behind each [user story](user-stories.md), in the order it was done, an
 | T-21 | Keyboard and screen readers: Tab to every element, arrows, R, Delete and Enter to connect; focus kept in dialogs; names that contain the visible text; axe checks in e2e. | US-07 | `web/src/diagram/Canvas.tsx`, `DiagramContent.tsx`, `web/src/ui/focus.ts` |
 | T-22 | Plural forms (Intl.PluralRules) and the language's digits, also in the drawing and its exports. | US-03 | `web/src/i18n/i18n.tsx`, `web/src/diagram/properties.ts` |
 | T-23 | Map tiles in one settings file, written into the Content Security Policy by the build; providers' terms documented. | US-40, US-41 | `web/src/layout/tiles.ts`, `web/vite.config.ts` |
+| T-24 | The app's own list for every choice (symbols, flags, keys of a select-only combobox); one dialog component; a New diagram dialog opened by the File menu and the logo; the large-drawing warning as a dialog. | US-02, US-03, US-06a, US-07 | `web/src/ui/controls.tsx`, `web/src/ui/Dialog.tsx`, `web/src/diagram/NewDiagram.tsx`, `web/src/i18n/Flag.tsx` |
 
 ## Backlog
 

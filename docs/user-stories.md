@@ -21,13 +21,15 @@ battery storage, hydropower, substation or transmission line), so the tool shows
   generator, transformer, overhead line).
 - The choice is remembered on later visits.
 
-**US-02 Change the plant type at any time.** As a user, I switch the plant type from the header.
+**US-02 Change the plant type at any time.** As a user, I switch the plant type from the header's list, each type
+with its symbol.
 - The palette and the drawing recognition rules change with it; the diagram itself is kept.
 - An opened diagram file sets the plant type it was saved with.
 
 **US-03 Use the app in my language.** As a user anywhere, I use plantline in my language.
 - 14 languages: English, Chinese, Hindi, Spanish, French, Arabic, Persian, Portuguese, Russian, Japanese, German,
-  Korean, Turkish and Italian, each in its own name.
+  Korean, Turkish and Italian, each in its own name with a flag (Portuguese has Brazil's: the translation is
+  Brazilian).
 - The browser's language is chosen on the first visit when the app speaks it; else English.
 - Arabic and Persian lay the whole page out right to left; drawings stay left to right.
 - Latin, Greek and Cyrillic letters use Inter and Arabic and Persian use Estedad on every device, served with the site.
@@ -51,13 +53,22 @@ app.
 - Tab reaches every control and every element of the diagram; the focused element is selected and scrolled into view.
 - Arrows move it, R turns it, Delete removes it; Enter starts a line from it and Enter on another element ends it.
 - A dialog keeps the focus inside until it is closed.
+- A list opens with the arrow keys, Enter or Space; arrows, Home and End move, typing jumps to a value, Enter chooses
+  and Escape closes.
 - Every control and element has a name that contains its visible text, so voice control finds it too.
 
 ## Epic B: Single-line diagram
 
 **US-06 Start from an example.** As a new user, I open a ready-made single-line diagram of any plant type (connected,
-with no problems to check) from the empty diagram, or the current plant type's from the File menu, and change it.
-Another plant type's example switches the plant type. The empty diagram also says, in three steps, how to start.
+with no problems to check) from the empty diagram, or from the New diagram dialog (File, Open an example), and change
+it. Another plant type's example switches the plant type. The empty diagram also says, in three steps, how to start.
+
+**US-06a Start a new diagram.** As a user, I start a new diagram from the File menu or by clicking the logo (from either
+view).
+- A dialog asks for the plant type (the current one chosen), an empty sheet or the plant type's example, and a name
+  (an example is named after its plant type if I leave it empty).
+- With a diagram open, it says that diagram is replaced, offers to save it first, and Undo brings it back.
+- Cancel, Escape or a click outside the dialog leave everything as it was.
 
 **US-10 Add equipment.** As a design engineer, I drag an element from the palette onto the drawing, where it lands on
 the grid point under the pointer, or I tap it and it appears in the middle of the view; either way it is selected.

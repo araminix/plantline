@@ -225,6 +225,7 @@ files others open.
 | Our own small translation layer | 14 flat dictionaries; message keys are type-checked, so a missing English message fails the build. |
 | Diagrams read left to right in every language | An electrical drawing is the same drawing in Arabic or English; only the interface mirrors. |
 | Inter and Estedad, served with the site | The same letters on every device (Persian and Arabic used to be whatever font the device had). Variable fonts from the `@fontsource-variable` packages: each part (Latin, Cyrillic, Arabic…) downloads only when the page shows its letters, about 48 KB for English and 57 KB more for Persian or Arabic. Chinese, Japanese, Korean and Hindi keep the system's font; theirs would weigh megabytes. |
+| Our own lists, not the browser's | The browser's list cannot be styled (on Windows it is a plain box with a blue bar) and cannot show symbols or flags. `Select` in `ui/controls.tsx` follows the select-only combobox pattern, so keyboards and screen readers work as with the browser's. The flags are inline SVG from `country-flag-icons`; only the 14 used are bundled, about 4 KB compressed. |
 | One mark, drawn once | `public/favicon.svg` is the logo. The header draws the same mark in the theme's colours (`ui/Logo.tsx`; a test keeps them equal), and `pnpm brand` renders the app icons, the link preview image and the README header from it. |
 
 ## Known limits

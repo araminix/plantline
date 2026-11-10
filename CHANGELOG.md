@@ -2,6 +2,23 @@
 
 All notable changes are listed here. The project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- A New diagram dialog, opened from the File menu or by clicking the logo: choose the plant type, an empty sheet or
+  the example, and a name. With a diagram open it says the diagram is replaced, offers Save, and Undo brings the old
+  one back.
+- Each language has its flag in the language list.
+
+### Changed
+
+- Every list (plant type, language, element and line fields, drawing units, UTM zone, layers and blocks) opens the
+  app's own list instead of the browser's: symbols and flags beside the names, the chosen one ticked, light and dark,
+  right to left in Arabic and Persian, and kept within the screen. Arrow keys, typing a name, Enter and Escape work
+  as before.
+- The warning before reading a drawing too large for the device is the app's own dialog, not the browser's.
+
 ## 0.7.0
 
 For everyone: the diagram by keyboard and screen reader, counts and numbers as each language writes them, and
