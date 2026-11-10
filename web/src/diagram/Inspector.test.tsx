@@ -51,7 +51,8 @@ describe("the properties panel", () => {
         const b = addNode(a.diagram, "transformer", 0, 200);
         const linked = connect(b.diagram, a.id, b.id)!;
         const { onChange } = show(linked, { nodes: [], link: linked.links[0]!.id });
-        fireEvent.change(screen.getByRole("combobox", { name: "Kind" }), { target: { value: "cable" } });
+        fireEvent.click(screen.getByRole("combobox", { name: "Kind" }));
+        fireEvent.click(screen.getByRole("option", { name: "Cable" }));
         expect(onChange.mock.calls[0]![0].links[0]!.props).toEqual({ lineKind: "cable" });
         expect(screen.getByRole("textbox", { name: /^Length/ })).toBeTruthy();
     });

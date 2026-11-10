@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
 
-const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+export const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
 /** Keeps Tab and Shift+Tab inside a modal dialog: from its last control back to its first, and the other way. */
 export function trapFocus(event: KeyboardEvent<HTMLElement>) {

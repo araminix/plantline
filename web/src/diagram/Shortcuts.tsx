@@ -1,8 +1,5 @@
-import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
 import { useI18n, type MessageKey } from "../i18n/i18n";
-import { IconButton } from "../ui/controls";
-import { trapFocus } from "../ui/focus";
+import { Dialog } from "../ui/Dialog";
 
 const COMMAND = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘" : "Ctrl";
 
@@ -31,51 +28,32 @@ const ROWS: { what: MessageKey; keys?: string[][]; how?: MessageKey }[] = [
     { what: "shortcut.help", keys: [["?"]] },
 ];
 
-/** The keyboard shortcuts and pointer gestures of the diagram, in a dialog closed by Escape, its button or outside it. */
+/** The keyboard shortcuts and pointer gestures of the diagram, in a dialog. */
 export function Shortcuts({ onClose }: { onClose: () => void }) {
     const { t } = useI18n();
-    const close = useRef<HTMLButtonElement>(null);
-    useEffect(() => {
-        close.current?.focus();
-        const onKey = (event: KeyboardEvent) => {
-            if (event.key !== "Escape") return;
-            event.stopPropagation();
-            onClose();
-        };
-        window.addEventListener("keydown", onKey, true);
-        return () => window.removeEventListener("keydown", onKey, true);
-    }, [onClose]);
 
     return (
-        <div className="overlay" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
-            <div className="dialog shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" onKeyDown={trapFocus}>
-                <header className="panel-header">
-                    <h2 id="shortcuts-title">{t("shortcuts.title")}</h2>
-                    <IconButton label={t("action.close")} onClick={onClose} buttonRef={close}>
-                        <X size={18} />
-                    </IconButton>
-                </header>
-                <table>
-                    <tbody>
-                        {ROWS.map(({ what, keys, how }) => (
-                            <tr key={what}>
-                                <th scope="row">{t(what)}</th>
-                                <td>
-                                    {how
-                                        ? t(how)
-                                        : keys!.map((combo, i) => (
-                                              <span key={i} className="keys">
-                                                  {combo.map((key) => (
-                                                      <kbd key={key}>{key}</kbd>
-                                                  ))}
-                                              </span>
-                                          ))}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <Dialog title={t("shortcuts.title")} onClose={onClose} className="shortcuts">
+            <table>
+                <tbody>
+                    {ROWS.map(({ what, keys, how }) => (
+                        <tr key={what}>
+                            <th scope="row">{t(what)}</th>
+                            <td>
+                                {how
+                                    ? t(how)
+                                    : keys!.map((combo, i) => (
+                                          <span key={i} className="keys">
+                                              {combo.map((key) => (
+                                                  <kbd key={key}>{key}</kbd>
+                                              ))}
+                                          </span>
+                                      ))}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </Dialog>
     );
 }

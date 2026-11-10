@@ -1,11 +1,12 @@
-import { ChevronDown, Crosshair, Download, FileText, FileUp, Layers, RotateCcw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Crosshair, Download, FileText, FileUp, Layers, RotateCcw, Search, ShieldCheck, SlidersHorizontal, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useI18n } from "../i18n/i18n";
 import { LAYOUT_RULES, MEASURE, PLANT_ICONS, PLANT_TYPES, type LayoutKind, type LayoutRule, type PlantType } from "../plants";
 import { SymbolIcon } from "../diagram/symbols";
 import { download } from "../diagram/export";
 import { usePersisted } from "../settings";
-import { IconButton, NumberField, Spoken, TextField } from "../ui/controls";
+import { IconButton, NumberField, SelectField, Spoken, TextField } from "../ui/controls";
+import { Dialog } from "../ui/Dialog";
 import { CadReadError, fitsDevice, readDrawing, type CadError } from "./cad";
 import { drawingBounds, LENGTH_UNITS, METRES_PER_UNIT, type Drawing, type LengthUnit } from "./drawing";
 import { toCsv, toGeoJson } from "./exports";
@@ -31,6 +32,8 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
     const [elapsed, setElapsed] = useState(0);
     const reading = useRef<AbortController | null>(null);
     const lastRead = useRef<{ file: File; preset?: Placement | undefined } | null>(null);
+    // A drawing too large for this device waits here until the reader says to read it anyway
+    const [tooLarge, setTooLarge] = useState<{ file: File; preset?: Placement | undefined } | null>(null);
     const [unit, setUnit] = useState<LengthUnit>("m");
     // Null until the user shows on the map where a drawing in local coordinates lies
     const [placement, setPlacement] = useState<Placement | null>(null);
@@ -120,8 +123,8 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
     }, [status]);
 
     // A newer reading replaces an older one; only the newest may change what is shown
-    const load = async (file: File, preset?: Placement) => {
-        if (!fitsDevice(file) && !window.confirm(t("layout.largeConfirm", { size: number(file.size / 2 ** 20, 0) }))) return;
+    const load = async (file: File, preset?: Placement, anyway = false) => {
+        if (!anyway && !fitsDevice(file)) return setTooLarge({ file, preset });
         reading.current?.abort();
         const controller = new AbortController();
         reading.current = controller;
@@ -228,6 +231,26 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
                 {t("layout.open")}
             </button>
             <input ref={fileInput} type="file" accept=".dwg,.dxf" hidden onChange={openFile} />
+            {tooLarge && (
+                <Dialog title={t("layout.largeTitle")} icon={<TriangleAlert size={20} aria-hidden="true" />} onClose={() => setTooLarge(null)}>
+                    <p>{t("layout.largeConfirm", { size: number(tooLarge.file.size / 2 ** 20, 0) })}</p>
+                    <footer className="dialog-actions">
+                        <button type="button" className="button" data-autofocus onClick={() => setTooLarge(null)}>
+                            {t("action.cancel")}
+                        </button>
+                        <button
+                            type="button"
+                            className="button primary"
+                            onClick={() => {
+                                setTooLarge(null);
+                                void load(tooLarge.file, tooLarge.preset, true);
+                            }}
+                        >
+                            {t("layout.readAnyway")}
+                        </button>
+                    </footer>
+                </Dialog>
+            )}
         </>
     );
 
@@ -461,16 +484,7 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
                             <h3>{t("layout.placement")}</h3>
                             {!placementOpen && <span className="summary-text">{placed}</span>}
                         </summary>
-                        <label className="field">
-                            <span>{t("layout.units")}</span>
-                            <select value={unit} onChange={(event) => useUnit(event.target.value as LengthUnit)}>
-                                {LENGTH_UNITS.filter((u) => u !== "unitless").map((u) => (
-                                    <option key={u} value={u}>
-                                        {u}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                        <SelectField label={t("layout.units")} value={unit} options={LENGTH_UNITS.filter((u) => u !== "unitless").map((u) => ({ value: u, label: u }))} onChange={useUnit} />
                         <div className="segmented" role="radiogroup" aria-label={t("layout.placement")}>
                             <button type="button" role="radio" aria-checked={placement?.mode !== "crs"} onClick={() => placement?.mode === "crs" && setPlacement(null)}>
                                 {t("layout.modePoint")}
@@ -500,20 +514,12 @@ export function LayoutView({ plant, onPlantChange, hidden }: { plant: PlantType;
                             </>
                         ) : (
                             <>
-                                <label className="field">
-                                    <span>{t("layout.utm")}</span>
-                                    <select value={utmZoneOf(placement.proj)} onChange={(event) => setPlacement({ mode: "crs", proj: event.target.value })}>
-                                        <option value="">—</option>
-                                        {Array.from({ length: 60 }, (_, i) => i + 1).flatMap((zone) =>
-                                            [false, true].map((south) => (
-                                                <option key={`${zone}${south}`} value={utmProj(zone, south)}>
-                                                    {zone}
-                                                    {south ? "S" : "N"}
-                                                </option>
-                                            )),
-                                        )}
-                                    </select>
-                                </label>
+                                <SelectField
+                                    label={t("layout.utm")}
+                                    value={utmZoneOf(placement.proj)}
+                                    options={[{ value: "", label: "—" }, ...Array.from({ length: 60 }, (_, i) => i + 1).flatMap((zone) => [false, true].map((south) => ({ value: utmProj(zone, south), label: `${zone}${south ? "S" : "N"}` })))]}
+                                    onChange={(proj) => setPlacement({ mode: "crs", proj })}
+                                />
                                 <TextField label={t("layout.proj")} value={placement.proj} maxLength={500} onCommit={(proj) => setPlacement({ mode: "crs", proj })} />
                                 {zoneMissing ? <p className="hint">{t("layout.zonePrompt", { section: t("layout.placement") })}</p> : !projector && <p className="error">{t("layout.projInvalid")}</p>}
                             </>

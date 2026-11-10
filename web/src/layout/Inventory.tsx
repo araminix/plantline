@@ -2,7 +2,7 @@ import { Eye, EyeOff, Search } from "lucide-react";
 import { useState } from "react";
 import { useI18n } from "../i18n/i18n";
 import { LAYOUT_KINDS, MEASURE, type LayoutKind } from "../plants";
-import { IconButton } from "../ui/controls";
+import { IconButton, Select } from "../ui/controls";
 import type { Assignments, Inventory as Contents } from "./recognize";
 
 interface Props {
@@ -31,16 +31,17 @@ export function Inventory({ contents, assignments, onAssign, hidden, onToggle, a
             onAssign({ ...assignments, [of]: next === "" ? rest : { ...rest, [name]: next } });
         };
         return (
-            <select aria-label={name} value={value} onChange={(event) => set(event.target.value)}>
-                <option value="">{auto ? t("layout.automatic", { kind: t(`kind.${auto}`) }) : t("layout.automaticNone")}</option>
-                <option value="none">{t("layout.notCounted")}</option>
-                {of === "blocks" && <option value="skip">{t("layout.leaveOut")}</option>}
-                {(of === "blocks" ? COUNTED : LAYOUT_KINDS).map((kind) => (
-                    <option key={kind} value={kind}>
-                        {t(`kind.${kind}`)}
-                    </option>
-                ))}
-            </select>
+            <Select
+                label={name}
+                value={value}
+                options={[
+                    { value: "", label: auto ? t("layout.automatic", { kind: t(`kind.${auto}`) }) : t("layout.automaticNone") },
+                    { value: "none", label: t("layout.notCounted") },
+                    ...(of === "blocks" ? [{ value: "skip", label: t("layout.leaveOut") }] : []),
+                    ...(of === "blocks" ? COUNTED : LAYOUT_KINDS).map((kind) => ({ value: kind, label: t(`kind.${kind}`) })),
+                ]}
+                onChange={set}
+            />
         );
     };
 

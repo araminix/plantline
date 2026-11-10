@@ -42,10 +42,17 @@ async function openFileMenu(page: Page) {
     await page.getByRole("navigation").getByRole("button", { name: "More" }).click();
 }
 
+/** Opens the list with this name and chooses an option by its text. */
+async function choose(page: Page, list: string, option: string) {
+    await page.getByRole("combobox", { name: list }).click();
+    await page.getByRole("listbox", { name: list }).getByRole("option", { name: option, exact: true }).click();
+}
+
 /** Chooses the language in the header, or on a phone in the settings menu. */
 async function chooseLanguage(page: Page, code: string) {
     if (isPhone(page)) await page.getByRole("button", { name: "Settings" }).click();
-    await page.getByRole("combobox", { name: "Language" }).selectOption(code);
+    await page.getByRole("combobox", { name: "Language" }).click();
+    await page.getByRole("listbox", { name: "Language" }).locator(`[lang="${code}"]`).click();
 }
 
 async function add(page: Page, element: string) {
@@ -396,6 +403,74 @@ test("opens a ready-made example from the empty diagram, with no problems, of th
     await expect(page.getByRole("menuitem", { name: "Open an example" })).toBeVisible();
 });
 
+test("starts a new diagram in a dialog, from the logo or the File menu, and undo brings the old one back", async ({ page }) => {
+    await start(page, "Hydropower");
+    await page.getByRole("button", { name: "Example: Hydropower" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(11);
+
+    // From the plant layout, the logo comes back to the diagram and asks
+    await page.getByRole("tab", { name: "Plant layout" }).click();
+    await page.getByRole("button", { name: "plantline, New diagram" }).click();
+    const dialog = page.getByRole("dialog", { name: "New diagram" });
+    await expect(dialog.getByRole("radio", { name: "Hydropower" })).toBeFocused();
+    await expect(dialog.getByText("This replaces the current diagram.", { exact: false })).toBeVisible();
+    await dialog.getByText("Wind farm").click();
+    await dialog.getByText("A ready-made diagram").click();
+    await dialog.getByRole("textbox", { name: "Name" }).fill("North field");
+    await dialog.getByRole("button", { name: "Create" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("tab", { name: "Single-line diagram" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("[data-node] text", { hasText: "WTG-03" })).toBeVisible();
+    if (!isPhone(page)) await expect(page.getByRole("combobox", { name: "Plant type" }).locator(".select-value")).toHaveText("Wind farm");
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(11);
+    await expect(page.locator("[data-node] text", { hasText: "WTG-03" })).toHaveCount(0);
+
+    // The File menu's New diagram: an empty sheet; Escape leaves everything as it was
+    await openFileMenu(page);
+    await page.getByRole("menuitem", { name: "New diagram" }).click();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(page.locator("[data-node]")).toHaveCount(11);
+    await openFileMenu(page);
+    await page.getByRole("menuitem", { name: "New diagram" }).click();
+    await expect(dialog.getByRole("radio", { name: /^Empty sheet/ })).toBeChecked();
+    await dialog.getByRole("button", { name: "Create" }).click();
+    await expect(page.locator("[data-node]")).toHaveCount(0);
+});
+
+test("chooses the plant type and language from their lists with the mouse and the keyboard", async ({ page }) => {
+    test.skip(isPhone(page), "a phone chooses them in the settings menu");
+    await start(page, "Solar PV");
+    const plant = page.getByRole("combobox", { name: "Plant type" });
+    const shown = plant.locator(".select-value");
+    await plant.click();
+    const list = page.getByRole("listbox", { name: "Plant type" });
+    await expect(list.getByRole("option")).toHaveCount(6);
+    await expect(list.locator(".check-mark")).toHaveCount(1);
+    await list.getByRole("option", { name: "Battery storage" }).click();
+    await expect(shown).toHaveText("Battery storage");
+    await expect(plant).toBeFocused();
+
+    // Arrows from the chosen value, Enter chooses; typing jumps to a value; Escape closes without choosing
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(shown).toHaveText("Hydropower");
+    await page.keyboard.press("t");
+    await expect(list.getByRole("option", { name: "Transmission line" })).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Escape");
+    await expect(list).toBeHidden();
+    await expect(shown).toHaveText("Hydropower");
+
+    // Each language with its flag, its name in its own language
+    const language = page.getByRole("combobox", { name: "Language" });
+    await language.click();
+    await expect(page.getByRole("listbox", { name: "Language" }).locator("svg.flag")).toHaveCount(14);
+    await page.getByRole("option", { name: "Deutsch" }).click();
+    await expect(page.getByRole("combobox", { name: "Sprache" })).toHaveText("Deutsch");
+});
+
 /** Presses Tab until the element has the focus, as a keyboard user would (at most 120 presses). */
 async function tabTo(page: Page, target: Locator) {
     for (let i = 0; i < 120; i++) {
@@ -476,6 +551,13 @@ test("has no serious accessibility problems on the main screens, in both themes"
     await expectAccessible(page, "plant layout, dark");
     await page.getByRole("tab", { name: "Single-line diagram" }).click();
     await expectAccessible(page, "diagram, dark");
+    if (isPhone(page)) await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByRole("combobox", { name: "Language" }).click();
+    await expectAccessible(page, "language list, dark");
+    await page.keyboard.press("Escape");
+    if (isPhone(page)) await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "plantline, New diagram" }).click();
+    await expectAccessible(page, "new diagram dialog, dark");
 });
 
 test("refuses a file that is not a diagram and keeps working", async ({ page }) => {
@@ -598,7 +680,7 @@ test("checks a drawing's unit, asks where a local drawing lies, and asks for the
     await open("solar-plant.dxf", await readFile("public/samples/solar-plant.dxf", "latin1"));
     const zone = page.locator(".map-banner", { hasText: "look like UTM" });
     await expect(zone).toBeVisible({ timeout: 60_000 });
-    await page.getByRole("combobox", { name: "UTM zone" }).selectOption({ label: "36N" });
+    await choose(page, "UTM zone", "36N");
     await expect(zone).toBeHidden();
 });
 
@@ -612,11 +694,10 @@ test("says what a block of the drawing is, and hides a layer", async ({ page }) 
 
     // 292 long tables and 24 short ones: leaving the long ones out leaves the short ones
     await page.getByText("Layers and blocks").click();
-    const table = page.getByRole("combobox", { name: "PV_TABLE_2P28" });
-    await expect(table.locator("option:checked")).toHaveText("Automatic: PV table");
-    await table.selectOption({ label: "Not counted" });
+    await expect(page.getByRole("combobox", { name: "PV_TABLE_2P28" })).toHaveText("Automatic: PV table");
+    await choose(page, "PV_TABLE_2P28", "Not counted");
     await expect(tables).toHaveText("24");
-    await table.selectOption({ label: "PV table" });
+    await choose(page, "PV_TABLE_2P28", "PV table");
     await expect(tables).toHaveText("316");
 
     const eye = page.getByRole("button", { name: "Show on the map: PV-TABLES" });
@@ -673,7 +754,7 @@ test("remembers a drawing's place and choices, and brings them back when the fil
     if (isPhone(page)) await page.getByRole("button", { name: "Drawing details" }).click();
     const latitude = await page.getByRole("textbox", { name: "Latitude" }).inputValue();
     await page.getByText("Layers and blocks").click();
-    await page.getByRole("combobox", { name: "BESS_CONTAINER_20FT_4.2MWH" }).selectOption({ label: "Not counted" });
+    await choose(page, "BESS_CONTAINER_20FT_4.2MWH", "Not counted");
     await page.getByRole("button", { name: "Show on the map: ROAD-ASPHALT-6M" }).click();
     await expect(batteries).toHaveText("0");
 
@@ -686,7 +767,7 @@ test("remembers a drawing's place and choices, and brings them back when the fil
     await expect(page.getByRole("textbox", { name: "Latitude" })).toHaveValue(latitude);
     await expect(batteries).toHaveText("0");
     await page.getByText("Layers and blocks").click();
-    await expect(page.getByRole("combobox", { name: "BESS_CONTAINER_20FT_4.2MWH" })).toHaveValue("none");
+    await expect(page.getByRole("combobox", { name: "BESS_CONTAINER_20FT_4.2MWH" })).toHaveText("Not counted");
     await expect(page.getByRole("button", { name: "Show on the map: ROAD-ASPHALT-6M" })).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -752,7 +833,7 @@ test("shows its own fonts, Estedad for Persian, and has app icons and a link pre
             return [...document.fonts].filter((font) => font.status === "loaded").map((font) => font.family.replaceAll('"', ""));
         });
     await start(page, "Solar PV");
-    await expect(page.getByRole("link", { name: "plantline" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "plantline, New diagram" })).toBeVisible();
     await expect.poll(loadedFonts).toContain("Inter Variable");
     await chooseLanguage(page, "fa");
     await expect.poll(loadedFonts).toContain("Estedad Variable");

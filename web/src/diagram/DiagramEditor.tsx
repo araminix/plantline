@@ -1,5 +1,5 @@
 import { Cable, ChevronDown, CircleCheck, Ellipsis, FilePlus, FileText, FolderOpen, Image, Keyboard, Maximize, Plus, Printer, Redo2, Save, ScanSearch, SlidersHorizontal, Sparkles, SquareDashed, Trash2, TriangleAlert, Type, Undo2, Workflow, X, ZoomIn, ZoomOut } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type ChangeEvent, type ReactNode, type Ref } from "react";
 import { useI18n } from "../i18n/i18n";
 import { PLANT_ICONS, PLANT_TYPES, type NodeKind, type PlantType } from "../plants";
 import { readStored, writeStored } from "../settings";
@@ -15,6 +15,7 @@ import { DiagramSheet, diagramSvg, download, fileNameOf, svgToPng } from "./expo
 import { FILE_EXTENSION, MAX_FILE_BYTES, parseDiagram, serializeDiagram } from "./file";
 import { useHistory } from "./history";
 import { Inspector } from "./Inspector";
+import { NewDiagram, type Start } from "./NewDiagram";
 import { alignNodes, copyItems, distributeNodes, flipNodes, pasteItems, rotateNodes, type Alignment, type Clip } from "./edit";
 import { addNode, addNote, connect, emptyDiagram, GRID, moveNodes, removeItems, type Diagram, type DiagramNote, type Point } from "./model";
 import { Palette } from "./Palette";
@@ -32,8 +33,13 @@ function restore(plant: PlantType): Diagram {
 }
 
 
+export interface DiagramEditorHandle {
+    /** Asks what the new diagram is (the logo does this). */
+    startNew: () => void;
+}
+
 /** The single-line diagram editor: toolbar, palette, canvas and inspector; the diagram is kept in this browser. */
-export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantType; onPlantChange: (plant: PlantType) => void; hidden: boolean }) {
+export function DiagramEditor({ ref, plant, onPlantChange, hidden }: { ref?: Ref<DiagramEditorHandle>; plant: PlantType; onPlantChange: (plant: PlantType) => void; hidden: boolean }) {
     const { t, lang, number } = useI18n();
     const history = useHistory(() => restore(plant));
     const { preview } = history;
@@ -49,7 +55,8 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
     const [zoom, setZoom] = useState(1);
     const zoomLevel = new Intl.NumberFormat(lang, { style: "percent" }).format(zoom);
     const [shortcuts, setShortcuts] = useState(false);
-    const shortcutsButton = useRef<HTMLButtonElement>(null);
+    const [creating, setCreating] = useState<Start | null>(null);
+    useImperativeHandle(ref, () => ({ startNew: () => setCreating("empty") }), []);
     const fileInput = useRef<HTMLInputElement>(null);
     const issues = useMemo(() => checkDiagram(diagram), [diagram]);
     // The drawing (and its exports) in the reader's words and digits; no thousands separators, as drawings write them
@@ -140,26 +147,20 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         requestAnimationFrame(() => canvas.current?.fit());
     };
 
-    // A ready-made diagram of a plant type (another one switches the plant type), as one step: undo brings the previous one back
-    const openExample = (of: PlantType = plant) => {
-        if (diagram.nodes.length > 0 && !window.confirm(t("file.confirmNew"))) return;
-        history.commit(exampleDiagram(of, t("example.name", { plant: t(`plant.${of}`) })));
+    // A new diagram (another plant type switches the plant type) is one step: undo brings the previous one back
+    const create = (of: PlantType, start: Start, name = "") => {
+        history.commit(start === "example" ? exampleDiagram(of, name || t("example.name", { plant: t(`plant.${of}`) })) : emptyDiagram(of, name));
         if (of !== plant) onPlantChange(of);
+        setCreating(null);
         setSelection(NONE);
         setSheet(null);
-        requestAnimationFrame(() => canvas.current?.fit());
-    };
-
-    const newDiagram = () => {
-        if (diagram.nodes.length > 0 && !window.confirm(t("file.confirmNew"))) return;
-        history.reset(emptyDiagram(plant));
-        setSelection(NONE);
+        if (start === "example") requestAnimationFrame(() => canvas.current?.fit());
     };
 
     useEffect(() => {
         if (hidden) return;
         const onKey = (event: KeyboardEvent) => {
-            if (isTyping(event.target) || shortcuts) return;
+            if (isTyping(event.target) || shortcuts || creating) return;
             const command = event.ctrlKey || event.metaKey;
             const key = event.key.toLowerCase();
             // With nothing selected, the keys act on the element or note the keyboard is on
@@ -213,11 +214,12 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
         setSelection(NONE);
         setSheet("inspector");
     };
+    const save = () => download(baseName + FILE_EXTENSION, serializeDiagram(diagram), "application/json");
     const fileItems: MenuItem[] = [
-        { label: t("file.new"), icon: <FilePlus size={16} />, onSelect: newDiagram },
+        { label: t("file.new"), icon: <FilePlus size={16} />, onSelect: () => setCreating("empty") },
         { label: t("file.open"), icon: <FolderOpen size={16} />, onSelect: () => fileInput.current?.click() },
-        { label: t("file.example"), icon: <Sparkles size={16} />, onSelect: () => openExample() },
-        { label: t("file.save"), icon: <Save size={16} />, onSelect: () => download(baseName + FILE_EXTENSION, serializeDiagram(diagram), "application/json") },
+        { label: t("file.example"), icon: <Sparkles size={16} />, onSelect: () => setCreating("example") },
+        { label: t("file.save"), icon: <Save size={16} />, onSelect: save },
         { label: t("file.exportSvg"), icon: <Image size={16} />, onSelect: () => download(`${baseName}.svg`, diagramSvg(diagram, wording), "image/svg+xml") },
         { label: t("file.exportPng"), icon: <Image size={16} />, onSelect: () => void svgToPng(diagramSvg(diagram, wording)).then((png) => download(`${baseName}.png`, png)) },
         { label: t("file.print"), icon: <Printer size={16} />, onSelect: () => setPrinting(true) },
@@ -302,7 +304,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                         <span className="chip-text">{problems}</span>
                     </button>
                 )}
-                <IconButton label={t("shortcuts.title")} className="extra" onClick={() => setShortcuts(true)} buttonRef={shortcutsButton}>
+                <IconButton label={t("shortcuts.title")} className="extra" onClick={() => setShortcuts(true)}>
                     <Keyboard size={18} />
                 </IconButton>
             </div>
@@ -358,7 +360,7 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
                                 <ul className="example-grid">
                                     {PLANT_TYPES.map((of) => (
                                         <li key={of}>
-                                            <button type="button" aria-current={of === plant ? "true" : undefined} onClick={() => openExample(of)}>
+                                            <button type="button" aria-current={of === plant ? "true" : undefined} onClick={() => create(of, "example")}>
                                                 <SymbolIcon kind={PLANT_ICONS[of]} size={28} />
                                                 <Spoken message={t("example.name", { plant: "\u0000" })}>{t(`plant.${of}`)}</Spoken>
                                             </button>
@@ -396,13 +398,9 @@ export function DiagramEditor({ plant, onPlantChange, hidden }: { plant: PlantTy
             </nav>
             <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={(event) => void openFile(event)} />
             {shortcuts && (
-                <Shortcuts
-                    onClose={() => {
-                        setShortcuts(false);
-                        shortcutsButton.current?.focus();
-                    }}
-                />
+                <Shortcuts onClose={() => setShortcuts(false)} />
             )}
+            {creating && <NewDiagram plant={plant} start={creating} replacing={drawn} onSave={save} onCreate={create} onClose={() => setCreating(null)} />}
             {printing && (
                 <div className="print-sheet">
                     <DiagramSheet diagram={diagram} wording={wording} />

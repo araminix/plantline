@@ -1,13 +1,14 @@
-import { Check, ChevronDown, EllipsisVertical, Languages, Map as MapIcon, Monitor, Moon, Network, Sun } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
-import { DiagramEditor } from "./diagram/DiagramEditor";
+import { Check, EllipsisVertical, Map as MapIcon, Monitor, Moon, Network, Sun } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { DiagramEditor, type DiagramEditorHandle } from "./diagram/DiagramEditor";
 import { SymbolIcon } from "./diagram/symbols";
 import { useI18n } from "./i18n/i18n";
-import { isLanguage, LANGUAGES } from "./i18n/languages";
+import { Flag } from "./i18n/Flag";
+import { LANGUAGES } from "./i18n/languages";
 import { PlantPicker } from "./PlantPicker";
 import { isPlantType, PLANT_ICONS, PLANT_TYPES, type PlantType } from "./plants";
 import { usePersisted } from "./settings";
-import { IconButton, Popover } from "./ui/controls";
+import { IconButton, Popover, Select } from "./ui/controls";
 import { Logo } from "./ui/Logo";
 
 type View = "diagram" | "layout";
@@ -47,54 +48,52 @@ export function App() {
         document.documentElement.dataset.theme = dark ? "dark" : "light";
     }, [dark]);
 
+    const editor = useRef<DiagramEditorHandle>(null);
+
     // The plant type and language as pills on wide screens; on phones they move into the settings menu
     const plantSelect = (
-        <label className="pill">
-            <SymbolIcon kind={PLANT_ICONS[current]} size={20} />
-            <span className="sr-only">{t("plant.label")}</span>
-            <select value={current} onChange={(event) => setPlant(event.target.value as PlantType)}>
-                {PLANT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                        {t(`plant.${type}`)}
-                    </option>
-                ))}
-            </select>
-            <ChevronDown className="chevron" size={14} aria-hidden="true" />
-        </label>
+        <Select
+            className="pill"
+            label={t("plant.label")}
+            value={current}
+            options={PLANT_TYPES.map((type) => ({ value: type, label: t(`plant.${type}`), icon: <SymbolIcon kind={PLANT_ICONS[type]} size={20} /> }))}
+            onChange={setPlant}
+        />
     );
     // In the settings menu, choosing a language closes the menu
     const languageSelect = (after?: () => void) => (
-        <label className="pill">
-            <Languages size={17} aria-hidden="true" />
-            <span className="sr-only">{t("settings.language")}</span>
-            <select
-                value={lang}
-                onChange={(event) => {
-                    if (!isLanguage(event.target.value)) return;
-                    setLang(event.target.value);
-                    after?.();
-                }}
-            >
-                {LANGUAGES.map((language) => (
-                    <option key={language.code} value={language.code} lang={language.code}>
-                        {language.name}
-                    </option>
-                ))}
-            </select>
-            <ChevronDown className="chevron" size={14} aria-hidden="true" />
-        </label>
+        <Select
+            className="pill"
+            label={t("settings.language")}
+            value={lang}
+            options={LANGUAGES.map((language) => ({ value: language.code, label: language.name, lang: language.code, icon: <Flag code={language.code} /> }))}
+            onChange={(code) => {
+                setLang(code);
+                after?.();
+            }}
+        />
     );
 
     return (
         <>
             <div className="app">
                 <header className="app-header">
-                    <a className="brand" href="./" aria-label="plantline">
+                    {/* The logo starts a new diagram */}
+                    <button
+                        type="button"
+                        className="brand"
+                        title={t("file.new")}
+                        aria-label={`plantline, ${t("file.new")}`}
+                        onClick={() => {
+                            setView("diagram");
+                            editor.current?.startNew();
+                        }}
+                    >
                         <Logo size={30} />
                         <span className="brand-name">
                             plant<span className="brand-accent">line</span>
                         </span>
-                    </a>
+                    </button>
                     <nav className="tabs" role="tablist" aria-label={t("nav.label")}>
                         {(["diagram", "layout"] as const).map((name) => (
                             <button
@@ -172,7 +171,7 @@ export function App() {
                     </div>
                 </header>
                 <main className="app-main">
-                    <DiagramEditor plant={current} onPlantChange={setPlant} hidden={view !== "diagram"} />
+                    <DiagramEditor ref={editor} plant={current} onPlantChange={setPlant} hidden={view !== "diagram"} />
                     {layoutOpened && (
                         <Suspense fallback={<section className="layout" id="view-layout" role="tabpanel" aria-labelledby="tab-layout" aria-busy="true" hidden={view !== "layout"} />}>
                             <LayoutView plant={current} onPlantChange={setPlant} hidden={view !== "layout"} />

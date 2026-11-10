@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type Ref, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
@@ -27,17 +27,19 @@ export interface MenuItem {
 }
 
 /**
- * Where a list drawn over the page goes: under its button (over it, in the screen's lower half), starting at the
- * button's start (or, `alignEnd`, ending at its end), mirrored in right-to-left languages; null when the button is out
- * of view.
+ * Where a list drawn over the page goes: under its button (over it, in the screen's lower half), at least as wide,
+ * starting at the button's start (or, `alignEnd`, ending at its end), mirrored in right-to-left languages; null when
+ * the button is out of view. `--room` is the height left to the screen's edge, which the list keeps within.
  */
 function placeUnder(button: HTMLElement, alignEnd: boolean): CSSProperties | null {
     const box = button.getBoundingClientRect();
     if (box.bottom < 0 || box.top > window.innerHeight || box.right < 0 || box.left > window.innerWidth) return null;
     const rtl = getComputedStyle(button).direction === "rtl";
     // In the lower half of the screen (a bottom bar), the list opens upwards
-    const vertical = box.top > window.innerHeight / 2 ? { bottom: window.innerHeight - box.top + 6 } : { top: box.bottom + 6 };
-    return { ...vertical, ...(rtl !== alignEnd ? { right: document.documentElement.clientWidth - box.right } : { left: box.left }) };
+    const up = box.top > window.innerHeight / 2;
+    const vertical = up ? { bottom: window.innerHeight - box.top + 6 } : { top: box.bottom + 6 };
+    const room = { "--room": `${Math.round(up ? box.top - 14 : window.innerHeight - box.bottom - 14)}px` } as CSSProperties;
+    return { ...vertical, ...room, minWidth: box.width, ...(rtl !== alignEnd ? { right: document.documentElement.clientWidth - box.right } : { left: box.left }) };
 }
 
 /** Keeps a list drawn over the page under its button while open: it follows scrolling and resizing, and closes on a click elsewhere. */
@@ -47,7 +49,9 @@ function useAnchored(open: boolean, button: RefObject<HTMLElement | null>, list:
         onOpen();
         const outside = (event: Event) => {
             const target = event.target as Node;
-            if (!list.current?.contains(target) && !button.current?.contains(target)) place(null);
+            // A list opened from inside (a Select in a Popover) is drawn elsewhere but belongs to it
+            const nested = target instanceof Element && target.closest(".select-list");
+            if (!list.current?.contains(target) && !button.current?.contains(target) && !nested) place(null);
         };
         const follow = () => place(button.current ? placeUnder(button.current, alignEnd) : null);
         document.addEventListener("pointerdown", outside);
@@ -146,7 +150,7 @@ export function Popover({ label, icon, children }: { label: string; icon: ReactN
         setPlace(null);
         button.current?.focus();
     };
-    useAnchored(place !== null, button, panel, true, setPlace, () => panel.current?.querySelector<HTMLElement>("button, select, input")?.focus());
+    useAnchored(place !== null, button, panel, true, setPlace, () => panel.current?.querySelector<HTMLElement>("button, [role=combobox], input")?.focus());
     return (
         <>
             <button ref={button} type="button" className="icon-button" title={label} aria-label={label} aria-haspopup="dialog" aria-expanded={!!place} aria-controls={id} onClick={() => (place ? setPlace(null) : setPlace(placeUnder(button.current!, true)))}>
@@ -212,20 +216,139 @@ export function NumberField(props: { label: string; value: number | null; onComm
     );
 }
 
-/** A list to choose one value from; it saves at once. */
-export function SelectField(props: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
-    const { label, value, options, onChange } = props;
+export interface Choice<T extends string> {
+    value: T;
+    label: string;
+    /** Shown before the label, in the list and, once chosen, on the button. */
+    icon?: ReactNode;
+    /** The language the label is written in ("中文" is Chinese), so screen readers say it right. */
+    lang?: string;
+}
+
+/**
+ * A list to choose one value from, drawn like the app's menus (the browser's own list cannot be styled): a button
+ * showing the chosen value opens the list over the page, under the button. Keys follow the select-only combobox
+ * pattern: arrows, Home, End, Page Up and Page Down move through the list, typing jumps to a value, Enter, Space or
+ * Tab chooses, Escape closes; the focus stays on the button. Labelled by `labelledBy` (a visible label) or `label`.
+ */
+export function Select<T extends string>(props: { label: string; labelledBy?: string; value: T; options: readonly Choice<T>[]; onChange: (value: T) => void; className?: string }) {
+    const { label, labelledBy, value, options, onChange, className = "select" } = props;
+    const [place, setPlace] = useState<CSSProperties | null>(null);
+    const [active, setActive] = useState(0);
+    const button = useRef<HTMLDivElement>(null);
+    const list = useRef<HTMLUListElement>(null);
+    const typed = useRef({ text: "", at: 0 });
+    const id = useId();
+    const chosen = Math.max(0, options.findIndex((option) => option.value === value));
+    const shown = options[chosen];
+    const last = options.length - 1;
+
+    const open = (at: number) => {
+        setActive(Math.max(0, Math.min(last, at)));
+        setPlace(placeUnder(button.current!, false));
+    };
+    const choose = (index: number) => {
+        setPlace(null);
+        const option = options[index];
+        if (option && option.value !== value) onChange(option.value);
+    };
+    useAnchored(place !== null, button, list, false, setPlace, () => {});
+    useEffect(() => {
+        if (place) list.current?.children[active]?.scrollIntoView?.({ block: "nearest" });
+    }, [place !== null, active]);
+
+    // The next value starting with what was typed; one letter pressed again steps through the values starting with it
+    const find = (key: string, from: number) => {
+        const now = Date.now();
+        typed.current = { text: now - typed.current.at > 700 ? key : typed.current.text + key, at: now };
+        const text = typed.current.text.toLocaleLowerCase();
+        const starts = (step: number, prefix: string) => options[(from + step) % options.length]!.label.toLocaleLowerCase().startsWith(prefix);
+        for (let step = 0; step < options.length; step++) if (text.length > 1 && starts(step, text)) return (from + step) % options.length;
+        for (let step = 1; step <= options.length; step++) if (starts(step, text[0]!)) return (from + step) % options.length;
+        return -1;
+    };
+
+    const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        const at = place ? active : chosen;
+        const move = (to: number) => (place ? setActive(Math.max(0, Math.min(last, to))) : open(to));
+        if (event.key === "ArrowDown") move(place ? at + 1 : at);
+        else if (event.key === "ArrowUp") move(place ? at - 1 : at);
+        else if (event.key === "Home") move(0);
+        else if (event.key === "End") move(last);
+        else if (event.key === "PageDown") move(at + 10);
+        else if (event.key === "PageUp") move(at - 10);
+        else if (event.key === "Enter" || event.key === " ") {
+            if (place) choose(active);
+            else open(chosen);
+        } else if (event.key === "Escape" && place) setPlace(null);
+        else if (event.key === "Tab") {
+            if (place) choose(active);
+            return;
+        } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            const found = find(event.key, at);
+            if (found >= 0) move(found);
+        } else return;
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
     return (
-        <label className="field">
-            <span>{label}</span>
-            <select value={value} onChange={(event) => onChange(event.target.value)}>
-                {options.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
-        </label>
+        <>
+            <div
+                ref={button}
+                role="combobox"
+                tabIndex={0}
+                className={className}
+                aria-label={labelledBy ? undefined : label}
+                aria-labelledby={labelledBy}
+                aria-haspopup="listbox"
+                aria-expanded={!!place}
+                aria-controls={place ? id : undefined}
+                aria-activedescendant={place ? `${id}-${active}` : undefined}
+                onClick={() => (place ? setPlace(null) : open(chosen))}
+                onKeyDown={onKeyDown}
+            >
+                {shown?.icon}
+                <span className="select-value" lang={shown?.lang}>
+                    {shown?.label}
+                </span>
+                <ChevronDown className="chevron" size={14} aria-hidden="true" />
+            </div>
+            {place &&
+                createPortal(
+                    // Pressing an option keeps the focus on the button
+                    <ul ref={list} className="select-list" role="listbox" id={id} aria-label={label} style={place} onMouseDown={(event) => event.preventDefault()}>
+                        {options.map((option, index) => (
+                            <li
+                                key={option.value}
+                                id={`${id}-${index}`}
+                                role="option"
+                                aria-selected={index === active}
+                                className={index === active ? "active" : undefined}
+                                lang={option.lang}
+                                onPointerMove={() => index !== active && setActive(index)}
+                                onClick={() => choose(index)}
+                            >
+                                {option.icon}
+                                <span>{option.label}</span>
+                                {index === chosen && <Check className="check-mark" size={16} aria-hidden="true" />}
+                            </li>
+                        ))}
+                    </ul>,
+                    document.body,
+                )}
+        </>
+    );
+}
+
+/** A list to choose one value from, with its label above; it saves at once. */
+export function SelectField<T extends string>(props: { label: string; value: T; options: readonly Choice<T>[]; onChange: (value: T) => void }) {
+    const id = useId();
+    return (
+        <div className="field">
+            <span id={id}>{props.label}</span>
+            <Select labelledBy={id} {...props} />
+        </div>
     );
 }
 
