@@ -15,6 +15,8 @@ plantline is a web tool for the people who design, build and run power plants. D
 
 **[Try it online](https://araminix.github.io/plantline/)** (every plant type has a sample drawing), run it on your own machine, or fork it and make it yours.
 
+![plantline in 17 seconds: a solar plant's example diagram, a transformer's properties, then the sample DWG opened on the map with its tables, modules and cables counted](docs/images/demo.gif)
+
 ![A single-line diagram of a solar plant in the dark theme](docs/images/diagram-dark.png)
 
 ## What it does
